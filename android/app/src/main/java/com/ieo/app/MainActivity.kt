@@ -1,17 +1,21 @@
 package com.ieo.app
 
 import android.os.Bundle
+import android.widget.Toast
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.platform.LocalContext
+import com.ieo.app.data.SessionStore
+import com.ieo.app.ui.home.HomeScreen
+import com.ieo.app.ui.login.LoginScreen
+import com.ieo.app.ui.splash.SplashScreen
 import com.ieo.app.ui.theme.IeoTheme
 
 class MainActivity : ComponentActivity() {
@@ -19,26 +23,36 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         setContent {
             IeoTheme {
-                HomeScreen()
+                IeoApp()
             }
         }
     }
 }
 
-@Composable
-fun HomeScreen() {
-    // Surface가 배경색과 그에 맞는 글자색(onBackground)을 함께 정해 줌
-    Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
-        Box(contentAlignment = Alignment.Center) {
-            Text(text = "Ieo", style = MaterialTheme.typography.displayLarge)
-        }
-    }
-}
+private enum class Screen { SPLASH, LOGIN, HOME }
 
-@Preview(widthDp = 1280, heightDp = 720)
 @Composable
-private fun HomeScreenPreview() {
-    IeoTheme(darkTheme = true) {
-        HomeScreen()
+private fun IeoApp() {
+    val context = LocalContext.current
+    val session = remember { SessionStore(context) }
+    var screen by rememberSaveable { mutableStateOf(Screen.SPLASH) }
+    // TODO: 서버 인증 API(/api/auth/*)가 구현되면 실제 요청으로 바꾼다
+    val notReady = { Toast.makeText(context, R.string.not_ready, Toast.LENGTH_SHORT).show() }
+
+    when (screen) {
+        Screen.SPLASH -> SplashScreen(
+            isLoggedIn = session.isLoggedIn(),
+            onStart = { screen = Screen.LOGIN },
+            onAutoLogin = { screen = Screen.HOME },
+        )
+        Screen.LOGIN -> {
+            BackHandler { screen = Screen.SPLASH }
+            LoginScreen(
+                onRequestCode = { },
+                onLogin = { _, _ -> notReady() },
+                onGoogleLogin = { notReady() },
+            )
+        }
+        Screen.HOME -> HomeScreen()
     }
 }

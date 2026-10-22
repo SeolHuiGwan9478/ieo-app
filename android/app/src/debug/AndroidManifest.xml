@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- 디버그 빌드 전용: 에뮬레이터에서 차량 신호와 위치가 앱까지 오는지 확인하는 화면 -->
+<!-- 디버그 빌드 전용 화면: 차량 신호 검증(VehicleProbe), 공통 컴포넌트 확인(ComponentGallery) -->
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
     <uses-permission android:name="android.car.permission.CAR_SPEED" />
@@ -9,6 +9,9 @@
     <application>
         <activity
             android:name=".debug.VehicleProbeActivity"
+            android:exported="true" />
+        <activity
+            android:name=".debug.ComponentGalleryActivity"
             android:exported="true" />
     </application>
 </manifest>
