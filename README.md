@@ -2,29 +2,16 @@
 
 화물차 기사를 위한 차량용 운행 비서. 현대자동차그룹 차량용 앱 개발 공모전(Pleos Connect) 출품작.
 
+백엔드는 [ieo-server](https://github.com/SeolHuiGwan9478/ieo-server) 저장소에 있다.
+
 ## 구조
 
 | 경로 | 내용 |
 |---|---|
 | `android/` | 차량 앱 (Kotlin, Pleos Connect SDK) |
-| `server/` | 백엔드 (Java 21, Spring Boot 4) |
 | `docs/` | 기획서, 도메인별 요구사항 (`docs/requirements/`) |
 | `research/` | 시장조사, SDK 조사 |
 | `design/` | 로고, 브랜드 가이드 |
-
-## 서버 실행
-
-```bash
-cd server
-./gradlew bootRun
-```
-
-- 기본 프로필은 `local`이고 H2 파일 DB(`server/data/`)를 씀
-- 프로필별 설정: `application-local.yml`(H2), `application-dev.yml`·`application-prod.yml`(PostgreSQL, `DB_URL`·`DB_USERNAME`·`DB_PASSWORD` 환경변수 필요)
-- 다른 프로필로 실행: `./gradlew bootRun --args='--spring.profiles.active=dev'`
-- 패키지 구조: `global`(공통 설정·엔티티·예외) / `domain/{도메인}/{controller,service,entity,repository,dto}`
-- 헬스체크: http://localhost:8080/actuator/health
-- H2 콘솔: http://localhost:8080/h2-console
 
 ## 앱 실행
 
