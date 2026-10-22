@@ -106,6 +106,7 @@ dependencies {
 출처: https://document.pleos.ai/docs/pleos-only/vehicle-app-planning-guide/app-structure-screen-model , .../performance-resource-mgmt , .../vehicle-app-developer-guide/audio-focus-development-guide/suspend-mode-audio-focus
 
 - 화면 모델: Driving view(고정 영역)와 앱 영역(window 최대 2개)으로 나뉜다. `screenOrientation` 미지정 시 portrait(1 window), landscape 지정 시 2 window를 쓴다. portrait와 landscape 레이아웃을 모두 설계해야 한다.
+  - 에뮬레이터 확인(2026-10-22): 방향을 지정하지 않은 앱도 앱 영역 가장자리 손잡이(⋮)를 끌어 내비와 반반으로 나눌 수 있었다. 반 화면은 약 840dp × 1200dp다. 반대로 `landscape`로 지정하면 반 화면 창에서 "이 앱을 사용하려면 창 크기를 넓게 조정하세요"만 보였다.
 - 화면에서 사라진 앱도 백그라운드에 남을 수 있다. 문서는 백그라운드에서 오디오, 통신, 다운로드처럼 지속할 작업은 "실행 조건과 중단·재개 정책을 명확히 정의"하라고 한다. 불필요한 상주, 타이머, 폴링은 최소화하라고 한다. 즉 백그라운드 작업 자체를 금지하지는 않는다.
 - **백그라운드 Service나 Foreground Service 사용 허용 여부를 명시한 규정은 문서에서 확인 안 됨.** Gleo App Schema에서는 `component: "service"`(sendBroadcast로 UI 없는 백그라운드 처리)를 공식 지원한다.
 - 리소스 기준: 주행 중 비내비 앱 CPU 5% 미만, 정차 중 25% 이하, RAM 400MB 이하. 앱은 10초 이내에 실행되어야 한다.
@@ -283,7 +284,13 @@ fusedLocation.registerFusedLocationCallback(listener)
   - `getTBTInfo()`, `onCurrentRoadSpeedLimit`, `onCameraAlert`, `onNavigationStatus(NavigationStatus: FREE_DRIVE/ROUTE_DRIVE/INACTIVE/INITIALIZING)`, `onDrivingInfo`
   - 도착 이벤트: `onDestinationArrived(DestinationArrivedInfo)`, `onWayPointArrived`
 - 현재 경로 전체(폴리라인) 조회: 문서에서 확인 안 됨. `TripSummary.routePoints`(RoutePointInfo)는 있다.
-- 단위(m/초 등): 문서에서 확인 안 됨
+- 단위: 거리는 미터, 시간은 초 (에뮬레이터 확인: 75km → 75000, 1시간 42분 → 6120)
+- 에뮬레이터에서 확인한 동작 (2026-10-22, 내비 서비스 3.0.4)
+  - `poiId = ""`, 좌표만 넣은 `requestRoute`도 경로 후보 화면이 뜨고, 잠시 뒤 1번 경로로 안내가 시작된다
+  - 경로가 정해지기 전 `onDestinationInfo`는 모두 0으로 온다. 0은 "아직 모름"으로 다뤄야 한다
+  - 이벤트 순서: `onRouteStarted`(전체 거리·시간) → `onRouteEnded`(경로 탐색 끝, 안내 종료가 아님) → `onNavigationStatus(ROUTE_DRIVE)`
+  - 내비에서 [안내 종료]를 누르면 `onRouteCancelled` → `onNavigationStatus(FREE_DRIVE)`
+  - 앱이 `FLAG_ACTIVITY_LAUNCH_ADJACENT`로 내비를 띄워도 옆 창으로 나뉘지 않고 앱 영역 전체를 덮는다. 화면 나누기는 사용자가 손잡이를 끌어서 한다
 - 기타: `requestNavigationScreen(...)`(검색, 경로 개요, 주변 충전소 등 내비 화면 열기), 북마크, 최근 목적지 조회
 - 권한: 조회는 NAVI_ROUTE, 경로 설정은 NAVI_ROUTE_SEARCH, 화면 요청은 NAVI_CUSTOM_MAP
 
