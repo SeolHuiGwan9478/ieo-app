@@ -8,7 +8,7 @@
 |---|---|
 | `android/` | 차량 앱 (Kotlin, Pleos Connect SDK) |
 | `server/` | 백엔드 (Java 21, Spring Boot 4) |
-| `docs/` | 기획서 |
+| `docs/` | 기획서, 도메인별 요구사항 (`docs/requirements/`) |
 | `research/` | 시장조사, SDK 조사 |
 | `design/` | 로고, 브랜드 가이드 |
 
