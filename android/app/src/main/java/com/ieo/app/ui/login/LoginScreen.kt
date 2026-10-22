@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
@@ -21,6 +22,8 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.PrimaryTabRow
+import androidx.compose.material3.Tab
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -120,9 +123,15 @@ private fun BrandPanel(modifier: Modifier = Modifier) {
     }
 }
 
+private enum class LoginTab(val label: Int) {
+    QR(R.string.login_tab_qr),
+    PHONE(R.string.login_tab_phone),
+}
+
 /**
- * 로그인 폼: 휴대폰 번호 → 인증번호. (Google 로그인은 차량에 Google 서비스가 없어 모바일 앱에서만 제공한다)
- * 인증번호는 받은 뒤 [CODE_VALID_SECONDS]초 동안만 쓸 수 있고, 남은 시간을 보여 준다.
+ * 로그인 폼: QR 로그인(기본)과 휴대폰 번호 로그인 두 탭.
+ * (Google 로그인은 차량에 Google 서비스가 없어 모바일 앱에서만 제공한다)
+ * 휴대폰 인증번호는 받은 뒤 [CODE_VALID_SECONDS]초 동안만 쓸 수 있고, 남은 시간을 보여 준다.
  */
 @Composable
 private fun LoginForm(
@@ -131,6 +140,8 @@ private fun LoginForm(
     onLogin: (phone: String, code: String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    var tab by rememberSaveable { mutableStateOf(LoginTab.QR) }
+    // 휴대폰 탭 입력값은 탭을 오가도 남도록 폼에서 들고 있는다
     var phone by rememberSaveable { mutableStateOf("") }
     var code by rememberSaveable { mutableStateOf("") }
     // 인증번호 만료 시각 (SystemClock.elapsedRealtime 기준). 0이면 아직 받지 않음
@@ -162,13 +173,34 @@ private fun LoginForm(
             Column {
                 Text(text = stringResource(R.string.login_title), fontSize = 36.sp, fontWeight = FontWeight.Bold)
                 Text(
-                    text = stringResource(R.string.login_subtitle),
+                    text = stringResource(if (tab == LoginTab.QR) R.string.login_subtitle_qr else R.string.login_subtitle),
                     fontSize = 22.sp,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
         }
-        Spacer(Modifier.height(40.dp))
+        Spacer(Modifier.height(32.dp))
+
+        PrimaryTabRow(
+            selectedTabIndex = tab.ordinal,
+            containerColor = MaterialTheme.colorScheme.background,
+            contentColor = MaterialTheme.colorScheme.onBackground,
+        ) {
+            LoginTab.entries.forEach { item ->
+                Tab(
+                    selected = tab == item,
+                    onClick = { tab = item },
+                    text = { Text(stringResource(item.label), fontSize = 22.sp, fontWeight = FontWeight.Medium) },
+                    modifier = Modifier.heightIn(min = 64.dp),
+                )
+            }
+        }
+        Spacer(Modifier.height(32.dp))
+
+        if (tab == LoginTab.QR) {
+            QrLoginContent(modifier = Modifier.fillMaxWidth())
+            return@Column
+        }
 
         // 휴대폰 번호: 숫자만 저장하고 화면에는 010-1234-5678처럼 하이픈을 넣어 보여 준다
         OutlinedTextField(
@@ -258,7 +290,7 @@ private fun CodeTimer(secondsLeft: Int) {
     )
 }
 
-private fun secondsUntil(expiresAt: Long): Int {
+internal fun secondsUntil(expiresAt: Long): Int {
     if (expiresAt == 0L) return 0
     val millisLeft = expiresAt - SystemClock.elapsedRealtime()
     return ((millisLeft + 999) / 1000).toInt().coerceAtLeast(0)

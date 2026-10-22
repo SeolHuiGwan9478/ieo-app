@@ -8,6 +8,14 @@
     <!-- 로그인 화면 -->
     <string name="login_title">로그인</string>
     <string name="login_subtitle">휴대폰 번호로 로그인하세요</string>
+    <string name="login_subtitle_qr">휴대폰으로 QR을 찍어 로그인하세요</string>
+    <string name="login_tab_qr">QR 로그인</string>
+    <string name="login_tab_phone">휴대폰 번호</string>
+    <string name="qr_instruction">휴대폰 카메라로 QR 코드를 찍어 주세요</string>
+    <string name="qr_code_label">로그인 코드</string>
+    <string name="qr_waiting">휴대폰에서 승인을 기다리는 중</string>
+    <string name="qr_expired">QR이 만료됐습니다. 새로 받아 주세요</string>
+    <string name="qr_refresh">새 QR 받기</string>
     <string name="login_phone_label">휴대폰 번호</string>
     <string name="login_phone_placeholder">01012345678</string>
     <string name="login_request_code">인증번호 받기</string>

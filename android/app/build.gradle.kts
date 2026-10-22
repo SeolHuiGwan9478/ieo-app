@@ -45,6 +45,8 @@ dependencies {
 
     implementation(libs.pleos.vehicle)
     implementation(libs.pleos.navihelper)
+    // QR 로그인용 QR 코드 생성 (Google 서비스 불필요)
+    implementation(libs.zxing.core)
 
     testImplementation(libs.junit)
 }
