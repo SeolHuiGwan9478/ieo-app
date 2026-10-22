@@ -4,3 +4,8 @@
 local.properties
 .gradle/
 build/
+
+# 브랜드 스크립트 작업물
+design/.venv/
+design/Outfit.ttf
+design/preview.svg

@@ -16,5 +16,5 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "daumjim"
+rootProject.name = "ieo"
 include(":app")

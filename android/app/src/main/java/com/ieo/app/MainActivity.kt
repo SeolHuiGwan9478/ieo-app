@@ -1,4 +1,4 @@
-package com.daumjim.app
+package com.ieo.app
 
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -26,7 +26,7 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun HomeScreen() {
     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-        Text(text = "다음짐", style = MaterialTheme.typography.displayLarge)
+        Text(text = "Ieo", style = MaterialTheme.typography.displayLarge)
     }
 }
 

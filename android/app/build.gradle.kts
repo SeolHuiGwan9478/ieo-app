@@ -4,11 +4,11 @@ plugins {
 }
 
 android {
-    namespace = "com.daumjim.app"
-    compileSdk = 36
+    namespace = "com.ieo.app"
+    compileSdk = 37
 
     defaultConfig {
-        applicationId = "com.daumjim.app"
+        applicationId = "com.ieo.app"
         // Pleos 차량 보안 요건(사이닝 키 로테이션)으로 28 이상 필수
         minSdk = 28
         targetSdk = 35
