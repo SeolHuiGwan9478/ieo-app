@@ -30,6 +30,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.VerticalDivider
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -70,6 +71,7 @@ fun LoginScreen(
             // 차량 화면처럼 넓을 때: 왼쪽 브랜드, 오른쪽 로그인
             Row(modifier = Modifier.fillMaxSize()) {
                 BrandPanel(modifier = Modifier.weight(0.45f).fillMaxHeight())
+                VerticalDivider(color = MaterialTheme.colorScheme.outline)
                 Surface(
                     color = MaterialTheme.colorScheme.background,
                     modifier = Modifier.weight(0.55f).fillMaxHeight(),
@@ -102,10 +104,10 @@ fun LoginScreen(
     }
 }
 
-/** 넓은 화면 왼쪽: 로고와 문구. 오른쪽 폼과 구분되도록 surface 색(라이트: 연한 회색)을 쓴다 */
+/** 넓은 화면 왼쪽: 로고와 문구. 배경은 오른쪽 폼과 같은 색이고, 가운데 가는 세로선으로만 나눈다 */
 @Composable
 private fun BrandPanel(modifier: Modifier = Modifier) {
-    Box(contentAlignment = Alignment.Center, modifier = modifier.background(MaterialTheme.colorScheme.surface)) {
+    Box(contentAlignment = Alignment.Center, modifier = modifier.background(MaterialTheme.colorScheme.background)) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
             IeoWordmark(width = 200.dp)
             Spacer(Modifier.height(28.dp))
