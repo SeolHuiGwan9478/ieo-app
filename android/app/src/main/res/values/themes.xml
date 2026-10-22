@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- 앱이 뜨는 순간부터 검은 바탕이 보이도록 창 배경을 검정으로 둔다. 화면 색은 Compose 테마(IeoTheme)가 정한다 -->
-    <style name="Theme.Ieo" parent="@android:style/Theme.DeviceDefault.NoActionBar">
-        <item name="android:windowBackground">@color/ieo_black</item>
+    <!-- 앱이 뜨는 순간부터 흰 바탕이 보이도록 창 배경을 흰색으로 둔다. 화면 색은 Compose 테마(IeoTheme, 기본 라이트)가 정한다 -->
+    <style name="Theme.Ieo" parent="@android:style/Theme.DeviceDefault.Light.NoActionBar">
+        <item name="android:windowBackground">@color/ieo_white</item>
     </style>
 </resources>

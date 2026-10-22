@@ -16,13 +16,13 @@ import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -31,13 +31,12 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.ieo.app.R
 import com.ieo.app.ui.component.IeoWordmark
+import com.ieo.app.ui.theme.IeoTheme
 import kotlinx.coroutines.async
 import kotlinx.coroutines.delay
 
-private val TaglineColor = Color(0xFFA3A3A3)
-
 /**
- * 첫 화면. 검은 바탕에 로고가 나타나고, 그 아래 문구가 차례로 떠오른다.
+ * 첫 화면. 흰 바탕에 로고가 나타나고, 그 아래 문구가 차례로 떠오른다. 색은 테마(라이트)를 따른다.
  * - 로그인 전: 하단에 "시작하기" 버튼이 나타나고, 누르면 로그인 화면으로 간다.
  * - 로그인 상태: 버튼 없이 잠시 뒤 바로 다음 화면으로 넘어간다.
  */
@@ -67,20 +66,19 @@ fun SplashScreen(
         }
     }
 
-    Box(modifier = Modifier.fillMaxSize().background(Color.Black)) {
+    Box(modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
             modifier = Modifier.align(Alignment.Center),
         ) {
             IeoWordmark(
                 width = 200.dp,
-                color = Color.White,
                 modifier = Modifier.graphicsLayer { alpha = logoAlpha.value },
             )
             Spacer(Modifier.height(28.dp))
             Text(
                 text = stringResource(R.string.splash_tagline),
-                color = TaglineColor,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 fontSize = 26.sp,
                 fontWeight = FontWeight.Medium,
                 letterSpacing = 1.sp,
@@ -96,11 +94,10 @@ fun SplashScreen(
                 onClick = onStart,
                 enabled = buttonAlpha.value > 0.5f,
                 shape = RoundedCornerShape(16.dp),
+                // 나타나는 동안 눌리지 않게 막아 두지만, 색은 활성 상태와 같게 보이도록 한다
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = Color.White,
-                    contentColor = Color.Black,
-                    disabledContainerColor = Color.White,
-                    disabledContentColor = Color.Black,
+                    disabledContainerColor = MaterialTheme.colorScheme.primary,
+                    disabledContentColor = MaterialTheme.colorScheme.onPrimary,
                 ),
                 modifier = Modifier
                     .align(Alignment.BottomCenter)
@@ -119,5 +116,7 @@ fun SplashScreen(
 @Preview(widthDp = 1280, heightDp = 720)
 @Composable
 private fun SplashScreenPreview() {
-    SplashScreen(isLoggedIn = false, onStart = {}, onAutoLogin = {})
+    IeoTheme {
+        SplashScreen(isLoggedIn = false, onStart = {}, onAutoLogin = {})
+    }
 }

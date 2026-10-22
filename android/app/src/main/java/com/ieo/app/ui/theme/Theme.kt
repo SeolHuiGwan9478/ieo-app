@@ -1,6 +1,5 @@
 package com.ieo.app.ui.theme
 
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
@@ -69,8 +68,12 @@ private val LightColors = lightColorScheme(
     error = LightStatus.warning,
 )
 
+/**
+ * 앱 테마. 기본은 라이트 모드(흰 바탕, 검은 글씨)다.
+ * 다크 색상은 남겨 두었으니, 나중에 밤에 어둡게 바꾸려면 darkTheme에 isSystemInDarkTheme()을 넘기면 된다.
+ */
 @Composable
-fun IeoTheme(darkTheme: Boolean = isSystemInDarkTheme(), content: @Composable () -> Unit) {
+fun IeoTheme(darkTheme: Boolean = false, content: @Composable () -> Unit) {
     MaterialTheme(
         colorScheme = if (darkTheme) DarkColors else LightColors,
         content = content,

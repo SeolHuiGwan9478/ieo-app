@@ -55,7 +55,8 @@
 - 텍스트 로고는 소문자와 마침표를 쓴 **`ieo.`**. 글꼴은 **Outfit ExtraBold(800)**이고 자간을 -0.03em 좁힘
 - 문장 안에서는 `Ieo`로 씀
 - 아이콘 의미: 막대는 지금 하는 운행, 점 두 개는 이어지는 다음 일. 멀어질수록 점이 작아짐
-- Android 앱 아이콘은 검정 배경에 흰 심볼 (`android/app/src/main/res/mipmap-anydpi/`)
+- 앱은 라이트 모드가 기본: 흰 바탕에 검은 로고·글씨. 다크 색상은 나중에 밤 모드용으로 남겨 둠
+- Android 앱 아이콘과 시스템 시작 화면은 흰 배경에 검은 심볼 (`android/app/src/main/res/mipmap-anydpi/`, `values-v31/themes.xml`)
 - Outfit은 SIL Open Font License 1.1이라 로고 제작과 상업적 이용이 가능함
 
 ## 다시 만들기

@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- Android 12 이상의 시스템 시작 화면: 검은 바탕에 흰 심볼 -->
-    <style name="Theme.Ieo" parent="@android:style/Theme.DeviceDefault.NoActionBar">
-        <item name="android:windowBackground">@color/ieo_black</item>
-        <item name="android:windowSplashScreenBackground">@color/ieo_black</item>
+    <!-- Android 12 이상의 시스템 시작 화면: 흰 바탕에 검은 심볼 -->
+    <style name="Theme.Ieo" parent="@android:style/Theme.DeviceDefault.Light.NoActionBar">
+        <item name="android:windowBackground">@color/ieo_white</item>
+        <item name="android:windowSplashScreenBackground">@color/ieo_white</item>
         <item name="android:windowSplashScreenAnimatedIcon">@drawable/ic_launcher_foreground</item>
     </style>
 </resources>
