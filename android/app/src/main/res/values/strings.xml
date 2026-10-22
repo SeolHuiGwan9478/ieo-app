@@ -14,6 +14,7 @@
     <string name="login_resend_code">인증번호 다시 받기</string>
     <string name="login_code_label">인증번호 6자리</string>
     <string name="login_code_sent">인증번호를 보냈습니다</string>
+    <string name="login_code_expired">인증 시간이 지났습니다. 인증번호를 다시 받아 주세요</string>
     <string name="login_submit">로그인</string>
     <string name="login_or">또는</string>
     <string name="login_google">Google로 로그인</string>

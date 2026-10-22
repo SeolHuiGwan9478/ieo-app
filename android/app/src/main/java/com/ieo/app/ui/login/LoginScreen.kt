@@ -1,12 +1,10 @@
 package com.ieo.app.ui.login
 
-import androidx.compose.foundation.BorderStroke
+import android.os.SystemClock
 import com.ieo.app.ui.component.IeoWordmark
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.background
-import androidx.compose.foundation.Image
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -14,32 +12,31 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.VerticalDivider
 import androidx.compose.runtime.Composable
+import kotlinx.coroutines.delay
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.mutableLongStateOf
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -54,6 +51,10 @@ import com.ieo.app.ui.theme.IeoTheme
 
 private val PHONE_PATTERN = Regex("^01\\d{8,9}$")
 private const val CODE_LENGTH = 6
+
+/** 인증번호 유효 시간. TODO: 서버 인증 구현 시 서버의 만료 시간과 맞춘다 */
+private const val CODE_VALID_SECONDS = 180
+private const val CODE_WARNING_SECONDS = 30
 private val WIDE_LAYOUT_MIN_WIDTH = 840.dp
 
 /**
@@ -64,7 +65,6 @@ private val WIDE_LAYOUT_MIN_WIDTH = 840.dp
 fun LoginScreen(
     onRequestCode: (phone: String) -> Unit,
     onLogin: (phone: String, code: String) -> Unit,
-    onGoogleLogin: () -> Unit,
 ) {
     BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
         if (maxWidth >= WIDE_LAYOUT_MIN_WIDTH) {
@@ -81,7 +81,6 @@ fun LoginScreen(
                             showSymbol = false,
                             onRequestCode = onRequestCode,
                             onLogin = onLogin,
-                            onGoogleLogin = onGoogleLogin,
                             modifier = Modifier.widthIn(max = 520.dp).padding(horizontal = 64.dp, vertical = 48.dp),
                         )
                     }
@@ -95,7 +94,6 @@ fun LoginScreen(
                         showSymbol = true,
                         onRequestCode = onRequestCode,
                         onLogin = onLogin,
-                        onGoogleLogin = onGoogleLogin,
                         modifier = Modifier.widthIn(max = 560.dp).padding(horizontal = 48.dp, vertical = 40.dp),
                     )
                 }
@@ -122,19 +120,38 @@ private fun BrandPanel(modifier: Modifier = Modifier) {
     }
 }
 
-/** 로그인 폼: 위쪽 휴대폰 인증번호 로그인(일반 로그인), 아래쪽 Google 로그인 */
+/**
+ * 로그인 폼: 휴대폰 번호 → 인증번호. (Google 로그인은 차량에 Google 서비스가 없어 모바일 앱에서만 제공한다)
+ * 인증번호는 받은 뒤 [CODE_VALID_SECONDS]초 동안만 쓸 수 있고, 남은 시간을 보여 준다.
+ */
 @Composable
 private fun LoginForm(
     showSymbol: Boolean,
     onRequestCode: (phone: String) -> Unit,
     onLogin: (phone: String, code: String) -> Unit,
-    onGoogleLogin: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     var phone by rememberSaveable { mutableStateOf("") }
     var code by rememberSaveable { mutableStateOf("") }
-    var codeSent by rememberSaveable { mutableStateOf(false) }
+    // 인증번호 만료 시각 (SystemClock.elapsedRealtime 기준). 0이면 아직 받지 않음
+    var codeExpiresAt by rememberSaveable { mutableLongStateOf(0L) }
+    val codeSent = codeExpiresAt > 0L
     val phoneValid = PHONE_PATTERN.matches(phone)
+
+    var secondsLeft by remember(codeExpiresAt) { mutableIntStateOf(secondsUntil(codeExpiresAt)) }
+    LaunchedEffect(codeExpiresAt) {
+        while (codeExpiresAt > 0L && secondsLeft > 0) {
+            delay(250)
+            secondsLeft = secondsUntil(codeExpiresAt)
+        }
+    }
+    val codeExpired = codeSent && secondsLeft == 0
+
+    val requestCode = {
+        code = ""
+        codeExpiresAt = SystemClock.elapsedRealtime() + CODE_VALID_SECONDS * 1000L
+        onRequestCode(phone)
+    }
 
     Column(modifier = modifier) {
         Row(verticalAlignment = Alignment.CenterVertically) {
@@ -153,12 +170,21 @@ private fun LoginForm(
         }
         Spacer(Modifier.height(40.dp))
 
-        // 일반 로그인: 휴대폰 번호 → 인증번호
+        // 휴대폰 번호: 숫자만 저장하고 화면에는 010-1234-5678처럼 하이픈을 넣어 보여 준다
         OutlinedTextField(
             value = phone,
-            onValueChange = { input -> phone = input.filter(Char::isDigit).take(11) },
+            onValueChange = { input ->
+                val digits = input.filter(Char::isDigit).take(11)
+                if (digits != phone) {
+                    phone = digits
+                    // 번호를 바꾸면 이전에 받은 인증번호는 쓸 수 없다
+                    codeExpiresAt = 0L
+                    code = ""
+                }
+            },
             label = { Text(stringResource(R.string.login_phone_label), fontSize = 18.sp) },
             placeholder = { Text(stringResource(R.string.login_phone_placeholder), fontSize = 24.sp) },
+            visualTransformation = PhoneNumberVisualTransformation(),
             textStyle = TextStyle(fontSize = 24.sp),
             singleLine = true,
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
@@ -171,10 +197,7 @@ private fun LoginForm(
             IeoPrimaryButton(
                 text = stringResource(R.string.login_request_code),
                 enabled = phoneValid,
-                onClick = {
-                    codeSent = true
-                    onRequestCode(phone)
-                },
+                onClick = requestCode,
             )
         } else {
             Text(
@@ -187,80 +210,64 @@ private fun LoginForm(
                 value = code,
                 onValueChange = { input -> code = input.filter(Char::isDigit).take(CODE_LENGTH) },
                 label = { Text(stringResource(R.string.login_code_label), fontSize = 18.sp) },
+                trailingIcon = { CodeTimer(secondsLeft) },
                 textStyle = TextStyle(fontSize = 24.sp, letterSpacing = 8.sp),
                 singleLine = true,
+                enabled = !codeExpired,
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword),
                 shape = RoundedCornerShape(16.dp),
                 modifier = Modifier.fillMaxWidth(),
             )
+            if (codeExpired) {
+                Spacer(Modifier.height(8.dp))
+                Text(
+                    text = stringResource(R.string.login_code_expired),
+                    fontSize = 20.sp,
+                    color = MaterialTheme.colorScheme.error,
+                )
+            }
             Spacer(Modifier.height(16.dp))
             IeoPrimaryButton(
                 text = stringResource(R.string.login_submit),
-                enabled = phoneValid && code.length == CODE_LENGTH,
+                enabled = phoneValid && code.length == CODE_LENGTH && !codeExpired,
                 onClick = { onLogin(phone, code) },
             )
             TextButton(
-                onClick = {
-                    code = ""
-                    onRequestCode(phone)
-                },
+                onClick = requestCode,
                 modifier = Modifier.align(Alignment.CenterHorizontally),
             ) {
                 Text(stringResource(R.string.login_resend_code), fontSize = 20.sp)
             }
         }
-
-        Spacer(Modifier.height(32.dp))
-        OrDivider()
-        Spacer(Modifier.height(32.dp))
-
-        GoogleLoginButton(onClick = onGoogleLogin)
     }
 }
 
+/** 인증번호 남은 시간 (m:ss). 30초 이하로 남으면 경고색으로 바뀐다 */
 @Composable
-private fun OrDivider() {
-    Row(verticalAlignment = Alignment.CenterVertically) {
-        HorizontalDivider(modifier = Modifier.weight(1f))
-        Text(
-            text = stringResource(R.string.login_or),
-            fontSize = 20.sp,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.padding(horizontal = 20.dp),
-        )
-        HorizontalDivider(modifier = Modifier.weight(1f))
-    }
+private fun CodeTimer(secondsLeft: Int) {
+    Text(
+        text = "%d:%02d".format(secondsLeft / 60, secondsLeft % 60),
+        fontSize = 22.sp,
+        fontWeight = FontWeight.Medium,
+        color = if (secondsLeft <= CODE_WARNING_SECONDS) {
+            MaterialTheme.colorScheme.error
+        } else {
+            MaterialTheme.colorScheme.onSurfaceVariant
+        },
+        modifier = Modifier.padding(end = 16.dp),
+    )
 }
 
-/** Google 브랜드 가이드에 맞춰 흰 바탕, 회색 테두리, 컬러 G 로고를 쓴다 (다크 모드에서도 동일) */
-@Composable
-private fun GoogleLoginButton(onClick: () -> Unit) {
-    OutlinedButton(
-        onClick = onClick,
-        shape = RoundedCornerShape(16.dp),
-        border = BorderStroke(1.dp, Color(0xFF747775)),
-        colors = androidx.compose.material3.ButtonDefaults.outlinedButtonColors(
-            containerColor = Color.White,
-            contentColor = Color(0xFF1F1F1F),
-        ),
-        modifier = Modifier.fillMaxWidth().heightIn(min = 76.dp),
-    ) {
-        Row(horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically) {
-            Image(
-                painter = painterResource(R.drawable.ic_google),
-                contentDescription = null,
-                modifier = Modifier.size(28.dp),
-            )
-            Spacer(Modifier.width(16.dp))
-            Text(text = stringResource(R.string.login_google), fontSize = 24.sp, fontWeight = FontWeight.Medium)
-        }
-    }
+private fun secondsUntil(expiresAt: Long): Int {
+    if (expiresAt == 0L) return 0
+    val millisLeft = expiresAt - SystemClock.elapsedRealtime()
+    return ((millisLeft + 999) / 1000).toInt().coerceAtLeast(0)
 }
 
 @Preview(widthDp = 1280, heightDp = 900)
 @Composable
 private fun LoginScreenPreview() {
     IeoTheme(darkTheme = false) {
-        LoginScreen(onRequestCode = {}, onLogin = { _, _ -> }, onGoogleLogin = {})
+        LoginScreen(onRequestCode = {}, onLogin = { _, _ -> })
     }
 }

@@ -50,7 +50,6 @@ private fun IeoApp() {
             LoginScreen(
                 onRequestCode = { },
                 onLogin = { _, _ -> notReady() },
-                onGoogleLogin = { notReady() },
             )
         }
         Screen.HOME -> HomeScreen()
