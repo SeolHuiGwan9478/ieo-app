@@ -4,8 +4,8 @@ import com.ieo.app.ui.home.StartGuidanceSheet
 import androidx.compose.ui.draw.clip
 import com.ieo.app.ui.theme.White
 import com.ieo.app.ui.theme.TextSub
-import com.ieo.app.ui.theme.TextStrong
-import com.ieo.app.ui.theme.CanvasGray
+import com.ieo.app.ui.theme.Orange50
+import com.ieo.app.ui.theme.Orange700
 import kotlinx.coroutines.delay
 import java.time.format.DateTimeFormatter
 import java.time.LocalTime
@@ -159,13 +159,13 @@ private fun NavRail(selected: Destination, onSelect: (Destination) -> Unit) {
 
 @Composable
 private fun NavRailItem(item: Destination, selected: Boolean, onClick: () -> Unit) {
-    val color = if (selected) TextStrong else TextSub
+    val color = if (selected) Orange700 else TextSub
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         modifier = Modifier
             .size(88.dp)
             .clip(RoundedCornerShape(20.dp))
-            .background(if (selected) CanvasGray else White)
+            .background(if (selected) Orange50 else White)
             .clickable(role = Role.Tab, onClick = onClick)
             .padding(top = 14.dp),
     ) {

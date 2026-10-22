@@ -1,5 +1,8 @@
 package com.ieo.app.ui.splash
 
+import com.ieo.app.ui.theme.Orange500
+import com.ieo.app.ui.theme.Orange700
+import com.ieo.app.ui.theme.White
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.tween
@@ -16,7 +19,6 @@ import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -66,19 +68,21 @@ fun SplashScreen(
         }
     }
 
-    Box(modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
+    // 시작 화면은 주황 바탕에 흰 로고. 시스템 시작 화면(values-v31/themes.xml)과 같은 색이라 이어져 보인다
+    Box(modifier = Modifier.fillMaxSize().background(Orange500)) {
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
             modifier = Modifier.align(Alignment.Center),
         ) {
             IeoWordmark(
                 width = 200.dp,
+                color = White,
                 modifier = Modifier.graphicsLayer { alpha = logoAlpha.value },
             )
             Spacer(Modifier.height(28.dp))
             Text(
                 text = stringResource(R.string.splash_tagline),
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                color = White.copy(alpha = 0.9f),
                 fontSize = 26.sp,
                 fontWeight = FontWeight.Medium,
                 letterSpacing = 1.sp,
@@ -96,8 +100,10 @@ fun SplashScreen(
                 shape = RoundedCornerShape(16.dp),
                 // 나타나는 동안 눌리지 않게 막아 두지만, 색은 활성 상태와 같게 보이도록 한다
                 colors = ButtonDefaults.buttonColors(
-                    disabledContainerColor = MaterialTheme.colorScheme.primary,
-                    disabledContentColor = MaterialTheme.colorScheme.onPrimary,
+                    containerColor = White,
+                    contentColor = Orange700,
+                    disabledContainerColor = White,
+                    disabledContentColor = Orange700,
                 ),
                 modifier = Modifier
                     .align(Alignment.BottomCenter)

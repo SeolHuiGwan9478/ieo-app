@@ -1,16 +1,10 @@
 <div align="center">
 
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="design/logo/icon/ieo_icon_white.svg">
-  <img src="design/logo/icon/ieo_icon_black.svg" alt="Ieo icon" width="96">
-</picture>
+<img src="design/logo/icon/ieo_icon_orange.svg" alt="Ieo icon" width="96">
 
 <br><br>
 
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="design/logo/wordmark/ieo_wordmark_white.svg">
-  <img src="design/logo/wordmark/ieo_wordmark_black.svg" alt="ieo." width="180">
-</picture>
+<img src="design/logo/wordmark/ieo_wordmark_orange.svg" alt="ieo." width="180">
 
 ### The in-car assistant for truck drivers
 
@@ -22,7 +16,7 @@ times the wait, and keeps the books, right on the car screen.
 ![Android Automotive](https://img.shields.io/badge/Android_Automotive-API_34-3DDC84?logo=android&logoColor=white)
 ![Kotlin](https://img.shields.io/badge/Kotlin-2.4-7F52FF?logo=kotlin&logoColor=white)
 ![Jetpack Compose](https://img.shields.io/badge/Jetpack_Compose-4285F4?logo=jetpackcompose&logoColor=white)
-![Pleos Connect](https://img.shields.io/badge/Pleos_Connect-SDK-000000)
+![Pleos Connect](https://img.shields.io/badge/Pleos_Connect-SDK-FF6C37)
 
 [Backend (ieo-server)](https://github.com/SeolHuiGwan9478/ieo-server) · [Planning docs (Korean)](docs/기획서_초안_v0.1.md) · [Brand guide](design/README.md)
 

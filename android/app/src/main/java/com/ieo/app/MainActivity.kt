@@ -1,5 +1,9 @@
 package com.ieo.app
 
+import androidx.compose.ui.Modifier
+import androidx.compose.material3.Surface
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.foundation.layout.fillMaxSize
 import android.os.Bundle
 import android.widget.Toast
 import androidx.activity.ComponentActivity
@@ -23,7 +27,10 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         setContent {
             IeoTheme {
-                IeoApp()
+                // 창 배경은 시작 화면용 주황이라, 그 위 모든 화면에 테마 바탕(흰색)을 깔아 둔다
+                Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
+                    IeoApp()
+                }
             }
         }
     }

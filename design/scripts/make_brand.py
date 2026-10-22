@@ -6,7 +6,7 @@ from fontTools.pens.transformPen import TransformPen
 from fontTools.pens.boundsPen import BoundsPen
 
 font_path, out = sys.argv[1], sys.argv[2]
-BLACK, WHITE = "#000000", "#FFFFFF"
+ORANGE, WHITE = "#FF6C37", "#FFFFFF"   # 브랜드 주황 (Orange 500)
 TEXT = "ieo."
 WEIGHT = 800
 TRACKING = -0.03            # 자간 (em 단위, 음수면 좁아짐)
@@ -55,12 +55,13 @@ import os
 for d in ("icon", "wordmark"):
     os.makedirs(f"{out}/{d}", exist_ok=True)
 
-# 파일 이름의 색 = 로고 색. black은 밝은 배경용, white는 어두운 배경용
-write("icon/ieo_icon_black.svg", 120, 120, icon(BLACK, WHITE))
-write("icon/ieo_icon_white.svg", 120, 120, icon(WHITE, BLACK))
-write("icon/ieo_symbol_black.svg", 94, 26, f'<g fill="{BLACK}">{GLYPH}</g>', 14, 47)
+# 파일 이름의 색 = 로고(글자·심볼) 색. orange는 흰·밝은 배경용, white는 주황·어두운 배경용
+# 이전 흑백 로고는 logo/drafts/v4_black_white/에 보관
+write("icon/ieo_icon_orange.svg", 120, 120, icon(ORANGE, WHITE))
+write("icon/ieo_icon_white.svg", 120, 120, icon(WHITE, ORANGE))
+write("icon/ieo_symbol_orange.svg", 94, 26, f'<g fill="{ORANGE}">{GLYPH}</g>', 14, 47)
 write("icon/ieo_symbol_white.svg", 94, 26, f'<g fill="{WHITE}">{GLYPH}</g>', 14, 47)
-write("wordmark/ieo_wordmark_black.svg", WM_W, WM_H, f'<g fill="{BLACK}">{WORD}</g>')
+write("wordmark/ieo_wordmark_orange.svg", WM_W, WM_H, f'<g fill="{ORANGE}">{WORD}</g>')
 write("wordmark/ieo_wordmark_white.svg", WM_W, WM_H, f'<g fill="{WHITE}">{WORD}</g>')
 
 print("wordmark", round(WM_W), round(WM_H))

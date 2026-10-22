@@ -1,5 +1,7 @@
 package com.ieo.app.ui.component
 
+import com.ieo.app.ui.theme.Orange500
+import com.ieo.app.ui.theme.White
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.size
@@ -20,14 +22,14 @@ import com.ieo.app.R
 
 /**
  * Ieo 아이콘: 둥근 사각형 안에 누운 i와 작아지는 점 두 개. (design/logo/icon)
- * 라이트 모드에서는 검정 사각형, 다크 모드에서는 흰 사각형이 되도록 테마 색을 쓴다.
+ * 기본은 주황 사각형에 흰 심볼 (design/logo/icon/ieo_icon_orange.svg).
  */
 @Composable
 fun IeoSymbol(
     modifier: Modifier = Modifier,
     size: Dp = 120.dp,
-    background: Color = MaterialTheme.colorScheme.onBackground,
-    foreground: Color = MaterialTheme.colorScheme.background,
+    background: Color = Orange500,
+    foreground: Color = White,
 ) {
     Canvas(modifier = modifier.size(size)) {
         // 원본 SVG의 120 단위 좌표를 그대로 쓰고 실제 크기에 맞춰 늘린다
@@ -44,12 +46,12 @@ fun IeoSymbol(
     }
 }
 
-/** 텍스트 로고 "ieo." */
+/** 텍스트 로고 "ieo.". 흰·밝은 바탕에는 주황, 주황·어두운 바탕에는 흰색으로 쓴다 */
 @Composable
 fun IeoWordmark(
     modifier: Modifier = Modifier,
     width: Dp = 240.dp,
-    color: Color = MaterialTheme.colorScheme.onBackground,
+    color: Color = Orange500,
 ) {
     Image(
         painter = painterResource(R.drawable.ieo_wordmark),
