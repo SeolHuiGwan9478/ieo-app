@@ -13,7 +13,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
 import com.ieo.app.data.SessionStore
-import com.ieo.app.ui.home.HomeScreen
+import com.ieo.app.ui.main.MainScreen
 import com.ieo.app.ui.login.LoginScreen
 import com.ieo.app.ui.splash.SplashScreen
 import com.ieo.app.ui.theme.IeoTheme
@@ -52,6 +52,6 @@ private fun IeoApp() {
                 onLogin = { _, _ -> notReady() },
             )
         }
-        Screen.HOME -> HomeScreen()
+        Screen.HOME -> MainScreen()
     }
 }

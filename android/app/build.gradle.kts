@@ -32,6 +32,8 @@ android {
 
     buildFeatures {
         compose = true
+        // 디버그 빌드에서만 데모 상태 전환을 보여 주려고 BuildConfig.DEBUG를 쓴다
+        buildConfig = true
     }
 }
 
@@ -40,6 +42,8 @@ dependencies {
     implementation(platform(libs.compose.bom))
     implementation(libs.compose.ui)
     implementation(libs.compose.material3)
+    // TODO: 출시 전에는 쓰는 아이콘만 벡터로 옮기고 이 의존성을 뺀다 (용량이 큼)
+    implementation(libs.compose.material.icons.extended)
     implementation(libs.compose.ui.tooling.preview)
     debugImplementation(libs.compose.ui.tooling)
 
