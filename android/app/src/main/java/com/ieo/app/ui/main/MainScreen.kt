@@ -52,6 +52,8 @@ import com.ieo.app.ui.home.HomeScreen
 import com.ieo.app.ui.home.HomeState
 import com.ieo.app.ui.home.SampleHomeData
 import com.ieo.app.ui.home.HomeViewModel
+import com.ieo.app.ui.ledger.LedgerRoute
+import com.ieo.app.ui.orders.OrdersRoute
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 
@@ -101,7 +103,10 @@ fun MainScreen(homeViewModel: HomeViewModel = viewModel(factory = HomeViewModel.
                         onArrive = homeViewModel::arrive,
                         onResumeGuidance = homeViewModel::resumeGuidance,
                     )
-                    else -> ComingSoon(destination.label)
+                    // 주행 중에는 오더 목록을 보여 주지 않는다 (DSP-012)
+                    Destination.ORDERS -> OrdersRoute(isDriving = liveState is HomeState.Driving)
+                    Destination.LEDGER -> LedgerRoute()
+                    Destination.SETTINGS -> ComingSoon(destination.label)
                 }
                 if (BuildConfig.DEBUG && destination == Destination.HOME) {
                     DemoStateSwitcher(

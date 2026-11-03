@@ -1,7 +1,6 @@
 package com.ieo.app.ui.home
 
 import com.ieo.app.domain.ledger.DailySummary
-import com.ieo.app.domain.ledger.Receivable
 import com.ieo.app.domain.ledger.Receivables
 import com.ieo.app.domain.navi.NaviProgress
 import com.ieo.app.domain.trip.StopType
@@ -35,7 +34,7 @@ class HomeStateFactoryTest {
     fun `운행 전 화면에 오늘 요약, 가장 밀린 미수금, 모집 중 오더를 보여 준다`() {
         val snapshot = HomeSnapshot(
             today = DailySummary(LocalDate.of(2026, 11, 3), tripCount = 2, netProfit = 610_000),
-            receivables = Receivables(listOf(Receivable("○○물류", 450_000, LocalDate.of(2026, 10, 31), overdue = true))),
+            receivables = Receivables(450_000, 450_000, 0, listOf(TripFixtures.entry(expectedPaymentDate = LocalDate.of(2026, 10, 31), overdue = true))),
             orders = listOf(TripFixtures.order()),
         )
 

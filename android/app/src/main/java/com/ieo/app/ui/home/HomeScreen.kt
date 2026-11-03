@@ -52,7 +52,15 @@ import com.ieo.app.ui.common.formatDuration
 import com.ieo.app.ui.common.formatMinutesKorean
 import com.ieo.app.ui.common.formatWon
 import com.ieo.app.domain.wait.WaitPolicy
+import com.ieo.app.ui.component.Chevron
+import com.ieo.app.ui.component.DetailLine
 import com.ieo.app.ui.component.IeoPrimaryButton
+import com.ieo.app.ui.component.ListRow
+import com.ieo.app.ui.component.SectionTitle
+import com.ieo.app.ui.component.StatusTag
+import com.ieo.app.ui.component.TagLine
+import com.ieo.app.ui.component.Tnum
+import com.ieo.app.ui.component.WhiteSection
 import com.ieo.app.ui.component.Keyword
 import com.ieo.app.ui.component.KeywordTag
 import com.ieo.app.ui.component.IeoTonalButton
@@ -72,10 +80,6 @@ import kotlinx.coroutines.delay
 
 private val ScreenPadding = 28.dp
 private val WideLayoutMinWidth = 1000.dp
-private val SectionShape = RoundedCornerShape(24.dp)
-
-/** 숫자 폭을 고정해 시각·금액 자릿수가 줄마다 맞고, 초가 바뀔 때 글자가 흔들리지 않게 한다 */
-private val Tnum = TextStyle(fontFeatureSettings = "tnum")
 
 /**
  * 홈 화면. 운행 상태마다 주인공이 하나다.
@@ -250,49 +254,6 @@ private fun NearbyOrders(state: HomeState.Idle, onOrderClick: (OrderCard) -> Uni
                 amountNote = order.netProfit?.let { "실수익 ${formatWon(it)}" },
                 onClick = { onOrderClick(order) },
             )
-        }
-    }
-}
-
-/** 목록 한 줄: [시각 칸] 구간 / 키워드 태그·설명 · 금액 */
-@Composable
-private fun ListRow(
-    time: String,
-    day: String,
-    title: String,
-    amount: String,
-    onClick: () -> Unit,
-    tags: List<Keyword> = emptyList(),
-    subtitle: String? = null,
-    amountNote: String? = null,
-) {
-    Row(
-        verticalAlignment = Alignment.CenterVertically,
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable(onClick = onClick)
-            .padding(horizontal = 8.dp, vertical = 16.dp),
-    ) {
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center,
-            modifier = Modifier.size(76.dp).background(CanvasGray, RoundedCornerShape(18.dp)),
-        ) {
-            Text(time, fontSize = 22.sp, fontWeight = FontWeight.ExtraBold, color = TextStrong, style = Tnum)
-            Text(day, fontSize = 16.sp, fontWeight = FontWeight.Medium, color = TextSub)
-        }
-        Spacer(Modifier.width(20.dp))
-        Column(modifier = Modifier.weight(1f)) {
-            Text(title, fontSize = 25.sp, fontWeight = FontWeight.Bold, color = TextStrong, maxLines = 1, overflow = TextOverflow.Ellipsis)
-            Spacer(Modifier.height(8.dp))
-            TagLine(tags, subtitle)
-        }
-        Spacer(Modifier.width(16.dp))
-        Column(horizontalAlignment = Alignment.End) {
-            Text(amount, fontSize = 25.sp, fontWeight = FontWeight.ExtraBold, color = TextStrong, style = Tnum)
-            amountNote?.let {
-                Text(it, fontSize = 18.sp, fontWeight = FontWeight.Bold, color = IeoStatus.colors.done, style = Tnum)
-            }
         }
     }
 }
@@ -507,71 +468,6 @@ private fun ProgressBar(progress: Float, color: Color) {
 }
 
 // ───────────────────────── 공통 조각 ─────────────────────────
-
-/** 키워드 태그를 늘어놓고, 주선사 이름 같은 남은 설명은 회색 글자로 뒤에 붙인다 */
-@Composable
-private fun TagLine(tags: List<Keyword>, text: String? = null) {
-    Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
-        tags.forEach { KeywordTag(it) }
-        text?.let { Text(it, fontSize = 19.sp, color = TextSub, maxLines = 1, overflow = TextOverflow.Ellipsis) }
-    }
-}
-
-@Composable
-private fun WhiteSection(contentPadding: Dp = 16.dp, content: @Composable ColumnScope.() -> Unit) {
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .background(White, SectionShape)
-            .padding(start = contentPadding, top = contentPadding + 10.dp, end = contentPadding, bottom = contentPadding),
-        content = content,
-    )
-}
-
-@Composable
-private fun SectionTitle(title: String, count: Int? = null, note: String? = null) {
-    Row(verticalAlignment = Alignment.Bottom, modifier = Modifier.padding(start = 12.dp, end = 12.dp, bottom = 10.dp)) {
-        Text(title, fontSize = 26.sp, fontWeight = FontWeight.ExtraBold, color = TextStrong)
-        count?.let {
-            Spacer(Modifier.width(8.dp))
-            Text("$it", fontSize = 26.sp, fontWeight = FontWeight.ExtraBold, color = TextSub)
-        }
-        note?.let {
-            Spacer(Modifier.weight(1f))
-            Text(it, fontSize = 18.sp, color = TextSub, modifier = Modifier.padding(bottom = 3.dp))
-        }
-    }
-}
-
-@Composable
-private fun DetailLine(label: String, value: String) {
-    Row(modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 10.dp)) {
-        Text(label, fontSize = 21.sp, color = TextSub, modifier = Modifier.width(130.dp))
-        Text(value, fontSize = 22.sp, fontWeight = FontWeight.Medium, color = TextStrong)
-    }
-}
-
-/** 상태 꼬리표: 옅은 바탕에 글자. 색만으로 상태를 구분하지 않는다 (NFR-006) */
-@Composable
-private fun StatusTag(text: String, color: Color, background: Color) {
-    Text(
-        text,
-        fontSize = 18.sp,
-        fontWeight = FontWeight.Bold,
-        color = color,
-        modifier = Modifier.background(background, RoundedCornerShape(8.dp)).padding(horizontal = 10.dp, vertical = 4.dp),
-    )
-}
-
-@Composable
-private fun Chevron() {
-    Icon(
-        Icons.AutoMirrored.Outlined.KeyboardArrowRight,
-        contentDescription = null,
-        tint = Color(0xFFB0B8C1),
-        modifier = Modifier.size(30.dp),
-    )
-}
 
 private fun todayText(): String =
     LocalDate.now().format(DateTimeFormatter.ofPattern("M월 d일 EEEE", Locale.KOREAN))

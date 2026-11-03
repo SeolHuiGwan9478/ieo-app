@@ -8,17 +8,32 @@ data class Order(
     val brokerName: String,
     val pickup: OrderSite,
     val dropoff: OrderSite,
-    /** 상차 가능 시작 시각 */
+    /** 상차 가능 시간 */
     val pickupFrom: Instant,
+    val pickupUntil: Instant,
+    /** 이때까지 하차 */
+    val dropoffBy: Instant,
     /** "5톤", "윙바디" 같은 서버 표기 */
     val tonnageLabel: String,
     val bodyTypeLabel: String,
+    /** 화물 종류. 주선사가 적지 않았으면 null */
+    val cargoType: String?,
+    val weightKg: Int,
+    /** "지게차", "수작업". 정하지 않았으면 null */
+    val loadingMethodLabel: String?,
     val fare: Long,
     val paymentTypeLabel: String,
+    /** 운행 뒤 며칠 안에 지급하는지 */
+    val expectedPaymentDays: Int,
     /** 위치를 보내고 찾았을 때만: 지금 위치에서 상차지까지 거리 */
     val distanceMeters: Long?,
+    /** 내가 이 오더에 보낸 배차 요청. 없으면 null */
+    val myRequest: DispatchRequest?,
 ) {
     val vehicleLabel: String get() = "$tonnageLabel $bodyTypeLabel"
+
+    /** 확정을 기다리는 내 요청이 있음 */
+    val isRequestedByMe: Boolean get() = myRequest?.status == DispatchRequestStatus.PENDING
 }
 
 data class OrderSite(
@@ -27,3 +42,28 @@ data class OrderSite(
     val latitude: Double,
     val longitude: Double,
 )
+
+/** 내가 보낸 배차 요청. 10분 안에 주선사가 확정하지 않으면 만료된다 (DSP-023) */
+data class DispatchRequest(
+    val id: Long,
+    val orderId: Long,
+    val status: DispatchRequestStatus,
+    val expiresAt: Instant,
+)
+
+enum class DispatchRequestStatus {
+    PENDING,
+    CONFIRMED,
+    DECLINED,
+    WITHDRAWN,
+    CANCELED,
+    EXPIRED,
+}
+
+/** 오더 신고 사유 (DSP-042) */
+enum class ReportType(val label: String) {
+    FALSE_INFO("허위 오더"),
+    OVERLOAD("과적 요구"),
+    UNPAID("운임 미지급"),
+    MISMATCH("정보가 실제와 다름"),
+}

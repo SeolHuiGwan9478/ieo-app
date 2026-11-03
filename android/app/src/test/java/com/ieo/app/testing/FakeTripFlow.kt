@@ -2,12 +2,17 @@ package com.ieo.app.testing
 
 import com.ieo.app.core.network.ApiResult
 import com.ieo.app.domain.ledger.DailySummary
+import com.ieo.app.domain.ledger.LedgerEntry
 import com.ieo.app.domain.ledger.LedgerRepository
+import com.ieo.app.domain.ledger.ManualEntry
+import com.ieo.app.domain.ledger.PaymentType
 import com.ieo.app.domain.ledger.Receivables
 import com.ieo.app.domain.navi.Destination
 import com.ieo.app.domain.navi.NaviProgress
 import com.ieo.app.domain.navi.Navigator
+import com.ieo.app.domain.order.DispatchRequest
 import com.ieo.app.domain.order.Order
+import com.ieo.app.domain.order.ReportType
 import com.ieo.app.domain.order.OrderRepository
 import com.ieo.app.domain.trip.StopType
 import com.ieo.app.domain.trip.Trip
@@ -43,9 +48,25 @@ class FakeTripServer(var trip: Trip) : TripRepository, WaitRepository, LedgerRep
 
     override suspend fun today() = ApiResult.Success(DailySummary(LocalDate.of(2026, 11, 3), tripCount = 1, netProfit = 320_000))
 
-    override suspend fun receivables() = ApiResult.Success(Receivables(emptyList()))
+    override suspend fun receivables() = ApiResult.Success(Receivables(0, 0, 0, emptyList()))
 
-    override suspend fun openOrders(): ApiResult<List<Order>> = ApiResult.Success(listOf(TripFixtures.order()))
+    override suspend fun entries(from: LocalDate, to: LocalDate) = ApiResult.Success(emptyList<LedgerEntry>())
+
+    override suspend fun setPaid(entryId: Long, paid: Boolean): ApiResult<LedgerEntry> = error("홈에서는 쓰지 않음")
+
+    override suspend fun setExtraIncomePaid(extraIncomeId: Long, paid: Boolean): ApiResult<Unit> = error("홈에서는 쓰지 않음")
+
+    override suspend fun update(entry: LedgerEntry, fare: Long, paymentType: PaymentType): ApiResult<LedgerEntry> = error("홈에서는 쓰지 않음")
+
+    override suspend fun addManual(entry: ManualEntry): ApiResult<LedgerEntry> = error("홈에서는 쓰지 않음")
+
+    override suspend fun openOrders(limit: Int): ApiResult<List<Order>> = ApiResult.Success(listOf(TripFixtures.order()))
+
+    override suspend fun request(orderId: Long): ApiResult<DispatchRequest> = error("홈에서는 쓰지 않음")
+
+    override suspend fun withdraw(requestId: Long): ApiResult<DispatchRequest> = error("홈에서는 쓰지 않음")
+
+    override suspend fun report(orderId: Long, type: ReportType): ApiResult<Unit> = error("홈에서는 쓰지 않음")
 
     override suspend fun arrive(tripId: Long, stop: StopType): ApiResult<WaitRecord> {
         calls += "arrive $stop"

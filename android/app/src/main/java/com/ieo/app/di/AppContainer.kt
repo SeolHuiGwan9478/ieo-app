@@ -12,6 +12,9 @@ import com.ieo.app.data.auth.DefaultAuthRepository
 import com.ieo.app.data.auth.ServerTokenRefresher
 import com.ieo.app.data.trip.DefaultTripRepository
 import com.ieo.app.data.trip.TripApi
+import com.ieo.app.data.expense.DefaultExpenseRepository
+import com.ieo.app.data.expense.ExpenseApi
+import com.ieo.app.domain.expense.ExpenseRepository
 import com.ieo.app.data.ledger.DefaultLedgerRepository
 import com.ieo.app.data.ledger.LedgerApi
 import com.ieo.app.data.order.DefaultOrderRepository
@@ -37,6 +40,7 @@ interface AppContainer {
     val waitRepository: WaitRepository
     val ledgerRepository: LedgerRepository
     val orderRepository: OrderRepository
+    val expenseRepository: ExpenseRepository
     val navigator: Navigator
 }
 
@@ -73,6 +77,10 @@ class DefaultAppContainer(context: Context) : AppContainer {
 
     override val orderRepository: OrderRepository by lazy {
         DefaultOrderRepository(network.authenticated.create(OrderApi::class.java), network.caller)
+    }
+
+    override val expenseRepository: ExpenseRepository by lazy {
+        DefaultExpenseRepository(network.authenticated.create(ExpenseApi::class.java), network.caller)
     }
 
     override val navigator: Navigator by lazy { NaviGuide(appContext) }

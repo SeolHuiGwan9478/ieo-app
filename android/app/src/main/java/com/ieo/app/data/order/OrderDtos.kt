@@ -1,5 +1,7 @@
 package com.ieo.app.data.order
 
+import com.ieo.app.domain.order.DispatchRequest
+import com.ieo.app.domain.order.DispatchRequestStatus
 import com.ieo.app.domain.order.Order
 import com.ieo.app.domain.order.OrderSite
 import java.time.Instant
@@ -14,11 +16,18 @@ data class OrderResponse(
     val pickup: OrderSiteResponse,
     val dropoff: OrderSiteResponse,
     val pickupFrom: String,
+    val pickupUntil: String,
+    val dropoffBy: String,
     val tonnageLabel: String,
     val bodyTypeLabel: String,
+    val cargoType: String? = null,
+    val weightKg: Int = 0,
+    val loadingMethodLabel: String? = null,
     val fare: Long,
     val paymentTypeLabel: String,
+    val expectedPaymentDays: Int = 0,
     val distanceM: Long? = null,
+    val myRequest: DispatchRequestResponse? = null,
 ) {
     fun toDomain() = Order(
         id = id,
@@ -26,11 +35,18 @@ data class OrderResponse(
         pickup = pickup.toDomain(),
         dropoff = dropoff.toDomain(),
         pickupFrom = Instant.parse(pickupFrom),
+        pickupUntil = Instant.parse(pickupUntil),
+        dropoffBy = Instant.parse(dropoffBy),
         tonnageLabel = tonnageLabel,
         bodyTypeLabel = bodyTypeLabel,
+        cargoType = cargoType?.takeIf { it.isNotBlank() },
+        weightKg = weightKg,
+        loadingMethodLabel = loadingMethodLabel,
         fare = fare,
         paymentTypeLabel = paymentTypeLabel,
+        expectedPaymentDays = expectedPaymentDays,
         distanceMeters = distanceM,
+        myRequest = myRequest?.toDomain(),
     )
 }
 
@@ -38,3 +54,19 @@ data class OrderResponse(
 data class OrderSiteResponse(val name: String, val address: String, val lat: Double, val lng: Double) {
     fun toDomain() = OrderSite(name = name, address = address, latitude = lat, longitude = lng)
 }
+
+@Serializable
+data class DispatchRequestResponse(val id: Long, val orderId: Long, val status: String, val expiresAt: String) {
+    fun toDomain() = DispatchRequest(
+        id = id,
+        orderId = orderId,
+        status = DispatchRequestStatus.valueOf(status),
+        expiresAt = Instant.parse(expiresAt),
+    )
+}
+
+@Serializable
+data class CreateDispatchRequestRequest(val vehicleId: Long? = null)
+
+@Serializable
+data class CreateOrderReportRequest(val type: String, val memo: String? = null)

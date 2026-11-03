@@ -154,7 +154,7 @@ class HomeViewModel(
         val current = viewModelScope.async { tripRepository.currentTrip() }
         val today = viewModelScope.async { ledgerRepository.today() }
         val receivables = viewModelScope.async { ledgerRepository.receivables() }
-        val orders = viewModelScope.async { orderRepository.openOrders() }
+        val orders = viewModelScope.async { orderRepository.openOrders(limit = HOME_ORDER_COUNT) }
         upcoming.await().orShow()?.let { trips -> snapshot.update { it.copy(upcoming = upcomingOf(trips)) } }
         today.await().orShow()?.let { summary -> snapshot.update { it.copy(today = summary) } }
         receivables.await().orShow()?.let { owed -> snapshot.update { it.copy(receivables = owed) } }
@@ -235,6 +235,9 @@ class HomeViewModel(
         const val TRIP_COMPLETED_MESSAGE = "운행을 마쳤어요. 장부에 기록했어요"
         const val NAVI_FAILED_MESSAGE = "차량 내비에 연결하지 못했습니다"
         private const val NAVI_REFRESH_MILLIS = 10_000L
+
+        /** 홈에는 오더를 이만큼만. 나머지는 오더 탭에서 */
+        private const val HOME_ORDER_COUNT = 5
 
         /** 끝나지 않은 운행을 상차 시각이 이른 순으로. 시각이 없는 운행은 뒤로 */
         fun upcomingOf(trips: List<Trip>): List<Trip> = trips

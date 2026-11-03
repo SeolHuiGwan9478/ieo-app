@@ -1,8 +1,12 @@
 package com.ieo.app.data.ledger
 
 import com.ieo.app.domain.ledger.DailySummary
-import com.ieo.app.domain.ledger.Receivable
+import com.ieo.app.domain.ledger.ExtraIncome
+import com.ieo.app.domain.ledger.LedgerEntry
+import com.ieo.app.domain.ledger.ManualEntry
+import com.ieo.app.domain.ledger.PaymentType
 import com.ieo.app.domain.ledger.Receivables
+import com.ieo.app.domain.trip.StopType
 import java.time.LocalDate
 import kotlinx.serialization.Serializable
 
@@ -14,21 +18,82 @@ data class DailySummaryResponse(val date: String, val tripCount: Int, val netPro
 }
 
 @Serializable
-data class ReceivablesResponse(val entries: List<LedgerEntryResponse>) {
-    fun toDomain() = Receivables(entries.map(LedgerEntryResponse::toReceivable))
+data class ReceivablesResponse(
+    val fareTotal: Long = 0,
+    val overdueFareTotal: Long = 0,
+    val waitFeeTotal: Long = 0,
+    val entries: List<LedgerEntryResponse>,
+) {
+    fun toDomain() = Receivables(
+        fareTotal = fareTotal,
+        overdueFareTotal = overdueFareTotal,
+        waitFeeTotal = waitFeeTotal,
+        entries = entries.map(LedgerEntryResponse::toDomain),
+    )
 }
 
 @Serializable
 data class LedgerEntryResponse(
-    val brokerName: String? = null,
+    val id: Long,
+    val auto: Boolean = false,
+    val workDate: String,
+    val description: String,
     val fare: Long,
+    val paymentType: String,
+    val brokerName: String? = null,
+    val distanceKm: Int? = null,
+    val waitMinutes: Long? = null,
     val expectedPaymentDate: String? = null,
-    val overdue: Boolean,
+    val paid: Boolean = false,
+    val overdue: Boolean = false,
+    val extraIncomes: List<ExtraIncomeResponse> = emptyList(),
 ) {
-    fun toReceivable() = Receivable(
-        brokerName = brokerName,
+    fun toDomain() = LedgerEntry(
+        id = id,
+        auto = auto,
+        workDate = LocalDate.parse(workDate),
+        description = description,
         fare = fare,
+        paymentType = PaymentType.valueOf(paymentType),
+        brokerName = brokerName,
+        distanceKm = distanceKm,
+        waitMinutes = waitMinutes,
         expectedPaymentDate = expectedPaymentDate?.let(LocalDate::parse),
+        paid = paid,
         overdue = overdue,
+        extraIncomes = extraIncomes.map(ExtraIncomeResponse::toDomain),
     )
+}
+
+@Serializable
+data class ExtraIncomeResponse(
+    val id: Long,
+    val stopType: String,
+    val siteName: String,
+    val amount: Long,
+    val paid: Boolean = false,
+) {
+    fun toDomain() = ExtraIncome(id = id, stopType = StopType.valueOf(stopType), siteName = siteName, amount = amount, paid = paid)
+}
+
+@Serializable
+data class UpdateLedgerEntryRequest(val fare: Long, val paymentType: String, val expectedPaymentDate: String)
+
+@Serializable
+data class CreateLedgerEntryRequest(
+    val workDate: String,
+    val description: String,
+    val fare: Long,
+    val paymentType: String,
+    val brokerName: String? = null,
+) {
+    companion object {
+        fun from(entry: ManualEntry) = CreateLedgerEntryRequest(
+            workDate = entry.workDate.toString(),
+            description = entry.description,
+            fare = entry.fare,
+            paymentType = entry.paymentType.name,
+            brokerName = entry.brokerName,
+        )
+    }
 }

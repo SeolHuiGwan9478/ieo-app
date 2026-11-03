@@ -1,5 +1,8 @@
 package com.ieo.app.testing
 
+import com.ieo.app.domain.ledger.LedgerEntry
+import com.ieo.app.domain.ledger.PaymentType
+import com.ieo.app.domain.order.DispatchRequest
 import com.ieo.app.domain.order.Order
 import com.ieo.app.domain.order.OrderSite
 import com.ieo.app.domain.trip.StopType
@@ -10,6 +13,7 @@ import com.ieo.app.domain.wait.WaitPolicy
 import com.ieo.app.domain.wait.WaitRecord
 import com.ieo.app.domain.wait.WaitStatus
 import java.time.Instant
+import java.time.LocalDate
 
 /** 테스트용 운행·대기 기록 */
 object TripFixtures {
@@ -33,18 +37,49 @@ object TripFixtures {
         dropoff = DROPOFF,
     )
 
-    fun order() = Order(
-        id = 11,
+    fun order(id: Long = 11, pickupFrom: Instant = Instant.parse("2026-11-03T21:00:00Z"), myRequest: DispatchRequest? = null) = Order(
+        id = id,
         brokerName = "△△운송",
         pickup = OrderSite("칠곡", "경북 칠곡군", 35.99, 128.40),
         dropoff = OrderSite("부산 강서", "부산 강서구", 35.08, 128.86),
-        // 한국 내일 06:00
-        pickupFrom = Instant.parse("2026-11-03T21:00:00Z"),
+        // 기본값은 한국 내일 06:00
+        pickupFrom = pickupFrom,
+        pickupUntil = pickupFrom.plusSeconds(7200),
+        dropoffBy = pickupFrom.plusSeconds(43_200),
         tonnageLabel = "5톤",
         bodyTypeLabel = "윙바디",
+        cargoType = "파렛트",
+        weightKg = 4200,
+        loadingMethodLabel = "지게차",
         fare = 380_000,
         paymentTypeLabel = "인수증",
+        expectedPaymentDays = 30,
         distanceMeters = null,
+        myRequest = myRequest,
+    )
+
+    fun entry(
+        id: Long = 21,
+        workDate: LocalDate = LocalDate.of(2026, 11, 3),
+        fare: Long = 450_000,
+        brokerName: String? = "○○물류",
+        expectedPaymentDate: LocalDate? = LocalDate.of(2026, 12, 3),
+        paid: Boolean = false,
+        overdue: Boolean = false,
+    ) = LedgerEntry(
+        id = id,
+        auto = true,
+        workDate = workDate,
+        description = "평택 포승 → 대구 성서",
+        fare = fare,
+        paymentType = PaymentType.RECEIPT,
+        brokerName = brokerName,
+        distanceKm = 312,
+        waitMinutes = 130,
+        expectedPaymentDate = expectedPaymentDate,
+        paid = paid,
+        overdue = overdue,
+        extraIncomes = emptyList(),
     )
 
     fun wait(
