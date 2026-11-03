@@ -1,0 +1,43 @@
+package com.ieo.app.domain.trip
+
+import java.time.Instant
+
+/** 운행 한 건 (서버 TripResponse) */
+data class Trip(
+    val id: Long,
+    val status: TripStatus,
+    val fare: Long,
+    /** "인수증", "선불" 등. 서버가 준 표기 */
+    val paymentTypeLabel: String,
+    /** Ieo 주선사면 상호, 직접 등록한 운행이면 차주가 적은 이름. 없을 수 있다 */
+    val brokerName: String?,
+    val plateNumber: String,
+    val pickup: TripStop,
+    val dropoff: TripStop,
+)
+
+/** 상차지 또는 하차지 */
+data class TripStop(
+    val name: String,
+    val address: String,
+    val latitude: Double,
+    val longitude: Double,
+    /** 이 반경 안에 들어오면 도착으로 본다 */
+    val geofenceRadiusMeters: Int,
+    /** 예정 시각. 정하지 않았으면 null */
+    val plannedAt: Instant?,
+)
+
+/** 운행 상태. SCHEDULED → TO_PICKUP → AT_PICKUP → IN_TRANSIT → AT_DROPOFF → COMPLETED */
+enum class TripStatus {
+    SCHEDULED,
+    TO_PICKUP,
+    AT_PICKUP,
+    IN_TRANSIT,
+    AT_DROPOFF,
+    COMPLETED,
+    CANCELLED;
+
+    /** 아직 끝나지 않은 운행 */
+    val isActive: Boolean get() = this != COMPLETED && this != CANCELLED
+}

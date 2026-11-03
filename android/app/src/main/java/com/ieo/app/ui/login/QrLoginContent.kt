@@ -1,6 +1,5 @@
 package com.ieo.app.ui.login
 
-import android.os.SystemClock
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -19,10 +18,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.mutableLongStateOf
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -37,32 +33,27 @@ import com.ieo.app.ui.component.IeoLoadingIndicator
 import com.ieo.app.ui.component.QrCode
 import kotlinx.coroutines.delay
 
-/** QR 유효 시간. TODO: 서버 QR 로그인(기기 인증) API가 생기면 서버가 정한 만료 시간을 쓴다 */
-private const val QR_VALID_SECONDS = 300
-
-/** 손으로 옮겨 적기 쉽도록 헷갈리는 글자(0/O, 1/I/L)를 뺀 문자 */
-private const val CODE_ALPHABET = "ABCDEFGHJKMNPQRSTUVWXYZ23456789"
-
 /**
  * QR 로그인: 차량 화면에 QR을 띄우고, 기사님이 휴대폰으로 찍어 로그인을 승인한다.
  * (OAuth Device Authorization 흐름: 차량은 코드를 보여 주고, 휴대폰이 승인하면 차량이 토큰을 받는다)
- *
- * TODO: 지금은 로그인 코드를 앱에서 임시로 만든다. 서버 API가 생기면
- *       1) 서버에서 코드를 받아 QR로 보여 주고 2) 승인될 때까지 서버에 확인해 토큰을 저장한다.
+ * 상태는 [QrLoginViewModel]이 정하고, 이 화면은 그리기만 한다.
  */
 @Composable
-fun QrLoginContent(modifier: Modifier = Modifier) {
-    var loginCode by rememberSaveable { mutableStateOf(newLoginCode()) }
-    var expiresAt by rememberSaveable { mutableLongStateOf(SystemClock.elapsedRealtime() + QR_VALID_SECONDS * 1000L) }
-
-    var secondsLeft by remember(expiresAt) { mutableIntStateOf(secondsUntil(expiresAt)) }
-    LaunchedEffect(expiresAt) {
-        while (secondsLeft > 0) {
+fun QrLoginContent(
+    state: QrLoginUiState,
+    onRefresh: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val waiting = state as? QrLoginUiState.Waiting
+    var secondsLeft by remember(waiting?.expiresAt) { mutableIntStateOf(secondsUntil(waiting?.expiresAt ?: 0L)) }
+    LaunchedEffect(waiting?.expiresAt) {
+        while (waiting != null && secondsLeft > 0) {
             delay(250)
-            secondsLeft = secondsUntil(expiresAt)
+            secondsLeft = secondsUntil(waiting.expiresAt)
         }
     }
-    val expired = secondsLeft == 0
+    // 서버가 만료를 알려 주기 전이라도 시간이 다 되면 만료로 보여 준다
+    val ended = (state !is QrLoginUiState.Waiting && state !is QrLoginUiState.Loading) || (waiting != null && secondsLeft == 0)
 
     Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = modifier) {
         // QR은 테마와 상관없이 흰 바탕에 검은 칸이어야 잘 찍힌다
@@ -73,16 +64,16 @@ fun QrLoginContent(modifier: Modifier = Modifier) {
                 .background(Color.White, RoundedCornerShape(16.dp))
                 .border(1.dp, MaterialTheme.colorScheme.outline, RoundedCornerShape(16.dp)),
         ) {
-            QrCode(
-                content = "ieo://login?code=$loginCode",
-                size = 240.dp,
-                modifier = Modifier.graphicsLayer { alpha = if (expired) 0.12f else 1f },
-            )
-            if (expired) {
-                TextButton(onClick = {
-                    loginCode = newLoginCode()
-                    expiresAt = SystemClock.elapsedRealtime() + QR_VALID_SECONDS * 1000L
-                }) {
+            when {
+                waiting != null -> QrCode(
+                    content = waiting.qrContent,
+                    size = 240.dp,
+                    modifier = Modifier.graphicsLayer { alpha = if (ended) 0.12f else 1f },
+                )
+                state is QrLoginUiState.Loading -> IeoLoadingIndicator(width = 56.dp)
+            }
+            if (ended) {
+                TextButton(onClick = onRefresh) {
                     Text(stringResource(R.string.qr_refresh), fontSize = 22.sp, fontWeight = FontWeight.Bold)
                 }
             }
@@ -92,20 +83,22 @@ fun QrLoginContent(modifier: Modifier = Modifier) {
         Text(text = stringResource(R.string.qr_instruction), fontSize = 22.sp, fontWeight = FontWeight.Medium)
         Spacer(Modifier.height(8.dp))
         Text(
-            text = stringResource(R.string.qr_code_label) + "  " + loginCode,
+            text = stringResource(R.string.qr_code_label) + "  " + (waiting?.code ?: "----"),
             fontSize = 20.sp,
             letterSpacing = 2.sp,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
         Spacer(Modifier.height(24.dp))
 
-        if (expired) {
-            Text(
-                text = stringResource(R.string.qr_expired),
-                fontSize = 20.sp,
-                color = MaterialTheme.colorScheme.error,
-            )
-        } else {
+        val problem = when {
+            state is QrLoginUiState.Rejected -> stringResource(R.string.qr_rejected)
+            state is QrLoginUiState.Failed -> state.message
+            ended -> stringResource(R.string.qr_expired)
+            else -> null
+        }
+        if (problem != null) {
+            Text(text = problem, fontSize = 20.sp, color = MaterialTheme.colorScheme.error)
+        } else if (waiting != null) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.Center) {
                 IeoLoadingIndicator(width = 40.dp)
                 Spacer(Modifier.width(12.dp))
@@ -117,10 +110,4 @@ fun QrLoginContent(modifier: Modifier = Modifier) {
             }
         }
     }
-}
-
-/** 8자리 로그인 코드 (예: KX7P-M4QZ) */
-private fun newLoginCode(): String {
-    val chars = (1..8).map { CODE_ALPHABET.random() }.joinToString("")
-    return chars.take(4) + "-" + chars.drop(4)
 }

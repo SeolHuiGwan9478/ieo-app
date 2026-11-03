@@ -1,6 +1,7 @@
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
+    alias(libs.plugins.kotlin.serialization)
 }
 
 android {
@@ -20,8 +21,15 @@ android {
     useLibrary("android.car")
 
     buildTypes {
+        debug {
+            // 에뮬레이터에서 본 내 컴퓨터(localhost)의 서버
+            buildConfigField("String", "API_BASE_URL", "\"http://10.0.2.2:8080/\"")
+        }
         release {
             isMinifyEnabled = false
+            // 배포 서버 주소는 빌드할 때 넘긴다: ./gradlew assembleRelease -PieoApiBaseUrl=https://.../
+            val apiBaseUrl = providers.gradleProperty("ieoApiBaseUrl").getOrElse("https://api.ieo.invalid/")
+            buildConfigField("String", "API_BASE_URL", "\"$apiBaseUrl\"")
         }
     }
 
@@ -52,5 +60,15 @@ dependencies {
     // QR 로그인용 QR 코드 생성 (Google 서비스 불필요)
     implementation(libs.zxing.core)
 
+    // 서버 연결
+    implementation(libs.retrofit)
+    implementation(libs.retrofit.kotlinx.serialization)
+    implementation(libs.okhttp.logging)
+    implementation(libs.kotlinx.serialization.json)
+    // 화면 상태(ViewModel)
+    implementation(libs.androidx.lifecycle.viewmodel.compose)
+    implementation(libs.androidx.lifecycle.runtime.compose)
+
     testImplementation(libs.junit)
+    testImplementation(libs.kotlinx.coroutines.test)
 }

@@ -59,6 +59,9 @@ import com.ieo.app.ui.component.IeoSymbol
 import com.ieo.app.ui.home.HomeScreen
 import com.ieo.app.ui.home.HomeState
 import com.ieo.app.ui.home.SampleHomeData
+import com.ieo.app.ui.home.HomeViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.viewmodel.compose.viewModel
 
 private enum class Destination(val label: String, val icon: ImageVector) {
     HOME("홈", Icons.Outlined.Home),
@@ -69,11 +72,19 @@ private enum class Destination(val label: String, val icon: ImageVector) {
 
 /** 로그인 후 화면: 왼쪽 세로 메뉴 + 오른쪽 본문 */
 @Composable
-fun MainScreen() {
+fun MainScreen(homeViewModel: HomeViewModel = viewModel(factory = HomeViewModel.Factory)) {
     val context = LocalContext.current
     var destination by rememberSaveable { mutableStateOf(Destination.HOME) }
-    // TODO: 운행 도메인이 생기면 실제 운행 상태로 바꾼다. 지금은 샘플 데이터를 보여 준다
+    // 운행 전 화면의 "내 배차"는 서버 값이다. 나머지(오늘 수익, 미수금, 근처 오더)와 대기·주행 상태는 아직 샘플이다
+    // TODO: 장부·배차·대기 API와 차량 신호를 붙이면 샘플을 걷어낸다
     var demo by rememberSaveable { mutableStateOf(DemoState.IDLE) }
+    val home by homeViewModel.state.collectAsStateWithLifecycle()
+    LaunchedEffect(home.errorMessage) {
+        home.errorMessage?.let {
+            Toast.makeText(context, it, Toast.LENGTH_SHORT).show()
+            homeViewModel.errorShown()
+        }
+    }
 
     // 차량 내비 연결. 배차에서 길 안내를 시작하면 내비가 알려 주는 진행 상황을 홈에 보여 준다
     val naviGuide = remember { NaviGuide(context) }
@@ -96,7 +107,7 @@ fun MainScreen() {
     }
 
     val homeState: HomeState = guidingTrip?.let { guidingHomeState(it, guidance) } ?: when (demo) {
-        DemoState.IDLE -> SampleHomeData.idle()
+        DemoState.IDLE -> SampleHomeData.idle().copy(myTrips = home.myTrips)
         DemoState.WAITING -> SampleHomeData.waiting()
         DemoState.DRIVING -> SampleHomeData.driving()
     }

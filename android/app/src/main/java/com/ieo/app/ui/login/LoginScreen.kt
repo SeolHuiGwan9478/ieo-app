@@ -31,7 +31,7 @@ import androidx.compose.material3.VerticalDivider
 import androidx.compose.runtime.Composable
 import kotlinx.coroutines.delay
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.mutableLongStateOf
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -52,22 +52,20 @@ import com.ieo.app.ui.component.IeoPrimaryButton
 import com.ieo.app.ui.component.IeoSymbol
 import com.ieo.app.ui.theme.IeoTheme
 
-private val PHONE_PATTERN = Regex("^01\\d{8,9}$")
-private const val CODE_LENGTH = 6
-
-/** 인증번호 유효 시간. TODO: 서버 인증 구현 시 서버의 만료 시간과 맞춘다 */
-private const val CODE_VALID_SECONDS = 180
 private const val CODE_WARNING_SECONDS = 30
 private val WIDE_LAYOUT_MIN_WIDTH = 840.dp
 
 /**
  * 로그인 화면. 넓은 화면(차량)에서는 왼쪽 브랜드·오른쪽 로그인 두 칸, 좁은 화면에서는 한 칸으로 보여 준다.
- * 실제 인증 처리는 콜백으로 넘긴다.
+ * 상태는 받기만 하고(휴대폰: [PhoneLoginViewModel], QR: [QrLoginViewModel]), 사용자 동작은 콜백으로 넘긴다.
+ * ViewModel과 연결하는 곳은 [LoginRoute].
  */
 @Composable
 fun LoginScreen(
-    onRequestCode: (phone: String) -> Unit,
-    onLogin: (phone: String, code: String) -> Unit,
+    phone: PhoneLoginUiState,
+    phoneActions: PhoneLoginActions,
+    qr: QrLoginUiState,
+    qrActions: QrLoginActions,
 ) {
     BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
         if (maxWidth >= WIDE_LAYOUT_MIN_WIDTH) {
@@ -82,8 +80,10 @@ fun LoginScreen(
                     Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
                         LoginForm(
                             showSymbol = false,
-                            onRequestCode = onRequestCode,
-                            onLogin = onLogin,
+                            phone = phone,
+                            phoneActions = phoneActions,
+                            qr = qr,
+                            qrActions = qrActions,
                             modifier = Modifier.widthIn(max = 520.dp).padding(horizontal = 64.dp, vertical = 48.dp),
                         )
                     }
@@ -95,8 +95,10 @@ fun LoginScreen(
                 Box(contentAlignment = Alignment.TopCenter, modifier = Modifier.verticalScroll(rememberScrollState())) {
                     LoginForm(
                         showSymbol = true,
-                        onRequestCode = onRequestCode,
-                        onLogin = onLogin,
+                        phone = phone,
+                        phoneActions = phoneActions,
+                        qr = qr,
+                        qrActions = qrActions,
                         modifier = Modifier.widthIn(max = 560.dp).padding(horizontal = 48.dp, vertical = 40.dp),
                     )
                 }
@@ -131,38 +133,27 @@ private enum class LoginTab(val label: Int) {
 /**
  * 로그인 폼: QR 로그인(기본)과 휴대폰 번호 로그인 두 탭.
  * (Google 로그인은 차량에 Google 서비스가 없어 모바일 앱에서만 제공한다)
- * 휴대폰 인증번호는 받은 뒤 [CODE_VALID_SECONDS]초 동안만 쓸 수 있고, 남은 시간을 보여 준다.
+ * 휴대폰 인증번호는 받은 뒤 3분 동안만 쓸 수 있고, 남은 시간을 보여 준다.
  */
 @Composable
 private fun LoginForm(
     showSymbol: Boolean,
-    onRequestCode: (phone: String) -> Unit,
-    onLogin: (phone: String, code: String) -> Unit,
+    phone: PhoneLoginUiState,
+    phoneActions: PhoneLoginActions,
+    qr: QrLoginUiState,
+    qrActions: QrLoginActions,
     modifier: Modifier = Modifier,
 ) {
     var tab by rememberSaveable { mutableStateOf(LoginTab.QR) }
-    // 휴대폰 탭 입력값은 탭을 오가도 남도록 폼에서 들고 있는다
-    var phone by rememberSaveable { mutableStateOf("") }
-    var code by rememberSaveable { mutableStateOf("") }
-    // 인증번호 만료 시각 (SystemClock.elapsedRealtime 기준). 0이면 아직 받지 않음
-    var codeExpiresAt by rememberSaveable { mutableLongStateOf(0L) }
-    val codeSent = codeExpiresAt > 0L
-    val phoneValid = PHONE_PATTERN.matches(phone)
 
-    var secondsLeft by remember(codeExpiresAt) { mutableIntStateOf(secondsUntil(codeExpiresAt)) }
-    LaunchedEffect(codeExpiresAt) {
-        while (codeExpiresAt > 0L && secondsLeft > 0) {
+    var secondsLeft by remember(phone.codeExpiresAt) { mutableIntStateOf(secondsUntil(phone.codeExpiresAt)) }
+    LaunchedEffect(phone.codeExpiresAt) {
+        while (phone.codeSent && secondsLeft > 0) {
             delay(250)
-            secondsLeft = secondsUntil(codeExpiresAt)
+            secondsLeft = secondsUntil(phone.codeExpiresAt)
         }
     }
-    val codeExpired = codeSent && secondsLeft == 0
-
-    val requestCode = {
-        code = ""
-        codeExpiresAt = SystemClock.elapsedRealtime() + CODE_VALID_SECONDS * 1000L
-        onRequestCode(phone)
-    }
+    val codeExpired = phone.codeSent && secondsLeft == 0
 
     Column(modifier = modifier) {
         Row(verticalAlignment = Alignment.CenterVertically) {
@@ -198,22 +189,19 @@ private fun LoginForm(
         Spacer(Modifier.height(32.dp))
 
         if (tab == LoginTab.QR) {
-            QrLoginContent(modifier = Modifier.fillMaxWidth())
+            // QR 탭이 보일 때만 서버에 승인 여부를 묻는다
+            DisposableEffect(Unit) {
+                qrActions.onVisible()
+                onDispose { qrActions.onHidden() }
+            }
+            QrLoginContent(state = qr, onRefresh = qrActions::refresh, modifier = Modifier.fillMaxWidth())
             return@Column
         }
 
         // 휴대폰 번호: 숫자만 저장하고 화면에는 010-1234-5678처럼 하이픈을 넣어 보여 준다
         OutlinedTextField(
-            value = phone,
-            onValueChange = { input ->
-                val digits = input.filter(Char::isDigit).take(11)
-                if (digits != phone) {
-                    phone = digits
-                    // 번호를 바꾸면 이전에 받은 인증번호는 쓸 수 없다
-                    codeExpiresAt = 0L
-                    code = ""
-                }
-            },
+            value = phone.phone,
+            onValueChange = phoneActions::onPhoneChange,
             label = { Text(stringResource(R.string.login_phone_label), fontSize = 18.sp) },
             placeholder = { Text(stringResource(R.string.login_phone_placeholder), fontSize = 24.sp) },
             visualTransformation = PhoneNumberVisualTransformation(),
@@ -225,11 +213,11 @@ private fun LoginForm(
         )
         Spacer(Modifier.height(16.dp))
 
-        if (!codeSent) {
+        if (!phone.codeSent) {
             IeoPrimaryButton(
                 text = stringResource(R.string.login_request_code),
-                enabled = phoneValid,
-                onClick = requestCode,
+                enabled = phone.phoneValid && !phone.isRequestingCode,
+                onClick = phoneActions::requestCode,
             )
         } else {
             Text(
@@ -239,8 +227,8 @@ private fun LoginForm(
             )
             Spacer(Modifier.height(12.dp))
             OutlinedTextField(
-                value = code,
-                onValueChange = { input -> code = input.filter(Char::isDigit).take(CODE_LENGTH) },
+                value = phone.code,
+                onValueChange = phoneActions::onCodeChange,
                 label = { Text(stringResource(R.string.login_code_label), fontSize = 18.sp) },
                 trailingIcon = { CodeTimer(secondsLeft) },
                 textStyle = TextStyle(fontSize = 24.sp, letterSpacing = 8.sp),
@@ -261,15 +249,20 @@ private fun LoginForm(
             Spacer(Modifier.height(16.dp))
             IeoPrimaryButton(
                 text = stringResource(R.string.login_submit),
-                enabled = phoneValid && code.length == CODE_LENGTH && !codeExpired,
-                onClick = { onLogin(phone, code) },
+                enabled = phone.phoneValid && phone.codeComplete && !codeExpired && !phone.isLoggingIn,
+                onClick = phoneActions::login,
             )
             TextButton(
-                onClick = requestCode,
+                onClick = phoneActions::requestCode,
+                enabled = !phone.isRequestingCode,
                 modifier = Modifier.align(Alignment.CenterHorizontally),
             ) {
                 Text(stringResource(R.string.login_resend_code), fontSize = 20.sp)
             }
+        }
+        phone.errorMessage?.let { message ->
+            Spacer(Modifier.height(12.dp))
+            Text(text = message, fontSize = 20.sp, color = MaterialTheme.colorScheme.error)
         }
     }
 }
@@ -300,6 +293,24 @@ internal fun secondsUntil(expiresAt: Long): Int {
 @Composable
 private fun LoginScreenPreview() {
     IeoTheme(darkTheme = false) {
-        LoginScreen(onRequestCode = {}, onLogin = { _, _ -> })
+        LoginScreen(
+            phone = PhoneLoginUiState(),
+            phoneActions = PreviewPhoneLoginActions,
+            qr = QrLoginUiState.Loading,
+            qrActions = PreviewQrLoginActions,
+        )
     }
+}
+
+private object PreviewPhoneLoginActions : PhoneLoginActions {
+    override fun onPhoneChange(input: String) = Unit
+    override fun onCodeChange(input: String) = Unit
+    override fun requestCode() = Unit
+    override fun login() = Unit
+}
+
+private object PreviewQrLoginActions : QrLoginActions {
+    override fun onVisible() = Unit
+    override fun onHidden() = Unit
+    override fun refresh() = Unit
 }
