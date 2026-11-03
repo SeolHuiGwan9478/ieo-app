@@ -45,6 +45,7 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.ieo.app.R
@@ -213,7 +214,9 @@ private fun LoginForm(
         )
         Spacer(Modifier.height(16.dp))
 
+        // 오류 문구는 버튼 위에 둔다. 버튼 아래에 두면 화면 키보드에 가려진다 (에뮬레이터 확인)
         if (!phone.codeSent) {
+            phone.errorMessage?.let { ErrorText(it, bottomSpace = 12.dp) }
             IeoPrimaryButton(
                 text = stringResource(R.string.login_request_code),
                 enabled = phone.phoneValid && !phone.isRequestingCode,
@@ -240,11 +243,11 @@ private fun LoginForm(
             )
             if (codeExpired) {
                 Spacer(Modifier.height(8.dp))
-                Text(
-                    text = stringResource(R.string.login_code_expired),
-                    fontSize = 20.sp,
-                    color = MaterialTheme.colorScheme.error,
-                )
+                ErrorText(stringResource(R.string.login_code_expired))
+            }
+            phone.errorMessage?.let {
+                Spacer(Modifier.height(8.dp))
+                ErrorText(it)
             }
             Spacer(Modifier.height(16.dp))
             IeoPrimaryButton(
@@ -260,11 +263,13 @@ private fun LoginForm(
                 Text(stringResource(R.string.login_resend_code), fontSize = 20.sp)
             }
         }
-        phone.errorMessage?.let { message ->
-            Spacer(Modifier.height(12.dp))
-            Text(text = message, fontSize = 20.sp, color = MaterialTheme.colorScheme.error)
-        }
     }
+}
+
+@Composable
+private fun ErrorText(message: String, bottomSpace: Dp = 0.dp) {
+    Text(text = message, fontSize = 20.sp, color = MaterialTheme.colorScheme.error)
+    if (bottomSpace > 0.dp) Spacer(Modifier.height(bottomSpace))
 }
 
 /** 인증번호 남은 시간 (m:ss). 30초 이하로 남으면 경고색으로 바뀐다 */
