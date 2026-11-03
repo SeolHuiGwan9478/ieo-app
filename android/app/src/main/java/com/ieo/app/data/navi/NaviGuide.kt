@@ -139,9 +139,14 @@ class NaviGuide(context: Context) : Navigator {
         runCatching { helper.getDestinationInfo() }
     }
 
+    /**
+     * 안내 취소를 보내면 내비가 앞으로 나온다. 그래서 안내 중일 때만 보낸다.
+     * 이미 안내가 꺼졌거나(내비에서 종료), 내비가 도착을 알려 안내를 스스로 끝낸 때는 보내지 않는다
+     */
     override fun stopGuidance() {
         handler.removeCallbacks(routeTimeout)
-        runCatching { helper.cancelRoute() }
+        val guiding = _progress.value?.let { !it.arrived } ?: false
+        if (guiding) runCatching { helper.cancelRoute() }
         _progress.value = null
     }
 
