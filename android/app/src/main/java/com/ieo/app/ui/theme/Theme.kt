@@ -36,6 +36,19 @@ val WarningPale = Color(0xFFFDECEC)  // 미수금 아이콘 바탕
 val DrivingPale = Color(0xFFE8EFFD)  // 운행 상태 꼬리표 바탕
 val WaitingPale = Color(0xFFFEF9C3)  // 대기 상태 꼬리표 바탕
 
+// 키워드 태그(차량·결제·지급): 주황과 잘 어울리는 색 중에서 키워드 성격에 맞게 고른다.
+// 상태색과 헷갈리지 않게 모두 옅은 바탕 + 진한 글자로 쓴다
+data class TagColor(val background: Color, val content: Color)
+
+object IeoTag {
+    val Navy = TagColor(Color(0xFFE8ECF4), Color(0xFF1E2A44))   // 차량: 단단한 장비
+    val Teal = TagColor(Color(0xFFD5F5F0), Color(0xFF0F766E))   // 선불: 바로 받는 돈
+    val Sand = TagColor(Color(0xFFF5EBDD), Color(0xFF7C5A2E))   // 인수증: 종이 서류
+    val Sage = TagColor(Color(0xFFE6EFE2), Color(0xFF3F5F31))   // 지급이 빠른 주선사 (15일 이하)
+    val Plum = TagColor(Color(0xFFF3E6F5), Color(0xFF74307F))   // 지급이 늦은 주선사 (20일 초과)
+    val Gray = TagColor(CanvasGray, TextMid)                    // 보통이거나 판단할 근거가 없을 때
+}
+
 // 상태색: 운행 상황을 알릴 때만 사용
 data class StatusColors(
     val driving: Color,

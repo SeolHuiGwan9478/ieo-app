@@ -11,7 +11,9 @@ import ai.pleos.playground.navi.helper.NaviHelper
 import ai.pleos.playground.navi.helper.listener.NaviHelperEventListener
 import android.content.Context
 import android.util.Log
-import com.ieo.app.ui.home.Place
+import com.ieo.app.domain.navi.Destination
+import com.ieo.app.domain.navi.NaviProgress
+import com.ieo.app.domain.navi.Navigator
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -24,13 +26,12 @@ import kotlinx.coroutines.flow.update
  * 거리는 미터, 시간은 초다 (에뮬레이터 확인: 75km → 75000, 1시간 42분 → 6120).
  * 경로가 정해지기 전에는 내비가 0을 보내므로, 0은 "아직 모름"으로 보고 버린다.
  */
-class NaviGuide(context: Context) {
+class NaviGuide(context: Context) : Navigator {
 
     private val helper = NaviHelper(context.applicationContext)
 
     private val _progress = MutableStateFlow<NaviProgress?>(null)
-    /** 안내 중인 경로의 진행 상황. 안내 중이 아니면 null */
-    val progress: StateFlow<NaviProgress?> = _progress.asStateFlow()
+    override val progress: StateFlow<NaviProgress?> = _progress.asStateFlow()
 
     private val listener = object : NaviHelperEventListener {
         override fun onRouteStarted(routeStartInfo: RouteStartInfo) {
@@ -80,7 +81,7 @@ class NaviGuide(context: Context) {
         }
     }
 
-    fun connect() {
+    override fun connect() {
         helper.initialize(
             onConnected = {
                 Log.d(TAG, "connected")
@@ -90,24 +91,23 @@ class NaviGuide(context: Context) {
         )
     }
 
-    fun release() {
+    override fun release() {
         helper.removeListener(listener)
         helper.release()
     }
 
-    /** 장소까지 길 안내를 요청한다. 내비가 없거나 권한이 없으면 false */
-    fun startGuidance(place: Place): Boolean {
-        _progress.value = NaviProgress(destinationName = place.name)
+    override fun startGuidance(destination: Destination): Boolean {
+        _progress.value = NaviProgress(destinationName = destination.name)
         return runCatching {
             helper.requestRoute(
                 RouteInfo(
-                    latitude = place.latitude,
-                    longitude = place.longitude,
-                    poiName = place.name,
+                    latitude = destination.latitude,
+                    longitude = destination.longitude,
+                    poiName = destination.name,
                     // TODO: 좌표만으로 안내가 되는지 확인 중. 장소 ID가 필요하면 주소 검색 API로 받는다
                     poiId = "",
                     poiSubId = "",
-                    address = place.address,
+                    address = destination.address,
                 ),
             )
             // 경로가 잡히면 남은 거리·시간을 한 번 받아 둔다. 이후에는 주행 정보 이벤트로 갱신된다
@@ -118,12 +118,11 @@ class NaviGuide(context: Context) {
         }.isSuccess
     }
 
-    /** 남은 거리·시간을 다시 요청한다. 결과는 [progress]로 온다 */
-    fun refresh() {
+    override fun refresh() {
         runCatching { helper.getDestinationInfo() }
     }
 
-    fun stopGuidance() {
+    override fun stopGuidance() {
         runCatching { helper.cancelRoute() }
         _progress.value = null
     }
@@ -131,22 +130,4 @@ class NaviGuide(context: Context) {
     private companion object {
         const val TAG = "NaviGuide"
     }
-}
-
-data class NaviProgress(
-    val destinationName: String,
-    val totalMeters: Int? = null,
-    val remainMeters: Int? = null,
-    val remainSeconds: Int? = null,
-    val arrived: Boolean = false,
-    val failed: Boolean = false,
-) {
-    /** 0.0 ~ 1.0. 전체 거리를 모르면 null */
-    val fraction: Float?
-        get() {
-            val total = totalMeters ?: return null
-            val remain = remainMeters ?: return null
-            if (total <= 0) return null
-            return ((total - remain).toFloat() / total).coerceIn(0f, 1f)
-        }
 }

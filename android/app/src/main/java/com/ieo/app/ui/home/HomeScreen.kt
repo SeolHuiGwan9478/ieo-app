@@ -51,7 +51,10 @@ import androidx.compose.ui.unit.sp
 import com.ieo.app.ui.common.formatDuration
 import com.ieo.app.ui.common.formatMinutesKorean
 import com.ieo.app.ui.common.formatWon
+import com.ieo.app.domain.wait.WaitPolicy
 import com.ieo.app.ui.component.IeoPrimaryButton
+import com.ieo.app.ui.component.Keyword
+import com.ieo.app.ui.component.KeywordTag
 import com.ieo.app.ui.component.IeoTonalButton
 import com.ieo.app.ui.theme.CanvasGray
 import com.ieo.app.ui.theme.DrivingPale
@@ -89,15 +92,18 @@ fun HomeScreen(
     onUnpaidClick: () -> Unit = {},
     onRegisterTrip: () -> Unit = {},
     onStartWork: () -> Unit = {},
+    onDepart: () -> Unit = {},
     onSendWaitProof: () -> Unit = {},
+    onArrive: () -> Unit = {},
+    onResumeGuidance: () -> Unit = {},
 ) {
     // 내비 옆 반 화면(좁은 창)이 기본 사용 형태다. 앱 영역 전체를 쓸 때만 두 칸으로 펼친다
     BoxWithConstraints(modifier = Modifier.fillMaxSize().background(CanvasGray)) {
         val compact = maxWidth < WideLayoutMinWidth
         when (state) {
             is HomeState.Idle -> IdleHome(state, compact, onTripClick, onOrderClick, onUnpaidClick, onRegisterTrip)
-            is HomeState.Waiting -> WaitingHome(state, compact, onStartWork, onSendWaitProof)
-            is HomeState.Driving -> DrivingHome(state)
+            is HomeState.Waiting -> WaitingHome(state, compact, WaitActions(onStartWork, onDepart, onSendWaitProof))
+            is HomeState.Driving -> DrivingHome(state, onArrive, onResumeGuidance)
         }
     }
 }
@@ -203,7 +209,8 @@ private fun MyTrips(trips: List<AssignedTrip>, onTripClick: (AssignedTrip) -> Un
                 time = trip.pickupTime,
                 day = trip.pickupDay,
                 title = "${trip.pickup.name} → ${trip.dropoff.name}",
-                subtitle = "${trip.vehicle} · ${trip.brokerName} · ${trip.paymentType}",
+                tags = listOf(Keyword.vehicle(trip.vehicle), Keyword.payment(trip.paymentType)),
+                subtitle = trip.brokerName,
                 amount = formatWon(trip.fare),
                 onClick = { onTripClick(trip) },
             )
@@ -226,7 +233,7 @@ private fun NearbyOrders(state: HomeState.Idle, onOrderClick: (OrderCard) -> Uni
                 time = order.pickupTime,
                 day = order.pickupDay,
                 title = "${order.pickup} → ${order.dropoff}",
-                subtitle = order.vehicle + " · " + (order.brokerPaymentDays?.let { "지급 평균 ${it}일" } ?: "지급 이력 없음"),
+                tags = listOf(Keyword.vehicle(order.vehicle), Keyword.paymentDays(order.brokerPaymentDays)),
                 amount = formatWon(order.fare),
                 amountNote = "실수익 ${formatWon(order.netProfit)}",
                 onClick = { onOrderClick(order) },
@@ -235,15 +242,16 @@ private fun NearbyOrders(state: HomeState.Idle, onOrderClick: (OrderCard) -> Uni
     }
 }
 
-/** 목록 한 줄: [시각 칸] 구간 / 설명 · 금액 */
+/** 목록 한 줄: [시각 칸] 구간 / 키워드 태그·설명 · 금액 */
 @Composable
 private fun ListRow(
     time: String,
     day: String,
     title: String,
-    subtitle: String,
     amount: String,
     onClick: () -> Unit,
+    tags: List<Keyword> = emptyList(),
+    subtitle: String? = null,
     amountNote: String? = null,
 ) {
     Row(
@@ -264,8 +272,8 @@ private fun ListRow(
         Spacer(Modifier.width(20.dp))
         Column(modifier = Modifier.weight(1f)) {
             Text(title, fontSize = 25.sp, fontWeight = FontWeight.Bold, color = TextStrong, maxLines = 1, overflow = TextOverflow.Ellipsis)
-            Spacer(Modifier.height(4.dp))
-            Text(subtitle, fontSize = 19.sp, color = TextSub, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            Spacer(Modifier.height(8.dp))
+            TagLine(tags, subtitle)
         }
         Spacer(Modifier.width(16.dp))
         Column(horizontalAlignment = Alignment.End) {
@@ -279,8 +287,11 @@ private fun ListRow(
 
 // ───────────────────────── 대기 중 ─────────────────────────
 
+/** 대기 화면의 버튼들 */
+private class WaitActions(val onStartWork: () -> Unit, val onDepart: () -> Unit, val onSendWaitProof: () -> Unit)
+
 @Composable
-private fun WaitingHome(state: HomeState.Waiting, compact: Boolean, onStartWork: () -> Unit, onSendWaitProof: () -> Unit) {
+private fun WaitingHome(state: HomeState.Waiting, compact: Boolean, actions: WaitActions) {
     var now by remember { mutableLongStateOf(SystemClock.elapsedRealtime()) }
     LaunchedEffect(state.waitStartedAt) {
         while (true) {
@@ -288,14 +299,16 @@ private fun WaitingHome(state: HomeState.Waiting, compact: Boolean, onStartWork:
             delay(1000)
         }
     }
-    val waitSeconds = (now - state.waitStartedAt) / 1000
+    // 작업을 시작하면 대기는 끝나고, 큰 숫자는 작업 시간을 센다
+    val timerSeconds = (now - (state.workStartedAt ?: state.waitStartedAt)) / 1000
+    val chargeableMinutes = ((state.workStartedAt ?: now) - state.chargeableFrom).coerceAtLeast(0) / 60_000
 
     if (compact) {
         Column(
             verticalArrangement = Arrangement.spacedBy(16.dp),
             modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(ScreenPadding),
         ) {
-            WaitTimer(state, waitSeconds, onStartWork, onSendWaitProof)
+            WaitTimer(state, timerSeconds, chargeableMinutes, actions)
             WaitDetails(state)
         }
     } else {
@@ -304,47 +317,52 @@ private fun WaitingHome(state: HomeState.Waiting, compact: Boolean, onStartWork:
             verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier.fillMaxSize().padding(ScreenPadding),
         ) {
-            Box(modifier = Modifier.weight(0.55f)) { WaitTimer(state, waitSeconds, onStartWork, onSendWaitProof) }
+            Box(modifier = Modifier.weight(0.55f)) { WaitTimer(state, timerSeconds, chargeableMinutes, actions) }
             Box(modifier = Modifier.weight(0.45f)) { WaitDetails(state) }
         }
     }
 }
 
 @Composable
-private fun WaitTimer(state: HomeState.Waiting, waitSeconds: Long, onStartWork: () -> Unit, onSendWaitProof: () -> Unit) {
+private fun WaitTimer(state: HomeState.Waiting, timerSeconds: Long, chargeableMinutes: Long, actions: WaitActions) {
     val waiting = IeoStatus.colors.waiting
+    val work = if (state.isPickup) "상차" else "하차"
     WhiteSection(contentPadding = 36.dp) {
-        StatusTag(text = "대기 중", color = waiting, background = WaitingPale)
+        StatusTag(text = if (state.isWorking) "$work 중" else "대기 중", color = waiting, background = WaitingPale)
         Spacer(Modifier.height(16.dp))
         Text(state.stopName, fontSize = 26.sp, fontWeight = FontWeight.Bold, color = TextStrong)
         Text(
-            text = formatDuration(waitSeconds),
+            text = formatDuration(timerSeconds),
             fontSize = 104.sp,
             fontWeight = FontWeight.ExtraBold,
             color = TextStrong,
             style = Tnum,
             letterSpacing = (-3).sp,
         )
-        WaitFeeLine(state.policy, waitSeconds / 60)
+        WaitFeeLine(state.policy, chargeableMinutes, waitEnded = state.isWorking)
         Spacer(Modifier.height(36.dp))
         Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            IeoTonalButton(text = "대기 증빙 보내기", onClick = onSendWaitProof, modifier = Modifier.weight(1f))
-            IeoPrimaryButton(
-                text = if (state.isPickup) "상차 시작" else "하차 시작",
-                onClick = onStartWork,
-                modifier = Modifier.weight(1f),
-            )
+            IeoTonalButton(text = "대기 증빙 보내기", onClick = actions.onSendWaitProof, modifier = Modifier.weight(1f))
+            when {
+                !state.isWorking -> IeoPrimaryButton(text = "$work 시작", onClick = actions.onStartWork, modifier = Modifier.weight(1f))
+                // 하차지를 떠나면 운행이 끝난다
+                state.isPickup -> IeoPrimaryButton(text = "상차 끝, 출발", onClick = actions.onDepart, modifier = Modifier.weight(1f))
+                else -> IeoPrimaryButton(text = "운행 완료", onClick = actions.onDepart, modifier = Modifier.weight(1f))
+            }
         }
     }
 }
 
+/** [chargeableMinutes]: 대기비를 세기 시작한 뒤 흐른 분. [waitEnded]면 작업을 시작해 대기가 끝났다 */
 @Composable
-private fun WaitFeeLine(policy: WaitPolicy?, waitMinutes: Long) {
+private fun WaitFeeLine(policy: WaitPolicy?, chargeableMinutes: Long, waitEnded: Boolean) {
+    val amount = policy?.chargeableAmount(chargeableMinutes) ?: 0L
     val text = when {
         policy == null -> "대기비 기준이 없어 시간만 기록해요"
-        policy.chargeableAmount(waitMinutes) == 0L ->
-            "${formatMinutesKorean(policy.freeMinutes - waitMinutes)} 뒤부터 대기비가 붙어요"
-        else -> "대기비 ${formatWon(policy.chargeableAmount(waitMinutes))}을 청구할 수 있어요"
+        waitEnded && amount == 0L -> "무료 대기 시간 안에 끝났어요"
+        waitEnded -> "대기비 ${formatWon(amount)}을 청구할 수 있어요"
+        amount == 0L -> "${formatMinutesKorean(policy.minutesUntilCharged(chargeableMinutes))} 뒤부터 대기비가 붙어요"
+        else -> "대기비 ${formatWon(amount)}을 청구할 수 있어요"
     }
     Text(text, fontSize = 22.sp, fontWeight = FontWeight.Medium, color = TextSub)
 }
@@ -371,9 +389,12 @@ private fun WaitDetails(state: HomeState.Waiting) {
 
 // ───────────────────────── 주행 중 ─────────────────────────
 
-/** 주행 중에는 버튼을 두지 않는다. 도착 시각과 진행 상황만 크게 보여 주고, 다음 배차는 음성으로 안내한다 */
+/**
+ * 주행 중에는 버튼을 두지 않는다. 도착 시각과 진행 상황만 크게 보여 주고, 다음 배차는 음성으로 안내한다.
+ * 내비 안내가 꺼졌을 때만(도착해서 끄거나, 앱을 다시 켰을 때) "다시 안내"·"도착했어요" 버튼을 보여 준다.
+ */
 @Composable
-private fun DrivingHome(state: HomeState.Driving) {
+private fun DrivingHome(state: HomeState.Driving, onArrive: () -> Unit, onResumeGuidance: () -> Unit) {
     val status = IeoStatus.colors
     Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize().padding(ScreenPadding)) {
         Column(
@@ -417,7 +438,11 @@ private fun DrivingHome(state: HomeState.Driving) {
                 Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp)) {
                     Column(modifier = Modifier.weight(1f)) {
                         Text(state.trip.route, fontSize = 22.sp, fontWeight = FontWeight.Bold, color = TextStrong, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                        Text("${state.trip.brokerName} · ${state.trip.paymentType}", fontSize = 18.sp, color = TextSub)
+                        Spacer(Modifier.height(6.dp))
+                        TagLine(
+                            tags = listOf(Keyword.vehicle(state.trip.vehicle), Keyword.payment(state.trip.paymentType)),
+                            text = state.trip.brokerName,
+                        )
                     }
                     Text(formatWon(state.trip.fare), fontSize = 22.sp, fontWeight = FontWeight.ExtraBold, color = TextStrong, style = Tnum)
                 }
@@ -436,7 +461,12 @@ private fun DrivingHome(state: HomeState.Driving) {
                     )
                 }
             }
-            if (state.recommendation == null) {
+            if (!state.naviActive) {
+                Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    IeoTonalButton(text = "길 안내 다시", onClick = onResumeGuidance, modifier = Modifier.weight(1f))
+                    IeoPrimaryButton(text = "도착했어요", onClick = onArrive, modifier = Modifier.weight(1f))
+                }
+            } else if (state.recommendation == null) {
                 Text(
                     "안내를 끝내려면 내비에서 안내 종료를 눌러 주세요",
                     fontSize = 18.sp,
@@ -465,6 +495,15 @@ private fun ProgressBar(progress: Float, color: Color) {
 }
 
 // ───────────────────────── 공통 조각 ─────────────────────────
+
+/** 키워드 태그를 늘어놓고, 주선사 이름 같은 남은 설명은 회색 글자로 뒤에 붙인다 */
+@Composable
+private fun TagLine(tags: List<Keyword>, text: String? = null) {
+    Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+        tags.forEach { KeywordTag(it) }
+        text?.let { Text(it, fontSize = 19.sp, color = TextSub, maxLines = 1, overflow = TextOverflow.Ellipsis) }
+    }
+}
 
 @Composable
 private fun WhiteSection(contentPadding: Dp = 16.dp, content: @Composable ColumnScope.() -> Unit) {

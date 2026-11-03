@@ -1,6 +1,7 @@
 package com.ieo.app.ui.home
 
 import android.os.SystemClock
+import com.ieo.app.domain.wait.WaitPolicy
 
 /**
  * 화면 확인용 샘플 데이터.

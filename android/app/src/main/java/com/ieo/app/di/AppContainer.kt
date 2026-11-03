@@ -12,6 +12,11 @@ import com.ieo.app.data.auth.DefaultAuthRepository
 import com.ieo.app.data.auth.ServerTokenRefresher
 import com.ieo.app.data.trip.DefaultTripRepository
 import com.ieo.app.data.trip.TripApi
+import com.ieo.app.data.navi.NaviGuide
+import com.ieo.app.data.wait.DefaultWaitRepository
+import com.ieo.app.data.wait.WaitApi
+import com.ieo.app.domain.navi.Navigator
+import com.ieo.app.domain.wait.WaitRepository
 import com.ieo.app.domain.auth.AuthRepository
 import com.ieo.app.domain.trip.TripRepository
 
@@ -23,6 +28,8 @@ interface AppContainer {
     val session: SessionManager
     val authRepository: AuthRepository
     val tripRepository: TripRepository
+    val waitRepository: WaitRepository
+    val navigator: Navigator
 }
 
 class DefaultAppContainer(context: Context) : AppContainer {
@@ -47,4 +54,10 @@ class DefaultAppContainer(context: Context) : AppContainer {
     override val tripRepository: TripRepository by lazy {
         DefaultTripRepository(network.authenticated.create(TripApi::class.java), network.caller)
     }
+
+    override val waitRepository: WaitRepository by lazy {
+        DefaultWaitRepository(network.authenticated.create(WaitApi::class.java), network.caller)
+    }
+
+    override val navigator: Navigator by lazy { NaviGuide(appContext) }
 }

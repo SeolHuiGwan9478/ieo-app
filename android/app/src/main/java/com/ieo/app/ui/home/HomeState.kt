@@ -1,5 +1,7 @@
 package com.ieo.app.ui.home
 
+import com.ieo.app.domain.wait.WaitPolicy
+
 /**
  * 홈 화면 상태. 운행 상태에 따라 화면의 주인공이 바뀐다. (요구사항: docs/requirements/01_운행.md, 02_대기.md)
  * - [Idle] 운행 전: 내 배차와 근처 오더
@@ -21,11 +23,17 @@ sealed interface HomeState {
         val trip: TripSummary,
         val stopName: String,
         val isPickup: Boolean,
-        /** 대기 시작 시각 (SystemClock.elapsedRealtime 기준) */
+        /** 도착 시각 (SystemClock.elapsedRealtime 기준) */
         val waitStartedAt: Long,
         val policy: WaitPolicy?,
         val site: SiteInfo?,
-    ) : HomeState
+        /** 대기비를 세기 시작하는 시각 (elapsedRealtime). 예정 시각보다 일찍 왔으면 도착보다 늦다 */
+        val chargeableFrom: Long = waitStartedAt,
+        /** 작업("상차 시작")을 누른 시각 (elapsedRealtime). 작업 전이면 null */
+        val workStartedAt: Long? = null,
+    ) : HomeState {
+        val isWorking: Boolean get() = workStartedAt != null
+    }
 
     data class Driving(
         val trip: TripSummary,
@@ -41,6 +49,8 @@ sealed interface HomeState {
         val etaShared: Boolean,
         /** 음성으로 안내 중인 다음 배차 추천. 없으면 null */
         val recommendation: Recommendation?,
+        /** 내비가 길 안내 중인지. 안내가 꺼졌으면 "다시 안내"·"도착했어요" 버튼을 보여 준다 */
+        val naviActive: Boolean = true,
     ) : HomeState
 }
 
@@ -85,6 +95,7 @@ data class OrderCard(
 
 data class TripSummary(
     val route: String,
+    val vehicle: String,
     val fare: Long,
     val paymentType: String,
     val brokerName: String,
@@ -92,22 +103,11 @@ data class TripSummary(
 
 data class Recommendation(val route: String, val pickupTime: String, val netProfit: Long)
 
-/** 대기비 정책: 무료 시간이 지나면 단위 시간마다 금액이 붙는다 (올림) */
-data class WaitPolicy(val freeMinutes: Int, val unitMinutes: Int, val unitAmount: Long, val maxAmount: Long?) {
-
-    fun chargeableAmount(waitMinutes: Long): Long {
-        val over = waitMinutes - freeMinutes
-        if (over <= 0) return 0
-        val units = (over + unitMinutes - 1) / unitMinutes
-        val amount = units * unitAmount
-        return maxAmount?.let { minOf(amount, it) } ?: amount
-    }
-}
-
 data class SiteInfo(val heightLimitMeters: Double?, val forklift: Boolean?, val averageWaitMinutes: Int?)
 
 fun AssignedTrip.toSummary() = TripSummary(
     route = "${pickup.name} → ${dropoff.name}",
+    vehicle = vehicle,
     fare = fare,
     paymentType = paymentType,
     brokerName = brokerName,

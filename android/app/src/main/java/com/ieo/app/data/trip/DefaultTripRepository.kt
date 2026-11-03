@@ -16,4 +16,7 @@ class DefaultTripRepository(
 
     override suspend fun currentTrip(): ApiResult<Trip?> =
         caller.callOptional { api.currentTrip() }.mapResponse { it?.toDomain() }
+
+    override suspend fun start(tripId: Long): ApiResult<Trip> =
+        caller.call { api.start(tripId) }.mapResponse { it.toDomain() }
 }

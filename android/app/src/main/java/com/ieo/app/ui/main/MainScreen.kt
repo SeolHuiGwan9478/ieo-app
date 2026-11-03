@@ -6,18 +6,10 @@ import com.ieo.app.ui.theme.White
 import com.ieo.app.ui.theme.TextSub
 import com.ieo.app.ui.theme.Orange50
 import com.ieo.app.ui.theme.Orange700
-import kotlinx.coroutines.delay
-import java.time.format.DateTimeFormatter
-import java.time.LocalTime
-import com.ieo.app.ui.home.toSummary
 import com.ieo.app.ui.home.AssignedTrip
-import com.ieo.app.data.navi.NaviProgress
-import com.ieo.app.data.navi.NaviGuide
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.DisposableEffect
 import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -75,39 +67,20 @@ private enum class Destination(val label: String, val icon: ImageVector) {
 fun MainScreen(homeViewModel: HomeViewModel = viewModel(factory = HomeViewModel.Factory)) {
     val context = LocalContext.current
     var destination by rememberSaveable { mutableStateOf(Destination.HOME) }
-    // 운행 전 화면의 "내 배차"는 서버 값이다. 나머지(오늘 수익, 미수금, 근처 오더)와 대기·주행 상태는 아직 샘플이다
-    // TODO: 장부·배차·대기 API와 차량 신호를 붙이면 샘플을 걷어낸다
-    var demo by rememberSaveable { mutableStateOf(DemoState.IDLE) }
-    val home by homeViewModel.state.collectAsStateWithLifecycle()
-    LaunchedEffect(home.errorMessage) {
-        home.errorMessage?.let {
+    // 디버그 빌드에서만: 서버 없이 대기·주행 화면을 확인하는 샘플
+    var demo by rememberSaveable { mutableStateOf(DemoState.LIVE) }
+
+    val liveState by homeViewModel.state.collectAsStateWithLifecycle()
+    val status by homeViewModel.status.collectAsStateWithLifecycle()
+    LaunchedEffect(status.message) {
+        status.message?.let {
             Toast.makeText(context, it, Toast.LENGTH_SHORT).show()
-            homeViewModel.errorShown()
+            homeViewModel.messageShown()
         }
     }
 
-    // 차량 내비 연결. 배차에서 길 안내를 시작하면 내비가 알려 주는 진행 상황을 홈에 보여 준다
-    val naviGuide = remember { NaviGuide(context) }
-    DisposableEffect(naviGuide) {
-        naviGuide.connect()
-        onDispose { naviGuide.release() }
-    }
-    val guidance by naviGuide.progress.collectAsState()
-    var guidingTrip by remember { mutableStateOf<AssignedTrip?>(null) }
-    // 내비에서 안내를 끄면 홈으로 돌아온다
-    LaunchedEffect(guidance) {
-        if (guidance == null) guidingTrip = null
-    }
-    LaunchedEffect(guidingTrip) {
-        if (guidingTrip == null) return@LaunchedEffect
-        while (true) {
-            delay(10_000)
-            naviGuide.refresh()
-        }
-    }
-
-    val homeState: HomeState = guidingTrip?.let { guidingHomeState(it, guidance) } ?: when (demo) {
-        DemoState.IDLE -> SampleHomeData.idle().copy(myTrips = home.myTrips)
+    val homeState: HomeState = when (demo) {
+        DemoState.LIVE -> liveState
         DemoState.WAITING -> SampleHomeData.waiting()
         DemoState.DRIVING -> SampleHomeData.driving()
     }
@@ -122,17 +95,18 @@ fun MainScreen(homeViewModel: HomeViewModel = viewModel(factory = HomeViewModel.
                     Destination.HOME -> HomeScreen(
                         state = homeState,
                         onTripClick = { confirmingTrip = it },
+                        onStartWork = homeViewModel::startWork,
+                        onDepart = homeViewModel::depart,
+                        onSendWaitProof = { Toast.makeText(context, "대기 증빙 보내기는 준비 중입니다", Toast.LENGTH_SHORT).show() },
+                        onArrive = homeViewModel::arrive,
+                        onResumeGuidance = homeViewModel::resumeGuidance,
                     )
                     else -> ComingSoon(destination.label)
                 }
                 if (BuildConfig.DEBUG && destination == Destination.HOME) {
                     DemoStateSwitcher(
                         selected = demo,
-                        onSelect = {
-                            if (guidingTrip != null) naviGuide.stopGuidance()
-                            guidingTrip = null
-                            demo = it
-                        },
+                        onSelect = { demo = it },
                         modifier = Modifier.align(Alignment.TopEnd).padding(16.dp),
                     )
                 }
@@ -142,11 +116,7 @@ fun MainScreen(homeViewModel: HomeViewModel = viewModel(factory = HomeViewModel.
             trip = confirmingTrip,
             onStart = { trip ->
                 confirmingTrip = null
-                if (naviGuide.startGuidance(trip.pickup)) {
-                    guidingTrip = trip
-                } else {
-                    Toast.makeText(context, "차량 내비에 연결하지 못했습니다", Toast.LENGTH_SHORT).show()
-                }
+                homeViewModel.startTrip(trip.id)
             },
             onDismiss = { confirmingTrip = null },
         )
@@ -198,7 +168,7 @@ private fun ComingSoon(title: String) {
     }
 }
 
-private enum class DemoState(val label: String) { IDLE("운행 전"), WAITING("대기 중"), DRIVING("주행 중") }
+private enum class DemoState(val label: String) { LIVE("서버"), WAITING("대기 샘플"), DRIVING("주행 샘플") }
 
 /** 디버그 빌드 전용: 홈 화면 상태를 바꿔 가며 확인한다 */
 @Composable
@@ -227,20 +197,4 @@ private fun DemoStateSwitcher(selected: DemoState, onSelect: (DemoState) -> Unit
             )
         }
     }
-}
-
-/** 내비 진행 상황으로 주행 중 화면 상태를 만든다. 아직 경로 정보가 없으면 값을 비워 둔다 */
-private fun guidingHomeState(trip: AssignedTrip, progress: NaviProgress?): HomeState.Driving {
-    val remainSeconds = progress?.remainSeconds
-    return HomeState.Driving(
-        trip = trip.toSummary(),
-        destinationName = trip.pickup.name,
-        isPickup = true,
-        etaText = remainSeconds?.let { LocalTime.now().plusSeconds(it.toLong()).format(DateTimeFormatter.ofPattern("HH:mm")) },
-        progress = progress?.fraction,
-        remainingKm = progress?.remainMeters?.let { (it + 500) / 1000 },
-        remainingMinutes = remainSeconds?.let { (it + 59) / 60 },
-        etaShared = false,
-        recommendation = null,
-    )
 }

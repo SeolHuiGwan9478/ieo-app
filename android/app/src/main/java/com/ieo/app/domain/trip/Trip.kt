@@ -14,7 +14,17 @@ data class Trip(
     val plateNumber: String,
     val pickup: TripStop,
     val dropoff: TripStop,
-)
+) {
+    fun stop(type: StopType): TripStop = when (type) {
+        StopType.PICKUP -> pickup
+        StopType.DROPOFF -> dropoff
+    }
+
+    /** 지금 향하고 있거나 머무는 곳. 출발 전이거나 끝난 운행이면 null */
+    val currentStop: StopType? get() = status.currentStop
+}
+
+enum class StopType { PICKUP, DROPOFF }
 
 /** 상차지 또는 하차지 */
 data class TripStop(
@@ -40,4 +50,17 @@ enum class TripStatus {
 
     /** 아직 끝나지 않은 운행 */
     val isActive: Boolean get() = this != COMPLETED && this != CANCELLED
+
+    /** 상하차지로 가는 중 */
+    val isDriving: Boolean get() = this == TO_PICKUP || this == IN_TRANSIT
+
+    /** 상하차지에서 대기·작업 중 */
+    val isAtStop: Boolean get() = this == AT_PICKUP || this == AT_DROPOFF
+
+    val currentStop: StopType?
+        get() = when (this) {
+            TO_PICKUP, AT_PICKUP -> StopType.PICKUP
+            IN_TRANSIT, AT_DROPOFF -> StopType.DROPOFF
+            SCHEDULED, COMPLETED, CANCELLED -> null
+        }
 }
