@@ -3,7 +3,7 @@ package com.ieo.app.core.network
 import com.ieo.app.core.session.AuthTokens
 import com.ieo.app.core.session.SessionManager
 import com.ieo.app.core.session.TokenRefresher
-import com.ieo.app.core.session.TokenStore
+import com.ieo.app.testing.MemoryTokenStore
 import okhttp3.Protocol
 import okhttp3.Request
 import okhttp3.Response
@@ -75,15 +75,5 @@ class TokenRefreshAuthenticatorTest {
             .code(401)
             .message("Unauthorized")
             .build()
-    }
-
-    private class MemoryTokenStore(var tokens: AuthTokens?) : TokenStore {
-        override fun read() = tokens
-        override fun write(tokens: AuthTokens) {
-            this.tokens = tokens
-        }
-        override fun clear() {
-            tokens = null
-        }
     }
 }

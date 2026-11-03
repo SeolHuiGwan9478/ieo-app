@@ -13,7 +13,7 @@ import retrofit2.converter.kotlinx.serialization.asConverterFactory
 /**
  * 서버 연결에 쓰는 Retrofit 두 개를 만든다.
  * - [public]: 로그인 전 API (/api/auth/...). 토큰을 붙이지 않는다.
- * - [authenticated]: 나머지 API. 토큰을 붙이고, 만료되면 자동으로 갱신한다.
+ * - [authenticated]: 나머지 API. 토큰을 붙이고, 만료되면 자동으로 갱신한다. 쓸 수 없는 계정이면 로그아웃한다.
  *
  * 토큰 갱신도 로그인 전 API라서, [refresherFactory]는 [public]을 받아 갱신기를 만든다.
  */
@@ -44,6 +44,7 @@ class NetworkClients(
 
     private val authenticatedClient: OkHttpClient = baseClient.newBuilder()
         .addInterceptor(BearerTokenInterceptor(session))
+        .addInterceptor(RevokedSessionInterceptor(session))
         .authenticator(TokenRefreshAuthenticator(session, refresherFactory(public)))
         .build()
 
