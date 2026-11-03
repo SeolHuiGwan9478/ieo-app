@@ -81,6 +81,16 @@ class HomeStateFactoryTest {
     }
 
     @Test
+    fun `내비가 길 안내 요청을 받지 못했으면 버튼을 보여 준다`() {
+        val navi = NaviProgress("평택 포승", failed = true)
+
+        val state = factory.create(HomeSnapshot(current = TripFixtures.trip(TripStatus.TO_PICKUP)), navi)
+
+        state as HomeState.Driving
+        assertFalse(state.naviActive)
+    }
+
+    @Test
     fun `상차지에 있으면 서버 시각을 기기 시계로 바꿔 대기 타이머를 만든다`() {
         // 10분 전 도착, 대기비는 5분 전부터
         val wait = TripFixtures.wait(arrivedAt = NOW.minusSeconds(600), chargeableFrom = NOW.minusSeconds(300))

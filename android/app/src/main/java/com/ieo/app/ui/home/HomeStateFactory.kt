@@ -75,7 +75,7 @@ class HomeStateFactory(
             // TODO: ETA 알림(09 알림)을 만들면 서버 값으로 바꾼다
             etaShared = false,
             recommendation = null,
-            naviActive = navi != null,
+            naviActive = navi != null && !navi.failed,
         )
     }
 

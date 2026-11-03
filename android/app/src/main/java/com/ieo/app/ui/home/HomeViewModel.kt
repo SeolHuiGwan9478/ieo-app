@@ -87,14 +87,9 @@ class HomeViewModel(
     val status: StateFlow<HomeStatus> = _status.asStateFlow()
 
     init {
-        navigator.connect()
         refresh()
         arriveWhenNaviArrives()
         keepNaviProgressFresh()
-    }
-
-    override fun onCleared() {
-        navigator.release()
     }
 
     override fun refresh() {

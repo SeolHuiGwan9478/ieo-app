@@ -10,6 +10,8 @@ import ai.pleos.playground.navi.data.RouteStartInfo
 import ai.pleos.playground.navi.helper.NaviHelper
 import ai.pleos.playground.navi.helper.listener.NaviHelperEventListener
 import android.content.Context
+import android.os.Handler
+import android.os.Looper
 import android.util.Log
 import com.ieo.app.domain.navi.Destination
 import com.ieo.app.domain.navi.NaviProgress
@@ -29,6 +31,15 @@ import kotlinx.coroutines.flow.update
 class NaviGuide(context: Context) : Navigator {
 
     private val helper = NaviHelper(context.applicationContext)
+    private val handler = Handler(Looper.getMainLooper())
+
+    /**
+     * 내비가 막 켜지는 중이면 요청을 답 없이 버린다. 이때는 안내 실패로 보고 "길 안내 다시"를 보여 준다.
+     * 에뮬레이터에서 경로 탐색에 24초가 걸려 30초를 기다린다
+     */
+    private val routeTimeout = Runnable {
+        _progress.update { if (it != null && it.isWaitingForRoute) it.copy(failed = true) else it }
+    }
 
     private val _progress = MutableStateFlow<NaviProgress?>(null)
     override val progress: StateFlow<NaviProgress?> = _progress.asStateFlow()
@@ -36,11 +47,14 @@ class NaviGuide(context: Context) : Navigator {
     private val listener = object : NaviHelperEventListener {
         override fun onRouteStarted(routeStartInfo: RouteStartInfo) {
             Log.d(TAG, "onRouteStarted $routeStartInfo")
+            handler.removeCallbacks(routeTimeout)
             _progress.update {
                 it?.copy(
                     totalMeters = routeStartInfo.distance,
                     remainMeters = routeStartInfo.distance,
                     remainSeconds = routeStartInfo.duration,
+                    // 기다리는 시간이 지난 뒤에 경로가 잡혀도 안내 중으로 되돌린다
+                    failed = false,
                 )
             }
         }
@@ -66,7 +80,8 @@ class NaviGuide(context: Context) : Navigator {
 
         override fun onRouteCancelled() {
             Log.d(TAG, "onRouteCancelled")
-            _progress.value = null
+            // 안내 중에 새 길 안내를 요청하면 내비가 앞 경로를 먼저 취소한다. 요청한 경로를 기다리는 중이면 무시한다
+            _progress.update { if (it != null && it.isWaitingForRoute) it else null }
         }
 
         // onRouteEnded는 경로 탐색이 끝날 때(안내 시작 직후)에도 와서 안내 종료 신호로 쓰지 않는다
@@ -81,7 +96,11 @@ class NaviGuide(context: Context) : Navigator {
         }
     }
 
-    override fun connect() {
+    /**
+     * 앱이 살아 있는 동안 연결을 유지한다. 화면(ViewModel)마다 연결·해제하면
+     * 화면이 다시 만들어질 때 앞 화면의 해제가 새 화면의 리스너까지 지워 안내 정보가 끊긴다 (에뮬레이터 확인)
+     */
+    init {
         helper.initialize(
             onConnected = {
                 Log.d(TAG, "connected")
@@ -91,13 +110,10 @@ class NaviGuide(context: Context) : Navigator {
         )
     }
 
-    override fun release() {
-        helper.removeListener(listener)
-        helper.release()
-    }
-
     override fun startGuidance(destination: Destination): Boolean {
         _progress.value = NaviProgress(destinationName = destination.name)
+        handler.removeCallbacks(routeTimeout)
+        handler.postDelayed(routeTimeout, ROUTE_TIMEOUT_MS)
         return runCatching {
             helper.requestRoute(
                 RouteInfo(
@@ -114,6 +130,7 @@ class NaviGuide(context: Context) : Navigator {
             helper.getDestinationInfo()
         }.onFailure {
             Log.w(TAG, "길 안내 요청 실패", it)
+            handler.removeCallbacks(routeTimeout)
             _progress.value = null
         }.isSuccess
     }
@@ -123,11 +140,13 @@ class NaviGuide(context: Context) : Navigator {
     }
 
     override fun stopGuidance() {
+        handler.removeCallbacks(routeTimeout)
         runCatching { helper.cancelRoute() }
         _progress.value = null
     }
 
     private companion object {
         const val TAG = "NaviGuide"
+        const val ROUTE_TIMEOUT_MS = 30_000L
     }
 }

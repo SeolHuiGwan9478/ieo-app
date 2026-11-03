@@ -364,7 +364,7 @@ private fun WaitDetails(state: HomeState.Waiting) {
 
 /**
  * 주행 중에는 버튼을 두지 않는다. 도착 시각과 진행 상황만 크게 보여 주고, 다음 배차는 음성으로 안내한다.
- * 내비 안내가 꺼졌을 때만(도착해서 끄거나, 앱을 다시 켰을 때) "다시 안내"·"도착했어요" 버튼을 보여 준다.
+ * 내비 안내가 꺼졌을 때만(도착해서 끄거나, 앱을 다시 켰거나, 내비가 요청을 받지 못했을 때) "길 안내 다시"·"도착했어요" 버튼을 보여 준다.
  */
 @Composable
 private fun DrivingHome(state: HomeState.Driving, onArrive: () -> Unit, onResumeGuidance: () -> Unit) {

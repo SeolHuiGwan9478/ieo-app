@@ -50,7 +50,7 @@ sealed interface HomeState {
         val etaShared: Boolean,
         /** 음성으로 안내 중인 다음 배차 추천. 없으면 null */
         val recommendation: Recommendation?,
-        /** 내비가 길 안내 중인지. 안내가 꺼졌으면 "다시 안내"·"도착했어요" 버튼을 보여 준다 */
+        /** 내비가 길 안내 중인지. 안내가 꺼졌거나 실패했으면 "길 안내 다시"·"도착했어요" 버튼을 보여 준다 */
         val naviActive: Boolean = true,
     ) : HomeState
 }

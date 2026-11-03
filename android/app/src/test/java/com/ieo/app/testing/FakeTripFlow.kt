@@ -95,10 +95,6 @@ class FakeNavigator : Navigator {
     override val progress = MutableStateFlow<NaviProgress?>(null)
     val guidedTo = mutableListOf<String>()
 
-    override fun connect() = Unit
-
-    override fun release() = Unit
-
     override fun startGuidance(destination: Destination): Boolean {
         guidedTo += destination.name
         progress.value = NaviProgress(destinationName = destination.name)
