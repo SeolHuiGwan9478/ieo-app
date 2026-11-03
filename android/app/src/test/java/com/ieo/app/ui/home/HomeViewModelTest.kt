@@ -45,8 +45,10 @@ class HomeViewModelTest {
         val vm = HomeViewModel(
             tripRepository = server,
             waitRepository = server,
+            ledgerRepository = server,
+            orderRepository = server,
             navigator = navigator,
-            stateFactory = HomeStateFactory(AssignedTripMapper(clock), clock) { 1_000_000L },
+            stateFactory = HomeStateFactory(clock) { 1_000_000L },
         )
         runCurrent()
         try {
@@ -107,6 +109,15 @@ class HomeViewModelTest {
 
         assertTrue(vm.state.value is HomeState.Idle)
         assertEquals(HomeViewModel.TRIP_COMPLETED_MESSAGE, vm.status.value.message)
+    }
+
+    @Test
+    fun `운행 전 화면에 오늘 요약과 모집 중 오더를 서버에서 받아 보여 준다`() = homeTest { vm ->
+        val state = vm.state.value as HomeState.Idle
+
+        assertEquals(1, state.today.tripCount)
+        assertEquals(1, state.orders.size)
+        assertEquals(1, state.myTrips.size)
     }
 
     @Test

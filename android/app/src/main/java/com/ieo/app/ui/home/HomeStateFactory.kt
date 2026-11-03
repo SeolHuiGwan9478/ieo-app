@@ -1,24 +1,31 @@
 package com.ieo.app.ui.home
 
 import android.os.SystemClock
+import com.ieo.app.domain.ledger.DailySummary
+import com.ieo.app.domain.ledger.Receivables
 import com.ieo.app.domain.navi.NaviProgress
+import com.ieo.app.domain.order.Order
 import com.ieo.app.domain.trip.StopType
 import com.ieo.app.domain.trip.Trip
 import com.ieo.app.domain.wait.WaitRecord
+import com.ieo.app.ui.common.DayTimeFormatter
 import java.time.Clock
 import java.time.Duration
 import java.time.Instant
-import java.time.ZoneId
-import java.time.format.DateTimeFormatter
 
-/** 홈 화면을 만드는 데 필요한 서버 데이터 */
-data class TripSnapshot(
+/** 홈 화면을 만드는 데 필요한 서버 데이터. 못 받은 값은 비어 있다 */
+data class HomeSnapshot(
     /** 끝나지 않은 운행 (상차 시각 순) */
     val upcoming: List<Trip> = emptyList(),
     /** 출발해서 진행 중인 운행 */
     val current: Trip? = null,
     /** 진행 중인 운행이 상하차지에 있을 때 그곳의 대기 기록 */
     val wait: WaitRecord? = null,
+    /** 오늘 운행 수와 순수익 */
+    val today: DailySummary? = null,
+    val receivables: Receivables? = null,
+    /** 모집 중 오더 */
+    val orders: List<Order> = emptyList(),
 )
 
 /**
@@ -30,22 +37,30 @@ data class TripSnapshot(
  * 서버 시각(Instant)을 화면 타이머용 기기 시계(elapsedRealtime)로 바꾸는 일도 여기서 한다.
  */
 class HomeStateFactory(
-    private val tripMapper: AssignedTripMapper = AssignedTripMapper(),
     private val clock: Clock = Clock.systemUTC(),
     private val elapsedRealtime: () -> Long = SystemClock::elapsedRealtime,
 ) {
 
-    fun create(snapshot: TripSnapshot, navi: NaviProgress?): HomeState {
-        val trip = snapshot.current ?: return idle(snapshot.upcoming)
-        val stop = trip.currentStop ?: return idle(snapshot.upcoming)
+    private val labels = DayTimeFormatter(clock)
+    private val tripMapper = AssignedTripMapper(clock)
+    private val orderMapper = OrderCardMapper(clock)
+
+    fun create(snapshot: HomeSnapshot, navi: NaviProgress?): HomeState {
+        val trip = snapshot.current ?: return idle(snapshot)
+        val stop = trip.currentStop ?: return idle(snapshot)
         val wait = snapshot.wait?.takeIf { it.stopType == stop }
         // 상하차지에 있는데 대기 기록을 못 받았으면 주행 화면의 "도착했어요"로 다시 받게 한다 (도착은 여러 번 불러도 같다)
         return if (trip.status.isAtStop && wait != null) waiting(trip, stop, wait) else driving(trip, stop, navi)
     }
 
-    private fun idle(upcoming: List<Trip>): HomeState.Idle =
-        // TODO: 오늘 수익·미수금(장부 API)과 근처 오더(배차 API)를 붙이면 샘플을 걷어낸다
-        SampleHomeData.idle().copy(myTrips = upcoming.map(tripMapper::map))
+    private fun idle(snapshot: HomeSnapshot) = HomeState.Idle(
+        today = snapshot.today?.let { TodaySummary(it.tripCount, it.netProfit) } ?: TodaySummary(tripCount = 0, netProfit = 0),
+        unpaid = snapshot.receivables?.mostOverdue(labels.today())?.let { UnpaidAlert(it.brokerName, it.amount, it.overdueDays) },
+        // TODO: 차량 위치를 받으면 그 지역 이름으로 "근처 오더"를 보여 준다
+        baseLocation = null,
+        myTrips = snapshot.upcoming.map(tripMapper::map),
+        orders = snapshot.orders.map(orderMapper::map),
+    )
 
     private fun driving(trip: Trip, stop: StopType, navi: NaviProgress?): HomeState.Driving {
         val remainSeconds = navi?.remainSeconds
@@ -53,7 +68,7 @@ class HomeStateFactory(
             trip = tripMapper.map(trip).toSummary(),
             destinationName = trip.stop(stop).name,
             isPickup = stop == StopType.PICKUP,
-            etaText = remainSeconds?.let { clock.instant().plusSeconds(it.toLong()).atZone(KOREA).format(TIME_FORMAT) },
+            etaText = remainSeconds?.let { labels.timeAfter(it.toLong()) },
             progress = navi?.fraction,
             remainingKm = navi?.remainMeters?.let { (it + 500) / 1000 },
             remainingMinutes = remainSeconds?.let { (it + 59) / 60 },
@@ -78,9 +93,4 @@ class HomeStateFactory(
 
     /** 서버 시각을 기기 시계 기준으로. 기기 시계를 바꿔도 타이머가 맞는다 */
     private fun toElapsed(at: Instant): Long = elapsedRealtime() - Duration.between(at, clock.instant()).toMillis()
-
-    private companion object {
-        val KOREA: ZoneId = ZoneId.of("Asia/Seoul")
-        val TIME_FORMAT: DateTimeFormatter = DateTimeFormatter.ofPattern("HH:mm")
-    }
 }

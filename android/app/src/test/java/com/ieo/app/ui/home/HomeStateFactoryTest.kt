@@ -1,11 +1,15 @@
 package com.ieo.app.ui.home
 
+import com.ieo.app.domain.ledger.DailySummary
+import com.ieo.app.domain.ledger.Receivable
+import com.ieo.app.domain.ledger.Receivables
 import com.ieo.app.domain.navi.NaviProgress
 import com.ieo.app.domain.trip.StopType
 import com.ieo.app.domain.trip.TripStatus
 import com.ieo.app.testing.TripFixtures
 import com.ieo.app.testing.TripFixtures.NOW
 import java.time.Clock
+import java.time.LocalDate
 import java.time.ZoneOffset
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -16,15 +20,11 @@ import org.junit.Test
 class HomeStateFactoryTest {
 
     // 기기 시계(elapsedRealtime)는 1,000,000ms
-    private val factory = HomeStateFactory(
-        tripMapper = AssignedTripMapper(Clock.fixed(NOW, ZoneOffset.UTC)),
-        clock = Clock.fixed(NOW, ZoneOffset.UTC),
-        elapsedRealtime = { 1_000_000L },
-    )
+    private val factory = HomeStateFactory(clock = Clock.fixed(NOW, ZoneOffset.UTC), elapsedRealtime = { 1_000_000L })
 
     @Test
     fun `진행 중인 운행이 없으면 내 배차 목록`() {
-        val state = factory.create(TripSnapshot(upcoming = listOf(TripFixtures.trip(TripStatus.SCHEDULED))), navi = null)
+        val state = factory.create(HomeSnapshot(upcoming = listOf(TripFixtures.trip(TripStatus.SCHEDULED))), navi = null)
 
         state as HomeState.Idle
         assertEquals(1, state.myTrips.size)
@@ -32,10 +32,34 @@ class HomeStateFactoryTest {
     }
 
     @Test
+    fun `운행 전 화면에 오늘 요약, 가장 밀린 미수금, 모집 중 오더를 보여 준다`() {
+        val snapshot = HomeSnapshot(
+            today = DailySummary(LocalDate.of(2026, 11, 3), tripCount = 2, netProfit = 610_000),
+            receivables = Receivables(listOf(Receivable("○○물류", 450_000, LocalDate.of(2026, 10, 31), overdue = true))),
+            orders = listOf(TripFixtures.order()),
+        )
+
+        val state = factory.create(snapshot, navi = null) as HomeState.Idle
+
+        assertEquals(TodaySummary(tripCount = 2, netProfit = 610_000), state.today)
+        assertEquals(UnpaidAlert("○○물류", 450_000, overdueDays = 3), state.unpaid)
+        assertNull(state.baseLocation)
+        assertEquals("칠곡 → 부산 강서", state.orders.single().let { "${it.pickup} → ${it.dropoff}" })
+    }
+
+    @Test
+    fun `장부를 못 받았으면 0건, 미수금 경고 없음`() {
+        val state = factory.create(HomeSnapshot(), navi = null) as HomeState.Idle
+
+        assertEquals(TodaySummary(tripCount = 0, netProfit = 0), state.today)
+        assertNull(state.unpaid)
+    }
+
+    @Test
     fun `상차지로 가는 중이면 내비의 남은 시간으로 도착 시각을 보여 준다`() {
         val navi = NaviProgress("평택 포승", totalMeters = 10_000, remainMeters = 2_500, remainSeconds = 600)
 
-        val state = factory.create(TripSnapshot(current = TripFixtures.trip(TripStatus.TO_PICKUP)), navi)
+        val state = factory.create(HomeSnapshot(current = TripFixtures.trip(TripStatus.TO_PICKUP)), navi)
 
         state as HomeState.Driving
         assertTrue(state.isPickup)
@@ -48,7 +72,7 @@ class HomeStateFactoryTest {
 
     @Test
     fun `운송 중이면 하차지로 가는 중, 내비가 꺼져 있으면 버튼을 보여 준다`() {
-        val state = factory.create(TripSnapshot(current = TripFixtures.trip(TripStatus.IN_TRANSIT)), navi = null)
+        val state = factory.create(HomeSnapshot(current = TripFixtures.trip(TripStatus.IN_TRANSIT)), navi = null)
 
         state as HomeState.Driving
         assertFalse(state.isPickup)
@@ -62,7 +86,7 @@ class HomeStateFactoryTest {
         // 10분 전 도착, 대기비는 5분 전부터
         val wait = TripFixtures.wait(arrivedAt = NOW.minusSeconds(600), chargeableFrom = NOW.minusSeconds(300))
 
-        val state = factory.create(TripSnapshot(current = TripFixtures.trip(TripStatus.AT_PICKUP), wait = wait), navi = null)
+        val state = factory.create(HomeSnapshot(current = TripFixtures.trip(TripStatus.AT_PICKUP), wait = wait), navi = null)
 
         state as HomeState.Waiting
         assertEquals(1_000_000L - 600_000L, state.waitStartedAt)
@@ -75,7 +99,7 @@ class HomeStateFactoryTest {
     fun `작업을 시작했으면 작업 중`() {
         val wait = TripFixtures.wait(workStartedAt = NOW.minusSeconds(60))
 
-        val state = factory.create(TripSnapshot(current = TripFixtures.trip(TripStatus.AT_PICKUP), wait = wait), navi = null)
+        val state = factory.create(HomeSnapshot(current = TripFixtures.trip(TripStatus.AT_PICKUP), wait = wait), navi = null)
 
         state as HomeState.Waiting
         assertEquals(1_000_000L - 60_000L, state.workStartedAt)
@@ -85,7 +109,7 @@ class HomeStateFactoryTest {
     fun `상차지에 있는데 대기 기록이 없으면 도착 버튼으로 다시 받게 한다`() {
         val other = TripFixtures.wait(stop = StopType.DROPOFF)
 
-        val state = factory.create(TripSnapshot(current = TripFixtures.trip(TripStatus.AT_PICKUP), wait = other), navi = null)
+        val state = factory.create(HomeSnapshot(current = TripFixtures.trip(TripStatus.AT_PICKUP), wait = other), navi = null)
 
         state as HomeState.Driving
         assertFalse(state.naviActive)

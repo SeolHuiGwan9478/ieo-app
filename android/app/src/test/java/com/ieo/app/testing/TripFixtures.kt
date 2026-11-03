@@ -1,5 +1,7 @@
 package com.ieo.app.testing
 
+import com.ieo.app.domain.order.Order
+import com.ieo.app.domain.order.OrderSite
 import com.ieo.app.domain.trip.StopType
 import com.ieo.app.domain.trip.Trip
 import com.ieo.app.domain.trip.TripStatus
@@ -29,6 +31,20 @@ object TripFixtures {
         plateNumber = "경기12가3456",
         pickup = PICKUP,
         dropoff = DROPOFF,
+    )
+
+    fun order() = Order(
+        id = 11,
+        brokerName = "△△운송",
+        pickup = OrderSite("칠곡", "경북 칠곡군", 35.99, 128.40),
+        dropoff = OrderSite("부산 강서", "부산 강서구", 35.08, 128.86),
+        // 한국 내일 06:00
+        pickupFrom = Instant.parse("2026-11-03T21:00:00Z"),
+        tonnageLabel = "5톤",
+        bodyTypeLabel = "윙바디",
+        fare = 380_000,
+        paymentTypeLabel = "인수증",
+        distanceMeters = null,
     )
 
     fun wait(

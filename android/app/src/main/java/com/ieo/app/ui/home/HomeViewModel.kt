@@ -7,8 +7,10 @@ import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import com.ieo.app.core.network.ApiResult
 import com.ieo.app.di.appContainer
+import com.ieo.app.domain.ledger.LedgerRepository
 import com.ieo.app.domain.navi.Destination
 import com.ieo.app.domain.navi.Navigator
+import com.ieo.app.domain.order.OrderRepository
 import com.ieo.app.domain.trip.StopType
 import com.ieo.app.domain.trip.Trip
 import com.ieo.app.domain.trip.TripRepository
@@ -70,14 +72,16 @@ interface HomeActions {
 class HomeViewModel(
     private val tripRepository: TripRepository,
     private val waitRepository: WaitRepository,
+    private val ledgerRepository: LedgerRepository,
+    private val orderRepository: OrderRepository,
     private val navigator: Navigator,
     private val stateFactory: HomeStateFactory = HomeStateFactory(),
 ) : ViewModel(), HomeActions {
 
-    private val snapshot = MutableStateFlow(TripSnapshot())
+    private val snapshot = MutableStateFlow(HomeSnapshot())
 
     val state: StateFlow<HomeState> = combine(snapshot, navigator.progress, stateFactory::create)
-        .stateIn(viewModelScope, SharingStarted.Eagerly, stateFactory.create(TripSnapshot(), null))
+        .stateIn(viewModelScope, SharingStarted.Eagerly, stateFactory.create(HomeSnapshot(), null))
 
     private val _status = MutableStateFlow(HomeStatus())
     val status: StateFlow<HomeStatus> = _status.asStateFlow()
@@ -141,11 +145,20 @@ class HomeViewModel(
 
     fun messageShown() = _status.update { it.copy(message = null) }
 
-    /** 내 배차 목록과 진행 중인 운행을 함께 받는다 */
+    /**
+     * 홈에 필요한 것을 한꺼번에 받는다: 내 배차, 진행 중인 운행, 오늘 요약, 미수금, 모집 중 오더.
+     * 하나가 실패해도 나머지는 보여 준다.
+     */
     private suspend fun load() {
         val upcoming = viewModelScope.async { tripRepository.myTrips() }
         val current = viewModelScope.async { tripRepository.currentTrip() }
+        val today = viewModelScope.async { ledgerRepository.today() }
+        val receivables = viewModelScope.async { ledgerRepository.receivables() }
+        val orders = viewModelScope.async { orderRepository.openOrders() }
         upcoming.await().orShow()?.let { trips -> snapshot.update { it.copy(upcoming = upcomingOf(trips)) } }
+        today.await().orShow()?.let { summary -> snapshot.update { it.copy(today = summary) } }
+        receivables.await().orShow()?.let { owed -> snapshot.update { it.copy(receivables = owed) } }
+        orders.await().orShow()?.let { list -> snapshot.update { it.copy(orders = list) } }
         val trip = current.await().orShow() ?: run {
             snapshot.update { it.copy(current = null, wait = null) }
             return
@@ -231,7 +244,13 @@ class HomeViewModel(
         val Factory: ViewModelProvider.Factory = viewModelFactory {
             initializer {
                 val container = appContainer()
-                HomeViewModel(container.tripRepository, container.waitRepository, container.navigator)
+                HomeViewModel(
+                    tripRepository = container.tripRepository,
+                    waitRepository = container.waitRepository,
+                    ledgerRepository = container.ledgerRepository,
+                    orderRepository = container.orderRepository,
+                    navigator = container.navigator,
+                )
             }
         }
     }

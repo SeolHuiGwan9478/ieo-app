@@ -1,9 +1,14 @@
 package com.ieo.app.testing
 
 import com.ieo.app.core.network.ApiResult
+import com.ieo.app.domain.ledger.DailySummary
+import com.ieo.app.domain.ledger.LedgerRepository
+import com.ieo.app.domain.ledger.Receivables
 import com.ieo.app.domain.navi.Destination
 import com.ieo.app.domain.navi.NaviProgress
 import com.ieo.app.domain.navi.Navigator
+import com.ieo.app.domain.order.Order
+import com.ieo.app.domain.order.OrderRepository
 import com.ieo.app.domain.trip.StopType
 import com.ieo.app.domain.trip.Trip
 import com.ieo.app.domain.trip.TripRepository
@@ -11,13 +16,14 @@ import com.ieo.app.domain.trip.TripStatus
 import com.ieo.app.domain.wait.WaitRecord
 import com.ieo.app.domain.wait.WaitRepository
 import com.ieo.app.domain.wait.WaitStatus
+import java.time.LocalDate
 import kotlinx.coroutines.flow.MutableStateFlow
 
 /**
- * 서버를 흉내 내는 운행·대기 저장소. 서버처럼 도착·출발에 따라 운행 상태를 바꾼다.
- * [trips]의 첫 운행을 진행 중인 운행으로 다룬다.
+ * 서버를 흉내 내는 저장소. 서버처럼 도착·출발에 따라 [trip]의 상태를 바꾼다.
+ * 장부와 오더는 고정된 값을 준다.
  */
-class FakeTripServer(var trip: Trip) : TripRepository, WaitRepository {
+class FakeTripServer(var trip: Trip) : TripRepository, WaitRepository, LedgerRepository, OrderRepository {
 
     val calls = mutableListOf<String>()
     private val records = mutableMapOf<StopType, WaitRecord>()
@@ -34,6 +40,12 @@ class FakeTripServer(var trip: Trip) : TripRepository, WaitRepository {
     }
 
     override suspend fun waits(tripId: Long) = ApiResult.Success(records.values.toList())
+
+    override suspend fun today() = ApiResult.Success(DailySummary(LocalDate.of(2026, 11, 3), tripCount = 1, netProfit = 320_000))
+
+    override suspend fun receivables() = ApiResult.Success(Receivables(emptyList()))
+
+    override suspend fun openOrders(): ApiResult<List<Order>> = ApiResult.Success(listOf(TripFixtures.order()))
 
     override suspend fun arrive(tripId: Long, stop: StopType): ApiResult<WaitRecord> {
         calls += "arrive $stop"

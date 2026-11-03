@@ -227,7 +227,19 @@ private fun MyTrips(trips: List<AssignedTrip>, onTripClick: (AssignedTrip) -> Un
 @Composable
 private fun NearbyOrders(state: HomeState.Idle, onOrderClick: (OrderCard) -> Unit) {
     WhiteSection {
-        SectionTitle(title = "근처 오더", count = state.orders.size, note = "${state.baseLocation} 기준")
+        SectionTitle(
+            title = if (state.baseLocation != null) "근처 오더" else "모집 중인 오더",
+            count = state.orders.size,
+            note = state.baseLocation?.let { "$it 기준" } ?: "내 차로 실을 수 있는 것만",
+        )
+        if (state.orders.isEmpty()) {
+            Text(
+                "지금 모집 중인 오더가 없어요",
+                fontSize = 20.sp,
+                color = TextSub,
+                modifier = Modifier.padding(horizontal = 12.dp, vertical = 16.dp),
+            )
+        }
         state.orders.forEach { order ->
             ListRow(
                 time = order.pickupTime,
@@ -235,7 +247,7 @@ private fun NearbyOrders(state: HomeState.Idle, onOrderClick: (OrderCard) -> Uni
                 title = "${order.pickup} → ${order.dropoff}",
                 tags = listOf(Keyword.vehicle(order.vehicle), Keyword.paymentDays(order.brokerPaymentDays)),
                 amount = formatWon(order.fare),
-                amountNote = "실수익 ${formatWon(order.netProfit)}",
+                amountNote = order.netProfit?.let { "실수익 ${formatWon(it)}" },
                 onClick = { onOrderClick(order) },
             )
         }

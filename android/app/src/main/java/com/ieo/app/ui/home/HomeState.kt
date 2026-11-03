@@ -13,7 +13,8 @@ sealed interface HomeState {
     data class Idle(
         val today: TodaySummary,
         val unpaid: UnpaidAlert?,
-        val baseLocation: String,
+        /** 근처 오더를 찾은 기준 위치 이름. 위치 없이 찾았으면 null ("모집 중인 오더") */
+        val baseLocation: String?,
         /** 내가 잡아 둔 배차. 눌러서 길 안내를 시작한다 */
         val myTrips: List<AssignedTrip>,
         val orders: List<OrderCard>,
@@ -88,7 +89,8 @@ data class OrderCard(
     val pickupTime: String,
     val vehicle: String,
     val fare: Long,
-    val netProfit: Long,
+    /** 공차 연료비를 뺀 실수익. 아직 계산하지 못하면 null */
+    val netProfit: Long?,
     /** 주선사 평균 지급 소요일. 데이터가 부족하면 null */
     val brokerPaymentDays: Int?,
 )
