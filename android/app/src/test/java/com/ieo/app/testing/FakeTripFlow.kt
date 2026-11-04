@@ -12,6 +12,7 @@ import com.ieo.app.domain.navi.NaviProgress
 import com.ieo.app.domain.navi.Navigator
 import com.ieo.app.domain.order.DispatchRequest
 import com.ieo.app.domain.order.Order
+import com.ieo.app.domain.vehicle.GeoPoint
 import com.ieo.app.domain.order.ReportType
 import com.ieo.app.domain.order.OrderRepository
 import com.ieo.app.domain.trip.NewTrip
@@ -80,7 +81,12 @@ class FakeTripServer(var trip: Trip) :
 
     override suspend fun addManual(entry: ManualEntry): ApiResult<LedgerEntry> = error("홈에서는 쓰지 않음")
 
-    override suspend fun openOrders(limit: Int): ApiResult<List<Order>> = ApiResult.Success(listOf(TripFixtures.order()))
+    val ordersNear = mutableListOf<GeoPoint?>()
+
+    override suspend fun openOrders(limit: Int, near: GeoPoint?): ApiResult<List<Order>> {
+        ordersNear += near
+        return ApiResult.Success(listOf(TripFixtures.order(distanceMeters = near?.let { 12_300L })))
+    }
 
     override suspend fun request(orderId: Long): ApiResult<DispatchRequest> = error("홈에서는 쓰지 않음")
 

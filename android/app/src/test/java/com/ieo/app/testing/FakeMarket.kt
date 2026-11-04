@@ -14,6 +14,7 @@ import com.ieo.app.domain.ledger.Receivables
 import com.ieo.app.domain.order.DispatchRequest
 import com.ieo.app.domain.order.DispatchRequestStatus
 import com.ieo.app.domain.order.Order
+import com.ieo.app.domain.vehicle.GeoPoint
 import com.ieo.app.domain.order.OrderRepository
 import com.ieo.app.domain.order.ReportType
 import java.time.LocalDate
@@ -24,7 +25,12 @@ class FakeOrderMarket(var orders: MutableList<Order>) : OrderRepository {
     val calls = mutableListOf<String>()
     var requestError: ApiError? = null
 
-    override suspend fun openOrders(limit: Int) = ApiResult.Success(orders.take(limit))
+    val searchedNear = mutableListOf<GeoPoint?>()
+
+    override suspend fun openOrders(limit: Int, near: GeoPoint?): ApiResult<List<Order>> {
+        searchedNear += near
+        return ApiResult.Success(orders.take(limit))
+    }
 
     override suspend fun request(orderId: Long): ApiResult<DispatchRequest> {
         calls += "request $orderId"

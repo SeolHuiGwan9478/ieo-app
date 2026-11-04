@@ -31,6 +31,12 @@ data class Keyword(val text: String, val color: TagColor) {
             },
         )
 
+        /** 지금 위치에서 상차지까지 직선거리. 1km보다 가까우면 "1km 안" */
+        fun distance(meters: Long) = Keyword(
+            if (meters < 1_000) "상차지 1km 안" else "상차지 ${(meters + 500) / 1_000}km",
+            IeoTag.Gray,
+        )
+
         /** 주선사 평균 지급 소요일. 15일 이하는 빠름, 20일 초과는 늦음, 그 사이와 이력 없음은 보통 */
         fun paymentDays(days: Int?) = when {
             days == null -> Keyword("지급 이력 없음", IeoTag.Gray)

@@ -2,7 +2,9 @@ package com.ieo.app.ui.orders
 
 import com.ieo.app.core.network.ApiError
 import com.ieo.app.domain.order.ReportType
+import com.ieo.app.domain.vehicle.GeoPoint
 import com.ieo.app.testing.FakeOrderMarket
+import com.ieo.app.testing.FakeSensors
 import com.ieo.app.testing.MainDispatcherRule
 import com.ieo.app.testing.TripFixtures
 import com.ieo.app.testing.TripFixtures.NOW
@@ -12,6 +14,7 @@ import java.time.ZoneOffset
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Rule
@@ -29,7 +32,29 @@ class OrdersViewModelTest {
             TripFixtures.order(id = 2),
         ),
     )
-    private val viewModel = OrdersViewModel(market, Clock.fixed(NOW, ZoneOffset.UTC), elapsedRealtime = { 1_000_000L })
+    private val sensors = FakeSensors()
+    private val viewModel = OrdersViewModel(market, sensors, Clock.fixed(NOW, ZoneOffset.UTC), elapsedRealtime = { 1_000_000L })
+
+    @Test
+    fun `차량 위치를 알면 그 위치로 근처 오더를 찾는다`() = runTest(main.dispatcher) {
+        val here = GeoPoint(36.9690, 126.8410)
+        sensors.parkAt(here)
+
+        viewModel.refresh()
+        advanceUntilIdle()
+
+        assertEquals(listOf<GeoPoint?>(here), market.searchedNear)
+        assertTrue(viewModel.state.value.nearby)
+    }
+
+    @Test
+    fun `위치를 모르면 모집 중 오더 전체에서 찾는다`() = runTest(main.dispatcher) {
+        viewModel.refresh()
+        advanceUntilIdle()
+
+        assertEquals(listOf<GeoPoint?>(null), market.searchedNear)
+        assertFalse(viewModel.state.value.nearby)
+    }
 
     @Test
     fun `날짜 칩으로 오늘·내일 오더를 거른다`() = runTest(main.dispatcher) {

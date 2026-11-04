@@ -136,7 +136,11 @@ private fun PendingStrip(pending: PendingRequest, onWithdraw: () -> Unit, onExpi
 @Composable
 private fun OrderList(state: OrdersUiState, onOrderClick: (Long) -> Unit) {
     WhiteSection {
-        SectionTitle(title = "모집 중인 오더", count = state.rows.size, note = "내 차로 실을 수 있는 것만")
+        SectionTitle(
+            title = if (state.nearby) "근처 오더" else "모집 중인 오더",
+            count = state.rows.size,
+            note = if (state.nearby) "지금 위치에서 50km 안, 내 차로 실을 수 있는 것만" else "내 차로 실을 수 있는 것만",
+        )
         if (state.rows.isEmpty()) {
             Text(
                 if (state.isLoading) "오더를 불러오는 중이에요" else "조건에 맞는 오더가 없어요",
@@ -150,7 +154,11 @@ private fun OrderList(state: OrdersUiState, onOrderClick: (Long) -> Unit) {
                 time = row.time,
                 day = row.day,
                 title = row.route,
-                tags = listOf(Keyword.vehicle(row.vehicle), Keyword.payment(row.paymentType)),
+                tags = listOfNotNull(
+                    Keyword.vehicle(row.vehicle),
+                    row.distanceMeters?.let(Keyword::distance),
+                    Keyword.payment(row.paymentType),
+                ),
                 subtitle = if (row.requested) "요청함" else row.brokerName,
                 subtitleColor = if (row.requested) Orange700 else TextSub,
                 amount = row.fare,

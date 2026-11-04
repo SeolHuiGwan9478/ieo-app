@@ -266,6 +266,21 @@ class HomeViewModelTest {
     }
 
     @Test
+    fun `위치를 받기 전에 홈을 열었으면 위치가 들어올 때 근처 오더로 다시 찾는다`() = homeTest { vm ->
+        assertEquals(listOf<GeoPoint?>(null), server.ordersNear)
+        assertTrue(!(vm.state.value as HomeState.Idle).nearby)
+
+        val here = GeoPoint(TripFixtures.PICKUP.latitude, TripFixtures.PICKUP.longitude)
+        sensors.parkAt(here)
+        runCurrent()
+
+        assertEquals(listOf(null, here), server.ordersNear)
+        val state = vm.state.value as HomeState.Idle
+        assertTrue(state.nearby)
+        assertEquals(12_300L, state.orders.single().distanceMeters)
+    }
+
+    @Test
     fun `운행 전 화면에 오늘 요약과 모집 중 오더를 서버에서 받아 보여 준다`() = homeTest { vm ->
         val state = vm.state.value as HomeState.Idle
 

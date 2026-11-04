@@ -11,6 +11,7 @@ import com.ieo.app.di.appContainer
 import com.ieo.app.domain.order.Order
 import com.ieo.app.domain.order.OrderRepository
 import com.ieo.app.domain.order.ReportType
+import com.ieo.app.domain.vehicle.VehicleSensors
 import com.ieo.app.ui.common.DayTimeFormatter
 import java.time.Clock
 import java.time.Duration
@@ -29,6 +30,8 @@ enum class OrderDayFilter(val label: String) {
 /** 오더 탭 화면 상태. 목록 한 줄과 상세는 [OrderUiMapper]가 만든다 */
 data class OrdersUiState(
     val filter: OrderDayFilter = OrderDayFilter.ALL,
+    /** 차량 위치로 근처 오더를 찾았다. 위치를 몰라 전체에서 찾았으면 false */
+    val nearby: Boolean = false,
     val rows: List<OrderRow> = emptyList(),
     /** 확정을 기다리는 내 요청. 여러 개면 만료가 가까운 것 */
     val pending: PendingRequest? = null,
@@ -56,9 +59,11 @@ interface OrdersActions {
 /**
  * 오더 탭 (DSP-010·020·042): 모집 중 오더를 보고, 배차를 요청하거나 철회하고, 신고한다.
  * 요청이 확정되면 서버가 운행을 만들고, 홈 "내 배차"에 나타난다.
+ * 차량 위치를 알면 상차지가 50km 안인 근처 오더만 보여 준다.
  */
 class OrdersViewModel(
     private val orderRepository: OrderRepository,
+    private val sensors: VehicleSensors,
     private val clock: Clock = Clock.system(DayTimeFormatter.KOREA),
     private val elapsedRealtime: () -> Long = SystemClock::elapsedRealtime,
 ) : ViewModel(), OrdersActions {
@@ -74,12 +79,8 @@ class OrdersViewModel(
     override fun refresh() {
         _state.update { it.copy(isLoading = true) }
         viewModelScope.launch {
-            when (val result = orderRepository.openOrders(limit = LIST_SIZE)) {
-                is ApiResult.Success -> orders = result.data
-                is ApiResult.Failure -> show(result.error.message)
-            }
+            reload()
             _state.update { it.copy(isLoading = false) }
-            publish()
         }
     }
 
@@ -130,7 +131,11 @@ class OrdersViewModel(
     }
 
     private suspend fun reload() {
-        orderRepository.openOrders(limit = LIST_SIZE).orShow()?.let { orders = it }
+        val near = sensors.location.value
+        orderRepository.openOrders(limit = LIST_SIZE, near = near).orShow()?.let { list ->
+            orders = list
+            _state.update { it.copy(nearby = near != null) }
+        }
         publish()
     }
 
@@ -184,7 +189,10 @@ class OrdersViewModel(
         const val REPORTED_MESSAGE = "신고를 접수했어요"
 
         val Factory: ViewModelProvider.Factory = viewModelFactory {
-            initializer { OrdersViewModel(appContainer().orderRepository) }
+            initializer {
+                val container = appContainer()
+                OrdersViewModel(container.orderRepository, container.vehicleSensors)
+            }
         }
     }
 }

@@ -42,7 +42,7 @@ class HomeStateFactoryTest {
 
         assertEquals(TodaySummary(tripCount = 2, netProfit = 610_000), state.today)
         assertEquals(UnpaidAlert("○○물류", 450_000, overdueDays = 3), state.unpaid)
-        assertNull(state.baseLocation)
+        assertFalse(state.nearby)
         assertEquals("칠곡 → 부산 강서", state.orders.single().let { "${it.pickup} → ${it.dropoff}" })
     }
 

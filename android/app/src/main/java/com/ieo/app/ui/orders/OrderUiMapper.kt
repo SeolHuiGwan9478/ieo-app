@@ -17,6 +17,8 @@ data class OrderRow(
     val fare: String,
     /** 내가 요청해 둔 오더 */
     val requested: Boolean,
+    /** 지금 위치에서 상차지까지 거리(m). 위치 없이 찾았으면 null */
+    val distanceMeters: Long? = null,
 )
 
 /** 아래에서 올라오는 상세 */
@@ -58,6 +60,7 @@ class OrderUiMapper(private val labels: DayTimeFormatter) {
         brokerName = order.brokerName,
         fare = formatWon(order.fare),
         requested = order.isRequestedByMe,
+        distanceMeters = order.distanceMeters,
     )
 
     fun detail(order: Order) = OrderDetail(

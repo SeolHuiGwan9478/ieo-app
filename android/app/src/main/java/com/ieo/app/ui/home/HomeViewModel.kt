@@ -42,6 +42,8 @@ import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.filter
+import kotlinx.coroutines.flow.filterNotNull
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
@@ -128,6 +130,7 @@ class HomeViewModel(
         arriveWhenStoppedAtStop()
         departWhenLeavingStop()
         keepNaviProgressFresh()
+        findNearbyOrdersOnceLocated()
     }
 
     override fun refresh() {
@@ -243,11 +246,12 @@ class HomeViewModel(
         val current = viewModelScope.async { tripRepository.currentTrip() }
         val today = viewModelScope.async { ledgerRepository.today() }
         val receivables = viewModelScope.async { ledgerRepository.receivables() }
-        val orders = viewModelScope.async { orderRepository.openOrders(limit = HOME_ORDER_COUNT) }
+        val near = sensors.location.value
+        val orders = viewModelScope.async { orderRepository.openOrders(limit = HOME_ORDER_COUNT, near = near) }
         upcoming.await().orShow()?.let { trips -> snapshot.update { it.copy(upcoming = upcomingOf(trips)) } }
         today.await().orShow()?.let { summary -> snapshot.update { it.copy(today = summary) } }
         receivables.await().orShow()?.let { owed -> snapshot.update { it.copy(receivables = owed) } }
-        orders.await().orShow()?.let { list -> snapshot.update { it.copy(orders = list) } }
+        orders.await().orShow()?.let { list -> snapshot.update { it.copy(orders = list, ordersNear = near) } }
         val trip = current.await().orShow() ?: run {
             snapshot.update { it.copy(current = null, wait = null, site = null) }
             return
@@ -359,6 +363,16 @@ class HomeViewModel(
     }
 
     private fun fenceOf(stop: TripStop) = GeoFence(GeoPoint(stop.latitude, stop.longitude), stop.geofenceRadiusMeters)
+
+    /** 위치를 받기 전에 오더를 찾았으면, 처음 위치가 들어올 때 근처 오더로 다시 찾는다 */
+    private fun findNearbyOrdersOnceLocated() {
+        viewModelScope.launch {
+            val near = sensors.location.filterNotNull().first()
+            if (snapshot.value.ordersNear != null) return@launch
+            orderRepository.openOrders(limit = HOME_ORDER_COUNT, near = near).orShow()
+                ?.let { list -> snapshot.update { it.copy(orders = list, ordersNear = near) } }
+        }
+    }
 
     /** 내비가 주행 정보를 띄엄띄엄 보내서, 안내 중에만 10초마다 남은 거리·시간을 다시 묻는다 */
     private fun keepNaviProgressFresh() {

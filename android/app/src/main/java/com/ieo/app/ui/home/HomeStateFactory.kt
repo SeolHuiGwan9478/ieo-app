@@ -8,6 +8,7 @@ import com.ieo.app.domain.order.Order
 import com.ieo.app.domain.site.SiteCard
 import com.ieo.app.domain.trip.StopType
 import com.ieo.app.domain.trip.Trip
+import com.ieo.app.domain.vehicle.GeoPoint
 import com.ieo.app.domain.wait.ArrivalCheck
 import com.ieo.app.domain.wait.DepartureCheck
 import com.ieo.app.domain.wait.WaitRecord
@@ -31,6 +32,8 @@ data class HomeSnapshot(
     val receivables: Receivables? = null,
     /** 모집 중 오더 */
     val orders: List<Order> = emptyList(),
+    /** [orders]를 찾은 차량 위치. 위치를 몰라 전체에서 찾았으면 null */
+    val ordersNear: GeoPoint? = null,
 )
 
 /**
@@ -68,8 +71,7 @@ class HomeStateFactory(
     private fun idle(snapshot: HomeSnapshot) = HomeState.Idle(
         today = snapshot.today?.let { TodaySummary(it.tripCount, it.netProfit) } ?: TodaySummary(tripCount = 0, netProfit = 0),
         unpaid = snapshot.receivables?.mostOverdue(labels.today())?.let { UnpaidAlert(it.brokerName, it.amount, it.overdueDays) },
-        // TODO: 차량 위치를 받으면 그 지역 이름으로 "근처 오더"를 보여 준다
-        baseLocation = null,
+        nearby = snapshot.ordersNear != null,
         myTrips = snapshot.upcoming.map(tripMapper::map),
         orders = snapshot.orders.map(orderMapper::map),
     )

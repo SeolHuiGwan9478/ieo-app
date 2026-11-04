@@ -22,7 +22,7 @@ object SampleHomeData {
     fun idle() = HomeState.Idle(
         today = TodaySummary(tripCount = 1, netProfit = 320_000),
         unpaid = UnpaidAlert(brokerName = "○○물류", amount = 450_000, overdueDays = 3),
-        baseLocation = "평택",
+        nearby = true,
         myTrips = myTrips,
         orders = listOf(
             OrderCard("o1", "평택 청북", "대구 북구", "오늘", "17:00", "5톤 카고", 470_000, 380_000, 12),

@@ -52,7 +52,12 @@ object TripFixtures {
         notes = listOf("정문 말고 후문으로", "점심시간 12~13시 상차 안 함", "경비실에 차번 말하기"),
     )
 
-    fun order(id: Long = 11, pickupFrom: Instant = Instant.parse("2026-11-03T21:00:00Z"), myRequest: DispatchRequest? = null) = Order(
+    fun order(
+        id: Long = 11,
+        pickupFrom: Instant = Instant.parse("2026-11-03T21:00:00Z"),
+        myRequest: DispatchRequest? = null,
+        distanceMeters: Long? = null,
+    ) = Order(
         id = id,
         brokerName = "△△운송",
         pickup = OrderSite("칠곡", "경북 칠곡군", 35.99, 128.40),
@@ -69,7 +74,7 @@ object TripFixtures {
         fare = 380_000,
         paymentTypeLabel = "인수증",
         expectedPaymentDays = 30,
-        distanceMeters = null,
+        distanceMeters = distanceMeters,
         myRequest = myRequest,
     )
 
