@@ -21,8 +21,11 @@ interface WaitRepository {
     /** "상차 시작" · "하차 시작" */
     suspend fun startWork(tripId: Long, stop: StopType): ApiResult<WaitRecord>
 
-    /** 떠남. 하차지에서 떠나면 운행이 끝난다 */
-    suspend fun depart(tripId: Long, stop: StopType): ApiResult<WaitRecord>
+    /**
+     * 떠남. 하차지에서 떠나면 운행이 끝난다.
+     * [at]: 자동 떠남이면 반경을 벗어나거나 달리기 시작한 때. 비우면 서버가 받은 때
+     */
+    suspend fun depart(tripId: Long, stop: StopType, at: Instant? = null): ApiResult<WaitRecord>
 
     /** 대기 증빙 링크. 주선사에게 바로 보내기는 알림(09)을 만든 뒤 붙인다 (WAIT-022) */
     suspend fun createProof(tripId: Long, stop: StopType): ApiResult<WaitProofLink>

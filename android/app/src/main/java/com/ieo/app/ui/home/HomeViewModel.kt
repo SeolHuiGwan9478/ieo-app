@@ -23,6 +23,8 @@ import com.ieo.app.domain.vehicle.GeoPoint
 import com.ieo.app.domain.vehicle.VehicleSensors
 import com.ieo.app.domain.wait.ArrivalCheck
 import com.ieo.app.domain.wait.ArrivalDetector
+import com.ieo.app.domain.wait.DepartureCheck
+import com.ieo.app.domain.wait.DepartureDetector
 import com.ieo.app.domain.wait.GeoFence
 import com.ieo.app.domain.wait.WaitProofLink
 import com.ieo.app.domain.wait.WaitRecord
@@ -89,6 +91,7 @@ interface HomeActions {
  *
  * 상하차지 도착은 셋 중 먼저 오는 것으로 처리한다: 상하차지 반경 안 3분 정차(WAIT-001),
  * 차량 내비의 "목적지 도착", "도착했어요" 버튼.
+ * 떠남은 반경을 벗어나거나 시속 20km 이상으로 1분 달린 때(WAIT-005), 또는 "출발"·"운행 완료" 버튼.
  */
 class HomeViewModel(
     private val tripRepository: TripRepository,
@@ -109,7 +112,11 @@ class HomeViewModel(
     private val arrivalCheck = MutableStateFlow<ArrivalCheck>(ArrivalCheck.NotYet)
     private val arrivalDetector = ArrivalDetector()
 
-    val state: StateFlow<HomeState> = combine(snapshot, navigator.progress, arrivalCheck, stateFactory::create)
+    /** 상하차지를 떠나는 동안 남은 시간을 화면에 보여 준다 */
+    private val departureCheck = MutableStateFlow<DepartureCheck>(DepartureCheck.Staying)
+    private val departureDetector = DepartureDetector()
+
+    val state: StateFlow<HomeState> = combine(snapshot, navigator.progress, arrivalCheck, departureCheck, stateFactory::create)
         .stateIn(viewModelScope, SharingStarted.Eagerly, stateFactory.create(HomeSnapshot(), null))
 
     private val _status = MutableStateFlow(HomeStatus())
@@ -119,6 +126,7 @@ class HomeViewModel(
         refresh()
         arriveWhenNaviArrives()
         arriveWhenStoppedAtStop()
+        departWhenLeavingStop()
         keepNaviProgressFresh()
     }
 
@@ -150,15 +158,22 @@ class HomeViewModel(
         snapshot.update { it.copy(wait = record) }
     }
 
-    override fun depart() = runAction {
+    override fun depart() = departAt(at = null)
+
+    /** [at]: 자동 떠남이면 반경을 벗어나거나 달리기 시작한 때. 버튼이면 null(서버가 받은 때) */
+    private fun departAt(at: Instant?) = runAction {
         val (trip, stop) = currentAtStop() ?: return@runAction
-        waitRepository.depart(trip.id, stop).orShow() ?: return@runAction
+        // 서버는 진입 ≤ 작업 시작 ≤ 떠남 순서만 받는다. 떠나기 시작한 뒤에 "상차 시작"을 눌렀으면 그때로 맞춘다
+        val record = snapshot.value.wait?.takeIf { it.stopType == stop }
+        val departedAt = at?.let { maxOf(it, record?.workStartedAt ?: record?.arrivedAt ?: it) }
+        waitRepository.depart(trip.id, stop, departedAt).orShow() ?: return@runAction
         when (stop) {
             StopType.PICKUP -> {
                 reloadCurrent(wait = null)
                 guideTo(trip.dropoff)
             }
             StopType.DROPOFF -> {
+                closeDeliveryProof()
                 snapshot.update { it.copy(current = null, wait = null, site = null) }
                 show(TRIP_COMPLETED_MESSAGE)
                 load()
@@ -291,7 +306,7 @@ class HomeViewModel(
         viewModelScope.launch {
             var fenceOf: Pair<Long, StopType>? = null
             while (true) {
-                delay(ARRIVAL_CHECK_MILLIS)
+                delay(SENSOR_CHECK_MILLIS)
                 val trip = snapshot.value.current?.takeIf { it.status.isDriving }
                 val stop = trip?.currentStop
                 if (trip == null || stop == null) {
@@ -303,9 +318,7 @@ class HomeViewModel(
                     fenceOf = trip.id to stop
                     arrivalDetector.reset()
                 }
-                val target = trip.stop(stop)
-                val fence = GeoFence(GeoPoint(target.latitude, target.longitude), target.geofenceRadiusMeters)
-                val check = arrivalDetector.check(clock.instant(), fence, sensors.location.value, sensors.motion.value)
+                val check = arrivalDetector.check(clock.instant(), fenceOf(trip.stop(stop)), sensors.location.value, sensors.motion.value)
                 arrivalCheck.value = check
                 if (check is ArrivalCheck.Arrived && !_status.value.isBusy) {
                     arrivalDetector.reset()
@@ -314,6 +327,38 @@ class HomeViewModel(
             }
         }
     }
+
+    /**
+     * 자동 떠남 (WAIT-005): 1초마다 지금 있는 상하차지를 떠났는지 본다.
+     * 떠났으면 반경을 벗어나거나 달리기 시작한 시각으로 알린다. 상차지면 하차지로 안내하고, 하차지면 운행이 끝난다.
+     */
+    private fun departWhenLeavingStop() {
+        viewModelScope.launch {
+            var stayingAt: Pair<Long, StopType>? = null
+            while (true) {
+                delay(SENSOR_CHECK_MILLIS)
+                val atStop = currentAtStop()?.takeIf { (_, stop) -> snapshot.value.wait?.stopType == stop }
+                if (atStop == null) {
+                    stayingAt = null
+                    departureCheck.value = DepartureCheck.Staying
+                    continue
+                }
+                val (trip, stop) = atStop
+                if (stayingAt != trip.id to stop) {
+                    stayingAt = trip.id to stop
+                    departureDetector.reset()
+                }
+                val check = departureDetector.check(clock.instant(), fenceOf(trip.stop(stop)), sensors.location.value, sensors.motion.value)
+                departureCheck.value = check
+                if (check is DepartureCheck.Departed && !_status.value.isBusy) {
+                    departureDetector.reset()
+                    departAt(check.at)
+                }
+            }
+        }
+    }
+
+    private fun fenceOf(stop: TripStop) = GeoFence(GeoPoint(stop.latitude, stop.longitude), stop.geofenceRadiusMeters)
 
     /** 내비가 주행 정보를 띄엄띄엄 보내서, 안내 중에만 10초마다 남은 거리·시간을 다시 묻는다 */
     private fun keepNaviProgressFresh() {
@@ -357,7 +402,7 @@ class HomeViewModel(
         const val DELIVERY_SIGNED_MESSAGE = "인수증 서명을 받았어요. 운행을 마쳤어요"
         private const val SIGNATURE_POLL_MILLIS = 3_000L
         private const val NAVI_REFRESH_MILLIS = 10_000L
-        private const val ARRIVAL_CHECK_MILLIS = 1_000L
+        private const val SENSOR_CHECK_MILLIS = 1_000L
 
         /** 홈에는 오더를 이만큼만. 나머지는 오더 탭에서 */
         private const val HOME_ORDER_COUNT = 5

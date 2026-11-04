@@ -33,6 +33,8 @@ sealed interface HomeState {
         val chargeableFrom: Long = waitStartedAt,
         /** 작업("상차 시작")을 누른 시각 (elapsedRealtime). 작업 전이면 null */
         val workStartedAt: Long? = null,
+        /** 상하차지를 떠나는 중이다. 이만큼 더 이어지면 자동으로 떠남 처리 (WAIT-005) */
+        val departingInSeconds: Long? = null,
     ) : HomeState {
         val isWorking: Boolean get() = workStartedAt != null
     }

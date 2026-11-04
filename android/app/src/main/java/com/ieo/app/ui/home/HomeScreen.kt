@@ -320,6 +320,15 @@ private fun WaitTimer(state: HomeState.Waiting, timerSeconds: Long, chargeableMi
             letterSpacing = (-3).sp,
         )
         WaitFeeLine(state.policy, chargeableMinutes, waitEnded = state.isWorking)
+        state.departingInSeconds?.let { seconds ->
+            Spacer(Modifier.height(12.dp))
+            Text(
+                "${if (state.isPickup) "상차지" else "하차지"}를 떠나고 있어요 · ${formatDuration(seconds).takeLast(5)} 뒤 ${if (state.isPickup) "출발" else "운행 완료"}로 기록해요",
+                fontSize = 22.sp,
+                fontWeight = FontWeight.Bold,
+                color = waiting,
+            )
+        }
         Spacer(Modifier.height(36.dp))
         Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             IeoTonalButton(text = "대기 증빙 보내기", onClick = actions.onSendWaitProof, modifier = Modifier.weight(1f))

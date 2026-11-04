@@ -212,6 +212,60 @@ class HomeViewModelTest {
     }
 
     @Test
+    fun `상차지 반경을 벗어나면 벗어난 시각으로 출발하고 하차지로 길 안내한다`() = homeTest(TripStatus.TO_PICKUP) { vm ->
+        vm.arrive()
+        sensors.parkAt(GeoPoint(TripFixtures.PICKUP.latitude + 0.001, TripFixtures.PICKUP.longitude))
+        advanceTimeBy(1_001)
+        runCurrent()
+
+        clock.instant = NOW.plusSeconds(10)
+        sensors.drive(GeoPoint(TripFixtures.PICKUP.latitude + 0.01, TripFixtures.PICKUP.longitude), speedKph = 15.0)
+        advanceTimeBy(1_000)
+        runCurrent()
+        assertEquals(30L, (vm.state.value as HomeState.Waiting).departingInSeconds)
+
+        clock.instant = NOW.plusSeconds(40)
+        advanceTimeBy(1_000)
+        runCurrent()
+
+        assertEquals(listOf("arrive PICKUP", "depart PICKUP"), server.calls)
+        assertEquals(listOf<Instant?>(NOW.plusSeconds(10)), server.departedAt)
+        assertEquals(listOf("대구 성서"), navigator.guidedTo)
+        assertTrue(vm.state.value is HomeState.Driving)
+    }
+
+    @Test
+    fun `하차지에서 시속 20km 이상으로 1분 달리면 운행을 마친다`() = homeTest(TripStatus.IN_TRANSIT) { vm ->
+        vm.arrive()
+        runCurrent()
+        sensors.drive(GeoPoint(TripFixtures.DROPOFF.latitude, TripFixtures.DROPOFF.longitude), speedKph = 30.0)
+        advanceTimeBy(1_000)
+        runCurrent()
+
+        clock.instant = NOW.plusSeconds(60)
+        advanceTimeBy(1_000)
+        runCurrent()
+
+        assertEquals(listOf("arrive DROPOFF", "depart DROPOFF"), server.calls)
+        assertEquals(listOf<Instant?>(NOW), server.departedAt)
+        assertTrue(vm.state.value is HomeState.Idle)
+    }
+
+    @Test
+    fun `반경 밖에서 도착을 눌렀으면 서 있는 동안 떠남으로 보지 않는다`() = homeTest(TripStatus.TO_PICKUP) { vm ->
+        sensors.parkAt(GeoPoint(TripFixtures.PICKUP.latitude + 0.05, TripFixtures.PICKUP.longitude))
+        vm.arrive()
+        runCurrent()
+
+        clock.instant = NOW.plusSeconds(600)
+        advanceTimeBy(5_000)
+        runCurrent()
+
+        assertEquals(listOf("arrive PICKUP"), server.calls)
+        assertNull((vm.state.value as HomeState.Waiting).departingInSeconds)
+    }
+
+    @Test
     fun `운행 전 화면에 오늘 요약과 모집 중 오더를 서버에서 받아 보여 준다`() = homeTest { vm ->
         val state = vm.state.value as HomeState.Idle
 

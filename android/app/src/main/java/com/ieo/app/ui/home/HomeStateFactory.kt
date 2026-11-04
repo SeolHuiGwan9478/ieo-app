@@ -9,6 +9,7 @@ import com.ieo.app.domain.site.SiteCard
 import com.ieo.app.domain.trip.StopType
 import com.ieo.app.domain.trip.Trip
 import com.ieo.app.domain.wait.ArrivalCheck
+import com.ieo.app.domain.wait.DepartureCheck
 import com.ieo.app.domain.wait.WaitRecord
 import com.ieo.app.ui.common.DayTimeFormatter
 import java.time.Clock
@@ -49,14 +50,19 @@ class HomeStateFactory(
     private val tripMapper = AssignedTripMapper(clock)
     private val orderMapper = OrderCardMapper(clock)
 
-    fun create(snapshot: HomeSnapshot, navi: NaviProgress?, arrival: ArrivalCheck = ArrivalCheck.NotYet): HomeState {
+    fun create(
+        snapshot: HomeSnapshot,
+        navi: NaviProgress?,
+        arrival: ArrivalCheck = ArrivalCheck.NotYet,
+        departure: DepartureCheck = DepartureCheck.Staying,
+    ): HomeState {
         val trip = snapshot.current ?: return idle(snapshot)
         val stop = trip.currentStop ?: return idle(snapshot)
         val wait = snapshot.wait?.takeIf { it.stopType == stop }
         // 상하차지에 있는데 대기 기록을 못 받았으면 주행 화면의 "도착했어요"로 다시 받게 한다 (도착은 여러 번 불러도 같다)
         if (!trip.status.isAtStop || wait == null) return driving(trip, stop, navi, arrival)
         val site = snapshot.site?.takeIf { it.id == trip.stop(stop).siteId }
-        return waiting(trip, stop, wait, site)
+        return waiting(trip, stop, wait, site, departure)
     }
 
     private fun idle(snapshot: HomeSnapshot) = HomeState.Idle(
@@ -86,7 +92,7 @@ class HomeStateFactory(
         )
     }
 
-    private fun waiting(trip: Trip, stop: StopType, wait: WaitRecord, site: SiteCard?) = HomeState.Waiting(
+    private fun waiting(trip: Trip, stop: StopType, wait: WaitRecord, site: SiteCard?, departure: DepartureCheck) = HomeState.Waiting(
         trip = tripMapper.map(trip).toSummary(),
         stopName = trip.stop(stop).name,
         isPickup = stop == StopType.PICKUP,
@@ -95,6 +101,7 @@ class HomeStateFactory(
         workStartedAt = wait.workStartedAt?.let(::toElapsed),
         policy = wait.policy,
         site = site?.let(::siteInfo),
+        departingInSeconds = (departure as? DepartureCheck.Leaving)?.remaining?.seconds,
     )
 
     private fun siteInfo(card: SiteCard) = SiteInfo(

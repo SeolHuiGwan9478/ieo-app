@@ -137,10 +137,13 @@ class FakeTripServer(var trip: Trip) :
         return ApiResult.Success(record)
     }
 
-    override suspend fun depart(tripId: Long, stop: StopType): ApiResult<WaitRecord> {
+    val departedAt = mutableListOf<Instant?>()
+
+    override suspend fun depart(tripId: Long, stop: StopType, at: Instant?): ApiResult<WaitRecord> {
         calls += "depart $stop"
+        departedAt += at
         trip = trip.copy(status = if (stop == StopType.PICKUP) TripStatus.IN_TRANSIT else TripStatus.COMPLETED)
-        val record = records.getValue(stop).copy(status = WaitStatus.DONE, departedAt = TripFixtures.NOW)
+        val record = records.getValue(stop).copy(status = WaitStatus.DONE, departedAt = at ?: TripFixtures.NOW)
         records[stop] = record
         return ApiResult.Success(record)
     }
