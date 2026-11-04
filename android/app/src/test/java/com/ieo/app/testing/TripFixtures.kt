@@ -5,6 +5,8 @@ import com.ieo.app.domain.ledger.PaymentType
 import com.ieo.app.domain.order.DispatchRequest
 import com.ieo.app.domain.order.Order
 import com.ieo.app.domain.order.OrderSite
+import com.ieo.app.domain.site.HeightWarning
+import com.ieo.app.domain.site.SiteCard
 import com.ieo.app.domain.trip.StopType
 import com.ieo.app.domain.trip.Trip
 import com.ieo.app.domain.trip.TripStatus
@@ -21,8 +23,8 @@ object TripFixtures {
     /** 테스트의 "지금" (한국 15:00) */
     val NOW: Instant = Instant.parse("2026-11-03T06:00:00Z")
 
-    val PICKUP = TripStop("평택 포승", "경기 평택시 포승읍", 36.9690, 126.8410, 200, NOW)
-    val DROPOFF = TripStop("대구 성서", "대구 달서구", 35.8420, 128.4960, 200, null)
+    val PICKUP = TripStop("평택 포승", "경기 평택시 포승읍", 36.9690, 126.8410, 200, NOW, siteId = 1)
+    val DROPOFF = TripStop("대구 성서", "대구 달서구", 35.8420, 128.4960, 200, null, siteId = 2)
 
     val POLICY = WaitPolicy(freeMinutes = 120, unitMinutes = 30, unitAmount = 10_000, maxAmount = 50_000)
 
@@ -35,6 +37,19 @@ object TripFixtures {
         plateNumber = "경기12가3456",
         pickup = PICKUP,
         dropoff = DROPOFF,
+    )
+
+    /** 높이 제한 3.5m, 지게차 있음, 메모 3개 */
+    fun site(id: Long) = SiteCard(
+        id = id,
+        name = if (id == PICKUP.siteId) PICKUP.name else DROPOFF.name,
+        heightLimitMeters = 3.5,
+        heightWarning = HeightWarning.CAUTION,
+        forklift = true,
+        parking = null,
+        averageWaitMinutes = 80,
+        averageWorkMinutes = 40,
+        notes = listOf("정문 말고 후문으로", "점심시간 12~13시 상차 안 함", "경비실에 차번 말하기"),
     )
 
     fun order(id: Long = 11, pickupFrom: Instant = Instant.parse("2026-11-03T21:00:00Z"), myRequest: DispatchRequest? = null) = Order(

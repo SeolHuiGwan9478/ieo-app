@@ -5,6 +5,7 @@ import com.ieo.app.domain.ledger.DailySummary
 import com.ieo.app.domain.ledger.Receivables
 import com.ieo.app.domain.navi.NaviProgress
 import com.ieo.app.domain.order.Order
+import com.ieo.app.domain.site.SiteCard
 import com.ieo.app.domain.trip.StopType
 import com.ieo.app.domain.trip.Trip
 import com.ieo.app.domain.wait.WaitRecord
@@ -21,6 +22,8 @@ data class HomeSnapshot(
     val current: Trip? = null,
     /** 진행 중인 운행이 상하차지에 있을 때 그곳의 대기 기록 */
     val wait: WaitRecord? = null,
+    /** 진행 중인 운행이 상하차지에 있을 때 그곳의 정보 카드. 못 받았으면 null */
+    val site: SiteCard? = null,
     /** 오늘 운행 수와 순수익 */
     val today: DailySummary? = null,
     val receivables: Receivables? = null,
@@ -50,7 +53,9 @@ class HomeStateFactory(
         val stop = trip.currentStop ?: return idle(snapshot)
         val wait = snapshot.wait?.takeIf { it.stopType == stop }
         // 상하차지에 있는데 대기 기록을 못 받았으면 주행 화면의 "도착했어요"로 다시 받게 한다 (도착은 여러 번 불러도 같다)
-        return if (trip.status.isAtStop && wait != null) waiting(trip, stop, wait) else driving(trip, stop, navi)
+        if (!trip.status.isAtStop || wait == null) return driving(trip, stop, navi)
+        val site = snapshot.site?.takeIf { it.id == trip.stop(stop).siteId }
+        return waiting(trip, stop, wait, site)
     }
 
     private fun idle(snapshot: HomeSnapshot) = HomeState.Idle(
@@ -79,7 +84,7 @@ class HomeStateFactory(
         )
     }
 
-    private fun waiting(trip: Trip, stop: StopType, wait: WaitRecord) = HomeState.Waiting(
+    private fun waiting(trip: Trip, stop: StopType, wait: WaitRecord, site: SiteCard?) = HomeState.Waiting(
         trip = tripMapper.map(trip).toSummary(),
         stopName = trip.stop(stop).name,
         isPickup = stop == StopType.PICKUP,
@@ -87,10 +92,24 @@ class HomeStateFactory(
         chargeableFrom = toElapsed(wait.chargeableFrom),
         workStartedAt = wait.workStartedAt?.let(::toElapsed),
         policy = wait.policy,
-        // TODO: 상하차지 카드 API(/api/sites/{id})를 붙인다
-        site = null,
+        site = site?.let(::siteInfo),
+    )
+
+    private fun siteInfo(card: SiteCard) = SiteInfo(
+        heightLimitMeters = card.heightLimitMeters,
+        heightWarning = card.heightWarning,
+        forklift = card.forklift,
+        parking = card.parking,
+        averageWaitMinutes = card.averageWaitMinutes,
+        averageWorkMinutes = card.averageWorkMinutes,
+        notes = card.notes.take(SITE_NOTE_COUNT),
     )
 
     /** 서버 시각을 기기 시계 기준으로. 기기 시계를 바꿔도 타이머가 맞는다 */
     private fun toElapsed(at: Instant): Long = elapsedRealtime() - Duration.between(at, clock.instant()).toMillis()
+
+    private companion object {
+        /** 정차 화면에 보여 줄 메모 수 */
+        const val SITE_NOTE_COUNT = 2
+    }
 }

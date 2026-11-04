@@ -51,6 +51,7 @@ import androidx.compose.ui.unit.sp
 import com.ieo.app.ui.common.formatDuration
 import com.ieo.app.ui.common.formatMinutesKorean
 import com.ieo.app.ui.common.formatWon
+import com.ieo.app.domain.site.HeightWarning
 import com.ieo.app.domain.wait.WaitPolicy
 import com.ieo.app.ui.component.Chevron
 import com.ieo.app.ui.component.DetailLine
@@ -98,6 +99,7 @@ fun HomeScreen(
     onStartWork: () -> Unit = {},
     onDepart: () -> Unit = {},
     onSendWaitProof: () -> Unit = {},
+    onRequestDeliveryProof: () -> Unit = {},
     onArrive: () -> Unit = {},
     onResumeGuidance: () -> Unit = {},
 ) {
@@ -106,7 +108,7 @@ fun HomeScreen(
         val compact = maxWidth < WideLayoutMinWidth
         when (state) {
             is HomeState.Idle -> IdleHome(state, compact, onTripClick, onOrderClick, onUnpaidClick, onRegisterTrip)
-            is HomeState.Waiting -> WaitingHome(state, compact, WaitActions(onStartWork, onDepart, onSendWaitProof))
+            is HomeState.Waiting -> WaitingHome(state, compact, WaitActions(onStartWork, onDepart, onSendWaitProof, onRequestDeliveryProof))
             is HomeState.Driving -> DrivingHome(state, onArrive, onResumeGuidance)
         }
     }
@@ -261,7 +263,12 @@ private fun NearbyOrders(state: HomeState.Idle, onOrderClick: (OrderCard) -> Uni
 // ───────────────────────── 대기 중 ─────────────────────────
 
 /** 대기 화면의 버튼들 */
-private class WaitActions(val onStartWork: () -> Unit, val onDepart: () -> Unit, val onSendWaitProof: () -> Unit)
+private class WaitActions(
+    val onStartWork: () -> Unit,
+    val onDepart: () -> Unit,
+    val onSendWaitProof: () -> Unit,
+    val onRequestDeliveryProof: () -> Unit,
+)
 
 @Composable
 private fun WaitingHome(state: HomeState.Waiting, compact: Boolean, actions: WaitActions) {
@@ -316,6 +323,10 @@ private fun WaitTimer(state: HomeState.Waiting, timerSeconds: Long, chargeableMi
         Spacer(Modifier.height(36.dp))
         Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             IeoTonalButton(text = "대기 증빙 보내기", onClick = actions.onSendWaitProof, modifier = Modifier.weight(1f))
+            // 인수증은 하차지에서만 받는다 (POD-003)
+            if (!state.isPickup) {
+                IeoTonalButton(text = "인수증 받기", onClick = actions.onRequestDeliveryProof, modifier = Modifier.weight(1f))
+            }
             when {
                 !state.isWorking -> IeoPrimaryButton(text = "$work 시작", onClick = actions.onStartWork, modifier = Modifier.weight(1f))
                 // 하차지를 떠나면 운행이 끝난다
@@ -349,15 +360,33 @@ private fun WaitDetails(state: HomeState.Waiting) {
             DetailLine("운임", "${formatWon(state.trip.fare)} (${state.trip.paymentType})")
             DetailLine("주선사", state.trip.brokerName)
         }
-        state.site?.let { site ->
-            WhiteSection {
-                SectionTitle(title = if (state.isPickup) "상차지 정보" else "하차지 정보")
-                site.heightLimitMeters?.let { DetailLine("높이 제한", "${it}m") }
-                site.forklift?.let { DetailLine("지게차", if (it) "있음" else "없음") }
-                site.averageWaitMinutes?.let { DetailLine("평균 대기", formatMinutesKorean(it.toLong())) }
-            }
+        state.site?.let { site -> SiteSection(site, isPickup = state.isPickup) }
+    }
+}
+
+/** 다른 차주들이 남긴 상하차지 정보. 아무도 남기지 않았으면 그렇게 알려 준다 (SITE-007) */
+@Composable
+private fun SiteSection(site: SiteInfo, isPickup: Boolean) {
+    WhiteSection {
+        SectionTitle(title = if (isPickup) "상차지 정보" else "하차지 정보")
+        site.heightLimitMeters?.let { DetailLine("높이 제한", "${it}m${heightNote(site.heightWarning)}") }
+        site.forklift?.let { DetailLine("지게차", if (it) "있음" else "없음") }
+        site.parking?.let { DetailLine("주차", if (it) "가능" else "어려움") }
+        site.averageWaitMinutes?.let { DetailLine("평균 대기", formatMinutesKorean(it.toLong())) }
+        site.averageWorkMinutes?.let { DetailLine("평균 작업", formatMinutesKorean(it.toLong())) }
+        site.notes.forEach { note ->
+            Text("“$note”", fontSize = 20.sp, color = TextSub, maxLines = 2, overflow = TextOverflow.Ellipsis, modifier = Modifier.padding(top = 8.dp))
+        }
+        if (site.isEmpty) {
+            Text("아직 남겨진 정보가 없어요", fontSize = 20.sp, color = TextSub)
         }
     }
+}
+
+private fun heightNote(warning: HeightWarning) = when (warning) {
+    HeightWarning.BLOCKED -> " · 내 차는 못 들어가요"
+    HeightWarning.CAUTION -> " · 여유 0.2m 미만"
+    HeightWarning.OK, HeightWarning.UNKNOWN -> ""
 }
 
 // ───────────────────────── 주행 중 ─────────────────────────

@@ -81,6 +81,19 @@ class HomeStateFactoryTest {
     }
 
     @Test
+    fun `다른 상하차지의 정보 카드는 대기 화면에 붙이지 않는다`() {
+        val snapshot = HomeSnapshot(
+            current = TripFixtures.trip(TripStatus.AT_PICKUP),
+            wait = TripFixtures.wait(StopType.PICKUP),
+            site = TripFixtures.site(TripFixtures.DROPOFF.siteId),
+        )
+
+        val state = factory.create(snapshot, navi = null) as HomeState.Waiting
+
+        assertNull(state.site)
+    }
+
+    @Test
     fun `내비가 길 안내 요청을 받지 못했으면 버튼을 보여 준다`() {
         val navi = NaviProgress("평택 포승", failed = true)
 

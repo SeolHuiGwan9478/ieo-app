@@ -33,4 +33,11 @@ interface WaitApi {
         @Path("stopType") stopType: String,
         @Body body: WaitTimeRequest = WaitTimeRequest(),
     ): Response<WaitRecordResponse>
+
+    /** 이미 만든 링크가 있으면 같은 링크 */
+    @POST("api/trips/{tripId}/stops/{stopType}/wait/proof")
+    suspend fun createProof(
+        @Path("tripId") tripId: Long,
+        @Path("stopType") stopType: String,
+    ): Response<WaitProofLinkResponse>
 }

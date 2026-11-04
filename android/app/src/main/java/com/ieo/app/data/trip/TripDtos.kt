@@ -39,6 +39,7 @@ data class TripStopResponse(
     val lng: Double,
     val geofenceRadiusM: Int,
     val plannedAt: String? = null,
+    val siteId: Long,
 ) {
     fun toDomain() = TripStop(
         name = name,
@@ -47,5 +48,6 @@ data class TripStopResponse(
         longitude = lng,
         geofenceRadiusMeters = geofenceRadiusM,
         plannedAt = plannedAt?.let(Instant::parse),
+        siteId = siteId,
     )
 }

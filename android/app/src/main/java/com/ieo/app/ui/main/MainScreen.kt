@@ -1,6 +1,8 @@
 package com.ieo.app.ui.main
 
+import com.ieo.app.ui.home.DeliveryProofSheet
 import com.ieo.app.ui.home.StartGuidanceSheet
+import com.ieo.app.ui.home.WaitProofSheet
 import androidx.compose.ui.draw.clip
 import com.ieo.app.ui.theme.White
 import com.ieo.app.ui.theme.TextSub
@@ -99,7 +101,8 @@ fun MainScreen(homeViewModel: HomeViewModel = viewModel(factory = HomeViewModel.
                         onTripClick = { confirmingTrip = it },
                         onStartWork = homeViewModel::startWork,
                         onDepart = homeViewModel::depart,
-                        onSendWaitProof = { Toast.makeText(context, "대기 증빙 보내기는 준비 중입니다", Toast.LENGTH_SHORT).show() },
+                        onSendWaitProof = homeViewModel::sendWaitProof,
+                        onRequestDeliveryProof = homeViewModel::requestDeliveryProof,
                         onArrive = homeViewModel::arrive,
                         onResumeGuidance = homeViewModel::resumeGuidance,
                     )
@@ -125,6 +128,8 @@ fun MainScreen(homeViewModel: HomeViewModel = viewModel(factory = HomeViewModel.
             },
             onDismiss = { confirmingTrip = null },
         )
+        WaitProofSheet(link = status.proof, onDismiss = homeViewModel::proofShown)
+        DeliveryProofSheet(proof = status.deliveryProof, onDismiss = homeViewModel::closeDeliveryProof)
     }
 }
 

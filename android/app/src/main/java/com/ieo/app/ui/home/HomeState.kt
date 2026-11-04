@@ -1,5 +1,6 @@
 package com.ieo.app.ui.home
 
+import com.ieo.app.domain.site.HeightWarning
 import com.ieo.app.domain.wait.WaitPolicy
 
 /**
@@ -105,7 +106,20 @@ data class TripSummary(
 
 data class Recommendation(val route: String, val pickupTime: String, val netProfit: Long)
 
-data class SiteInfo(val heightLimitMeters: Double?, val forklift: Boolean?, val averageWaitMinutes: Int?)
+/** 상하차지 정보 카드. 아무도 남기지 않은 항목은 null */
+data class SiteInfo(
+    val heightLimitMeters: Double?,
+    val forklift: Boolean?,
+    val averageWaitMinutes: Int?,
+    val heightWarning: HeightWarning = HeightWarning.UNKNOWN,
+    val parking: Boolean? = null,
+    val averageWorkMinutes: Int? = null,
+    val notes: List<String> = emptyList(),
+) {
+    val isEmpty: Boolean
+        get() = heightLimitMeters == null && forklift == null && parking == null &&
+            averageWaitMinutes == null && averageWorkMinutes == null && notes.isEmpty()
+}
 
 fun AssignedTrip.toSummary() = TripSummary(
     route = "${pickup.name} → ${dropoff.name}",

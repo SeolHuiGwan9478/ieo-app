@@ -64,7 +64,7 @@ class AssignedTripMapperTest {
         paymentTypeLabel = "인수증",
         brokerName = brokerName,
         plateNumber = "경기12가3456",
-        pickup = TripStop("평택 포승", "경기 평택시 포승읍", 36.9690, 126.8410, 200, pickupAt),
-        dropoff = TripStop("대구 성서", "대구 달서구", 35.8420, 128.4960, 200, null),
+        pickup = TripStop("평택 포승", "경기 평택시 포승읍", 36.9690, 126.8410, 200, pickupAt, siteId = 1),
+        dropoff = TripStop("대구 성서", "대구 달서구", 35.8420, 128.4960, 200, null, siteId = 2),
     )
 }

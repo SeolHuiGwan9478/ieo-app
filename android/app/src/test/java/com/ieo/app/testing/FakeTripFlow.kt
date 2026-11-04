@@ -19,6 +19,12 @@ import com.ieo.app.domain.trip.Trip
 import com.ieo.app.domain.trip.TripRepository
 import com.ieo.app.domain.trip.TripStatus
 import com.ieo.app.domain.wait.WaitRecord
+import com.ieo.app.domain.delivery.DeliveryProof
+import com.ieo.app.domain.delivery.DeliveryProofRepository
+import com.ieo.app.domain.delivery.DeliveryProofStatus
+import com.ieo.app.domain.site.SiteCard
+import com.ieo.app.domain.site.SiteRepository
+import com.ieo.app.domain.wait.WaitProofLink
 import com.ieo.app.domain.wait.WaitRepository
 import com.ieo.app.domain.wait.WaitStatus
 import java.time.LocalDate
@@ -28,9 +34,13 @@ import kotlinx.coroutines.flow.MutableStateFlow
  * 서버를 흉내 내는 저장소. 서버처럼 도착·출발에 따라 [trip]의 상태를 바꾼다.
  * 장부와 오더는 고정된 값을 준다.
  */
-class FakeTripServer(var trip: Trip) : TripRepository, WaitRepository, LedgerRepository, OrderRepository {
+class FakeTripServer(var trip: Trip) :
+    TripRepository, WaitRepository, LedgerRepository, OrderRepository, SiteRepository, DeliveryProofRepository {
 
     val calls = mutableListOf<String>()
+
+    /** 정보 카드를 받은 상하차지. 운행 진행 단계([calls])와 따로 센다 */
+    val siteRequests = mutableListOf<Long>()
     private val records = mutableMapOf<StopType, WaitRecord>()
 
     override suspend fun myTrips() = ApiResult.Success(listOf(trip))
@@ -72,6 +82,38 @@ class FakeTripServer(var trip: Trip) : TripRepository, WaitRepository, LedgerRep
         calls += "arrive $stop"
         trip = trip.copy(status = if (stop == StopType.PICKUP) TripStatus.AT_PICKUP else TripStatus.AT_DROPOFF)
         return ApiResult.Success(records.getOrPut(stop) { TripFixtures.wait(stop) })
+    }
+
+    private var deliveryStatus = DeliveryProofStatus.PENDING
+
+    /** 수하인이 서명한다. 서버처럼 운행을 끝낸다 (POD-008) */
+    fun signDelivery() {
+        deliveryStatus = DeliveryProofStatus.SIGNED
+        trip = trip.copy(status = TripStatus.COMPLETED)
+    }
+
+    private fun deliveryProof() = DeliveryProof(
+        url = "http://localhost/api/public/delivery-proofs/token",
+        status = deliveryStatus,
+        signerName = if (deliveryStatus == DeliveryProofStatus.SIGNED) "김수하" else null,
+        signedAt = if (deliveryStatus == DeliveryProofStatus.SIGNED) TripFixtures.NOW else null,
+    )
+
+    override suspend fun issue(tripId: Long): ApiResult<DeliveryProof> {
+        calls += "delivery proof"
+        return ApiResult.Success(deliveryProof())
+    }
+
+    override suspend fun get(tripId: Long): ApiResult<DeliveryProof> = ApiResult.Success(deliveryProof())
+
+    override suspend fun card(siteId: Long): ApiResult<SiteCard> {
+        siteRequests += siteId
+        return ApiResult.Success(TripFixtures.site(siteId))
+    }
+
+    override suspend fun createProof(tripId: Long, stop: StopType): ApiResult<WaitProofLink> {
+        calls += "proof $stop"
+        return ApiResult.Success(WaitProofLink("http://localhost/api/public/wait-proofs/token-$stop", TripFixtures.NOW.plusSeconds(86_400)))
     }
 
     override suspend fun startWork(tripId: Long, stop: StopType): ApiResult<WaitRecord> {

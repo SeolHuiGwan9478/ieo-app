@@ -2,6 +2,7 @@ package com.ieo.app.data.wait
 
 import com.ieo.app.domain.trip.StopType
 import com.ieo.app.domain.wait.WaitPolicy
+import com.ieo.app.domain.wait.WaitProofLink
 import com.ieo.app.domain.wait.WaitRecord
 import com.ieo.app.domain.wait.WaitStatus
 import java.time.Instant
@@ -12,6 +13,15 @@ import kotlinx.serialization.Serializable
 /** 시각을 비우면 서버가 받은 시각으로 남긴다 */
 @Serializable
 data class WaitTimeRequest(val at: String? = null)
+
+/** path는 서버 주소 뒤에 붙이는 공개 링크 (/api/public/wait-proofs/{token}) */
+@Serializable
+data class WaitProofLinkResponse(val path: String, val expiresAt: String) {
+    fun toDomain(baseUrl: String) = WaitProofLink(
+        url = baseUrl.trimEnd('/') + path,
+        expiresAt = Instant.parse(expiresAt),
+    )
+}
 
 @Serializable
 data class WaitRecordResponse(

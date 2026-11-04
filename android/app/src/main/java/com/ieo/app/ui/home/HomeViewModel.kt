@@ -7,18 +7,23 @@ import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import com.ieo.app.core.network.ApiResult
 import com.ieo.app.di.appContainer
+import com.ieo.app.domain.delivery.DeliveryProof
+import com.ieo.app.domain.delivery.DeliveryProofRepository
 import com.ieo.app.domain.ledger.LedgerRepository
 import com.ieo.app.domain.navi.Destination
 import com.ieo.app.domain.navi.Navigator
 import com.ieo.app.domain.order.OrderRepository
+import com.ieo.app.domain.site.SiteRepository
 import com.ieo.app.domain.trip.StopType
 import com.ieo.app.domain.trip.Trip
 import com.ieo.app.domain.trip.TripRepository
 import com.ieo.app.domain.trip.TripStatus
 import com.ieo.app.domain.trip.TripStop
+import com.ieo.app.domain.wait.WaitProofLink
 import com.ieo.app.domain.wait.WaitRecord
 import com.ieo.app.domain.wait.WaitRepository
 import java.time.Instant
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -40,6 +45,10 @@ data class HomeStatus(
     val isBusy: Boolean = false,
     /** 한 번 보여 주고 지운다 ([HomeViewModel.messageShown]) */
     val message: String? = null,
+    /** 대기 증빙 링크 창. 닫으면 null ([HomeViewModel.proofShown]) */
+    val proof: WaitProofLink? = null,
+    /** 인수증 QR 창. 닫으면 null ([HomeViewModel.closeDeliveryProof]) */
+    val deliveryProof: DeliveryProof? = null,
 )
 
 /** 홈 화면이 ViewModel에 보내는 동작 */
@@ -59,6 +68,12 @@ interface HomeActions {
     /** 내비 안내가 꺼졌을 때 다시 켜기 */
     fun resumeGuidance()
 
+    /** 지금 상하차지의 대기 증빙 링크를 만들어 보여 준다 */
+    fun sendWaitProof()
+
+    /** 하차지에서 "인수증 받기": QR을 보여 주고 수하인 서명을 기다린다 (POD-003) */
+    fun requestDeliveryProof()
+
     fun refresh()
 }
 
@@ -74,6 +89,8 @@ class HomeViewModel(
     private val waitRepository: WaitRepository,
     private val ledgerRepository: LedgerRepository,
     private val orderRepository: OrderRepository,
+    private val siteRepository: SiteRepository,
+    private val deliveryProofRepository: DeliveryProofRepository,
     private val navigator: Navigator,
     private val stateFactory: HomeStateFactory = HomeStateFactory(),
 ) : ViewModel(), HomeActions {
@@ -126,7 +143,7 @@ class HomeViewModel(
                 guideTo(trip.dropoff)
             }
             StopType.DROPOFF -> {
-                snapshot.update { it.copy(current = null, wait = null) }
+                snapshot.update { it.copy(current = null, wait = null, site = null) }
                 show(TRIP_COMPLETED_MESSAGE)
                 load()
             }
@@ -138,7 +155,53 @@ class HomeViewModel(
         trip.currentStop?.let { guideTo(trip.stop(it)) }
     }
 
+    override fun sendWaitProof() = runAction {
+        val (trip, stop) = currentAtStop() ?: return@runAction
+        val link = waitRepository.createProof(trip.id, stop).orShow() ?: return@runAction
+        _status.update { it.copy(proof = link) }
+    }
+
+    private var signatureWatch: Job? = null
+
+    override fun requestDeliveryProof() = runAction {
+        val (trip, stop) = currentAtStop() ?: return@runAction
+        if (stop != StopType.DROPOFF) return@runAction
+        val proof = deliveryProofRepository.issue(trip.id).orShow() ?: return@runAction
+        _status.update { it.copy(deliveryProof = proof) }
+        if (proof.isConfirmed) onDeliveryConfirmed() else watchSignature(trip.id)
+    }
+
+    /** 창을 닫으면 서명 확인도 멈춘다. 다시 누르면 같은 링크로 이어서 기다린다 */
+    fun closeDeliveryProof() {
+        signatureWatch?.cancel()
+        _status.update { it.copy(deliveryProof = null) }
+    }
+
+    /** 수하인 서명을 몇 초마다 확인한다. 통신이 잠깐 끊겨도 계속 기다린다 */
+    private fun watchSignature(tripId: Long) {
+        signatureWatch?.cancel()
+        signatureWatch = viewModelScope.launch {
+            while (true) {
+                delay(SIGNATURE_POLL_MILLIS)
+                val proof = (deliveryProofRepository.get(tripId) as? ApiResult.Success)?.data ?: continue
+                _status.update { it.copy(deliveryProof = proof) }
+                if (proof.isConfirmed) {
+                    onDeliveryConfirmed()
+                    return@launch
+                }
+            }
+        }
+    }
+
+    /** 서명하면 서버가 운행을 끝낸다 (POD-008). 창은 그대로 두고 뒤의 홈을 새로 받는다 */
+    private suspend fun onDeliveryConfirmed() {
+        show(DELIVERY_SIGNED_MESSAGE)
+        load()
+    }
+
     fun messageShown() = _status.update { it.copy(message = null) }
+
+    fun proofShown() = _status.update { it.copy(proof = null) }
 
     /**
      * 홈에 필요한 것을 한꺼번에 받는다: 내 배차, 진행 중인 운행, 오늘 요약, 미수금, 모집 중 오더.
@@ -155,16 +218,30 @@ class HomeViewModel(
         receivables.await().orShow()?.let { owed -> snapshot.update { it.copy(receivables = owed) } }
         orders.await().orShow()?.let { list -> snapshot.update { it.copy(orders = list) } }
         val trip = current.await().orShow() ?: run {
-            snapshot.update { it.copy(current = null, wait = null) }
+            snapshot.update { it.copy(current = null, wait = null, site = null) }
             return
         }
         snapshot.update { it.copy(current = trip, wait = if (trip.status.isAtStop) waitAt(trip) else null) }
+        loadSite(trip)
     }
 
     /** 서버가 바꾼 운행 상태를 다시 받는다 (도착 → 대기 중, 출발 → 운송 중) */
     private suspend fun reloadCurrent(wait: WaitRecord?) {
         val trip = tripRepository.currentTrip().orShow()
         snapshot.update { it.copy(current = trip, wait = wait) }
+        loadSite(trip)
+    }
+
+    /** 상하차지에 있으면 그곳의 정보 카드를 받는다. 못 받아도 대기 화면은 그대로 보여 준다 */
+    private suspend fun loadSite(trip: Trip?) {
+        val stop = trip?.takeIf { it.status.isAtStop }?.currentStop?.let(trip::stop)
+        if (stop == null) {
+            snapshot.update { it.copy(site = null) }
+            return
+        }
+        if (snapshot.value.site?.id == stop.siteId) return
+        val card = (siteRepository.card(stop.siteId) as? ApiResult.Success)?.data
+        snapshot.update { it.copy(site = card) }
     }
 
     private suspend fun waitAt(trip: Trip): WaitRecord? {
@@ -229,6 +306,8 @@ class HomeViewModel(
     companion object {
         const val TRIP_COMPLETED_MESSAGE = "운행을 마쳤어요. 장부에 기록했어요"
         const val NAVI_FAILED_MESSAGE = "차량 내비에 연결하지 못했습니다"
+        const val DELIVERY_SIGNED_MESSAGE = "인수증 서명을 받았어요. 운행을 마쳤어요"
+        private const val SIGNATURE_POLL_MILLIS = 3_000L
         private const val NAVI_REFRESH_MILLIS = 10_000L
 
         /** 홈에는 오더를 이만큼만. 나머지는 오더 탭에서 */
@@ -247,6 +326,8 @@ class HomeViewModel(
                     waitRepository = container.waitRepository,
                     ledgerRepository = container.ledgerRepository,
                     orderRepository = container.orderRepository,
+                    siteRepository = container.siteRepository,
+                    deliveryProofRepository = container.deliveryProofRepository,
                     navigator = container.navigator,
                 )
             }

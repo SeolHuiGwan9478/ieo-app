@@ -22,9 +22,15 @@ import com.ieo.app.data.order.OrderApi
 import com.ieo.app.domain.ledger.LedgerRepository
 import com.ieo.app.domain.order.OrderRepository
 import com.ieo.app.data.navi.NaviGuide
+import com.ieo.app.data.delivery.DefaultDeliveryProofRepository
+import com.ieo.app.data.delivery.DeliveryProofApi
+import com.ieo.app.data.site.DefaultSiteRepository
+import com.ieo.app.data.site.SiteApi
 import com.ieo.app.data.wait.DefaultWaitRepository
 import com.ieo.app.data.wait.WaitApi
+import com.ieo.app.domain.delivery.DeliveryProofRepository
 import com.ieo.app.domain.navi.Navigator
+import com.ieo.app.domain.site.SiteRepository
 import com.ieo.app.domain.wait.WaitRepository
 import com.ieo.app.domain.auth.AuthRepository
 import com.ieo.app.domain.trip.TripRepository
@@ -41,6 +47,8 @@ interface AppContainer {
     val ledgerRepository: LedgerRepository
     val orderRepository: OrderRepository
     val expenseRepository: ExpenseRepository
+    val siteRepository: SiteRepository
+    val deliveryProofRepository: DeliveryProofRepository
     val navigator: Navigator
 }
 
@@ -68,7 +76,11 @@ class DefaultAppContainer(context: Context) : AppContainer {
     }
 
     override val waitRepository: WaitRepository by lazy {
-        DefaultWaitRepository(network.authenticated.create(WaitApi::class.java), network.caller)
+        DefaultWaitRepository(
+            api = network.authenticated.create(WaitApi::class.java),
+            caller = network.caller,
+            publicBaseUrl = BuildConfig.API_BASE_URL,
+        )
     }
 
     override val ledgerRepository: LedgerRepository by lazy {
@@ -81,6 +93,18 @@ class DefaultAppContainer(context: Context) : AppContainer {
 
     override val expenseRepository: ExpenseRepository by lazy {
         DefaultExpenseRepository(network.authenticated.create(ExpenseApi::class.java), network.caller)
+    }
+
+    override val siteRepository: SiteRepository by lazy {
+        DefaultSiteRepository(network.authenticated.create(SiteApi::class.java), network.caller)
+    }
+
+    override val deliveryProofRepository: DeliveryProofRepository by lazy {
+        DefaultDeliveryProofRepository(
+            api = network.authenticated.create(DeliveryProofApi::class.java),
+            caller = network.caller,
+            publicBaseUrl = BuildConfig.API_BASE_URL,
+        )
     }
 
     override val navigator: Navigator by lazy { NaviGuide(appContext) }

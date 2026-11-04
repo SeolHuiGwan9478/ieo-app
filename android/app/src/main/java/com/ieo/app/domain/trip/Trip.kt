@@ -36,6 +36,8 @@ data class TripStop(
     val geofenceRadiusMeters: Int,
     /** 예정 시각. 정하지 않았으면 null */
     val plannedAt: Instant?,
+    /** 상하차지 정보 카드를 받을 때 쓴다 */
+    val siteId: Long,
 )
 
 /** 운행 상태. SCHEDULED → TO_PICKUP → AT_PICKUP → IN_TRANSIT → AT_DROPOFF → COMPLETED */

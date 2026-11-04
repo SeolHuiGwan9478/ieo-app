@@ -1,6 +1,7 @@
 package com.ieo.app.ui.home
 
 import androidx.lifecycle.viewModelScope
+import com.ieo.app.domain.delivery.DeliveryProofStatus
 import com.ieo.app.domain.trip.StopType
 import com.ieo.app.domain.trip.TripStatus
 import com.ieo.app.testing.FakeNavigator
@@ -13,6 +14,7 @@ import java.time.ZoneOffset
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.test.TestScope
+import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
@@ -47,6 +49,8 @@ class HomeViewModelTest {
             waitRepository = server,
             ledgerRepository = server,
             orderRepository = server,
+            siteRepository = server,
+            deliveryProofRepository = server,
             navigator = navigator,
             stateFactory = HomeStateFactory(clock) { 1_000_000L },
         )
@@ -97,6 +101,69 @@ class HomeViewModelTest {
         assertEquals(listOf("arrive PICKUP", "work PICKUP", "depart PICKUP"), server.calls)
         assertEquals(listOf("대구 성서"), navigator.guidedTo)
         assertTrue((vm.state.value as HomeState.Driving).isPickup.not())
+    }
+
+    @Test
+    fun `상차지에 도착하면 상차지 정보 카드를 받아 대기 화면에 보여 준다`() = homeTest(TripStatus.TO_PICKUP) { vm ->
+        vm.arrive()
+        runCurrent()
+
+        assertEquals(listOf(1L), server.siteRequests)
+        val site = (vm.state.value as HomeState.Waiting).site
+        assertEquals(3.5, site?.heightLimitMeters)
+        assertEquals(2, site?.notes?.size)
+    }
+
+    @Test
+    fun `하차지에서 인수증 QR을 띄우고 수하인이 서명하면 운행을 마친다`() = homeTest(TripStatus.IN_TRANSIT) { vm ->
+        vm.arrive()
+        runCurrent()
+
+        vm.requestDeliveryProof()
+        runCurrent()
+        assertEquals(DeliveryProofStatus.PENDING, vm.status.value.deliveryProof?.status)
+
+        server.signDelivery()
+        advanceTimeBy(3_001)
+        runCurrent()
+
+        assertEquals("김수하", vm.status.value.deliveryProof?.signerName)
+        assertEquals(HomeViewModel.DELIVERY_SIGNED_MESSAGE, vm.status.value.message)
+        assertTrue(vm.state.value is HomeState.Idle)
+    }
+
+    @Test
+    fun `상차지에서는 인수증을 만들지 않는다`() = homeTest(TripStatus.TO_PICKUP) { vm ->
+        vm.arrive()
+        runCurrent()
+
+        vm.requestDeliveryProof()
+        runCurrent()
+
+        assertTrue("delivery proof" !in server.calls)
+        assertNull(vm.status.value.deliveryProof)
+    }
+
+    @Test
+    fun `대기 중에 증빙을 보내면 그 상하차지의 링크 창을 띄운다`() = homeTest(TripStatus.TO_PICKUP) { vm ->
+        vm.arrive()
+        runCurrent()
+
+        vm.sendWaitProof()
+        runCurrent()
+
+        assertEquals("http://localhost/api/public/wait-proofs/token-PICKUP", vm.status.value.proof?.url)
+        vm.proofShown()
+        assertNull(vm.status.value.proof)
+    }
+
+    @Test
+    fun `상하차지에 있지 않으면 증빙을 만들지 않는다`() = homeTest(TripStatus.TO_PICKUP) { vm ->
+        vm.sendWaitProof()
+        runCurrent()
+
+        assertTrue(server.calls.none { it.startsWith("proof") })
+        assertNull(vm.status.value.proof)
     }
 
     @Test
