@@ -56,6 +56,7 @@ import com.ieo.app.ui.home.SampleHomeData
 import com.ieo.app.ui.home.HomeViewModel
 import com.ieo.app.ui.ledger.LedgerRoute
 import com.ieo.app.ui.orders.OrdersRoute
+import com.ieo.app.ui.settings.SettingsRoute
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 
@@ -109,7 +110,7 @@ fun MainScreen(homeViewModel: HomeViewModel = viewModel(factory = HomeViewModel.
                     // 주행 중에는 오더 목록을 보여 주지 않는다 (DSP-012)
                     Destination.ORDERS -> OrdersRoute(isDriving = liveState is HomeState.Driving)
                     Destination.LEDGER -> LedgerRoute()
-                    Destination.SETTINGS -> ComingSoon(destination.label)
+                    Destination.SETTINGS -> SettingsRoute()
                 }
                 if (BuildConfig.DEBUG && destination == Destination.HOME) {
                     DemoStateSwitcher(
@@ -168,13 +169,6 @@ private fun NavRailItem(item: Destination, selected: Boolean, onClick: () -> Uni
             fontSize = 18.sp,
             fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium,
         )
-    }
-}
-
-@Composable
-private fun ComingSoon(title: String) {
-    Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
-        Text(text = "$title 화면은 준비 중입니다", fontSize = 26.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
     }
 }
 

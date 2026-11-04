@@ -1,0 +1,166 @@
+package com.ieo.app.ui.settings
+
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import com.ieo.app.domain.account.Profile
+import com.ieo.app.domain.vehicle.BodyType
+import com.ieo.app.domain.vehicle.Tonnage
+import com.ieo.app.domain.vehicle.Vehicle
+import com.ieo.app.ui.component.DetailLine
+import com.ieo.app.ui.component.IeoBottomSheet
+import com.ieo.app.ui.component.IeoTonalButton
+import com.ieo.app.ui.component.SectionTitle
+import com.ieo.app.ui.component.StatusTag
+import com.ieo.app.ui.component.WhiteSection
+import com.ieo.app.ui.theme.CanvasGray
+import com.ieo.app.ui.theme.IeoTheme
+import com.ieo.app.ui.theme.Orange50
+import com.ieo.app.ui.theme.Orange700
+import com.ieo.app.ui.theme.TextStrong
+import com.ieo.app.ui.theme.TextSub
+
+private val ScreenPadding = 28.dp
+
+/**
+ * 설정 탭: 내 정보 / 내 차량 / 앱. 고치기는 아래에서 올라오는 창에서 한다.
+ * 상태는 [SettingsViewModel]이 정하고, 이 화면은 그리기만 한다.
+ */
+@Composable
+fun SettingsScreen(state: SettingsUiState, actions: SettingsActions) {
+    Box(modifier = Modifier.fillMaxSize().background(CanvasGray)) {
+        Column(
+            verticalArrangement = Arrangement.spacedBy(16.dp),
+            modifier = Modifier
+                .fillMaxSize()
+                .verticalScroll(rememberScrollState())
+                .padding(ScreenPadding)
+                .widthIn(max = 880.dp),
+        ) {
+            ProfileSection(state.profile, onEdit = { actions.openForm(SettingsForm.EditName(state.profile?.name.orEmpty())) })
+            VehicleSection(state.vehicles, isLoading = state.isLoading, onEdit = { actions.openForm(SettingsForm.EditVehicle(it)) })
+            AppSection(state.appVersion, onSignOut = { actions.openForm(SettingsForm.ConfirmSignOut) })
+        }
+        IeoBottomSheet(item = state.form, onDismiss = actions::close) { form ->
+            when (form) {
+                is SettingsForm.EditName -> NameForm(form, busy = state.isBusy, onSubmit = actions::saveName, onCancel = actions::close)
+                is SettingsForm.EditVehicle -> VehicleForm(
+                    vehicle = form.vehicle,
+                    busy = state.isBusy,
+                    onSubmit = actions::saveVehicle,
+                    onSetDefault = { actions.setDefault(form.vehicle.id) },
+                    onCancel = actions::close,
+                )
+                SettingsForm.ConfirmSignOut -> SignOutConfirm(onSignOut = actions::signOut, onCancel = actions::close)
+            }
+        }
+    }
+}
+
+@Composable
+private fun ProfileSection(profile: Profile?, onEdit: () -> Unit) {
+    WhiteSection {
+        SectionTitle(title = "내 정보")
+        DetailLine("이름", profile?.name ?: "-")
+        DetailLine("휴대폰", profile?.phone?.let(::maskPhone) ?: "-")
+        Spacer(Modifier.height(12.dp))
+        IeoTonalButton(text = "이름 바꾸기", onClick = onEdit)
+    }
+}
+
+@Composable
+private fun VehicleSection(vehicles: List<Vehicle>, isLoading: Boolean, onEdit: (Vehicle) -> Unit) {
+    WhiteSection {
+        SectionTitle(title = "내 차량", count = vehicles.size, note = "추가·삭제는 휴대폰 앱에서")
+        if (vehicles.isEmpty()) {
+            Text(if (isLoading) "불러오는 중…" else "등록된 차량이 없어요", fontSize = 20.sp, color = TextSub, modifier = Modifier.padding(8.dp))
+        }
+        vehicles.forEach { vehicle -> VehicleRow(vehicle, onClick = { onEdit(vehicle) }) }
+    }
+}
+
+@Composable
+private fun VehicleRow(vehicle: Vehicle, onClick: () -> Unit) {
+    Column(modifier = Modifier.padding(vertical = 8.dp)) {
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            Text(vehicle.plateNumber, fontSize = 24.sp, fontWeight = FontWeight.Bold, color = TextStrong)
+            if (vehicle.isDefault) StatusTag(text = "기본 차량", color = Orange700, background = Orange50)
+            if (vehicle.pleosLinked) StatusTag(text = "이 차와 연결됨", color = TextSub, background = CanvasGray)
+        }
+        Spacer(Modifier.height(4.dp))
+        Text(vehicleSummary(vehicle), fontSize = 20.sp, color = TextSub)
+        Spacer(Modifier.height(10.dp))
+        IeoTonalButton(text = "고치기", onClick = onClick)
+    }
+}
+
+@Composable
+private fun AppSection(appVersion: String, onSignOut: () -> Unit) {
+    WhiteSection {
+        SectionTitle(title = "앱")
+        DetailLine("버전", appVersion)
+        Spacer(Modifier.height(12.dp))
+        IeoTonalButton(text = "로그아웃", onClick = onSignOut)
+    }
+}
+
+/** "5톤 카고 · 높이 3.6m · 연비 4.2km/L". 모르는 값은 뺀다 */
+internal fun vehicleSummary(vehicle: Vehicle): String = listOfNotNull(
+    "${vehicle.tonnage.label} ${vehicle.bodyType.label}",
+    vehicle.heightMeters?.let { "높이 ${formatMeters(it)}" } ?: "높이 모름",
+    vehicle.measuredKmPerLiter?.let { "연비 ${"%.1f".format(it)}km/L" },
+).joinToString(" · ")
+
+internal fun formatMeters(meters: Double): String = "%.1fm".format(meters)
+
+/** 010-1234-5678 → 010-****-5678. 차량 화면은 옆 사람도 보므로 가운데를 가린다 */
+internal fun maskPhone(phone: String): String {
+    val digits = phone.filter(Char::isDigit)
+    if (digits.length < 10) return phone
+    return "${digits.take(3)}-****-${digits.takeLast(4)}"
+}
+
+@Preview(widthDp = 1100, heightDp = 900)
+@Composable
+private fun SettingsScreenPreview() {
+    IeoTheme {
+        SettingsScreen(
+            state = SettingsUiState(
+                profile = Profile(name = "김기사", phone = "01012345678"),
+                vehicles = listOf(
+                    Vehicle(1, "경기80바1234", Tonnage.TON_5, BodyType.CARGO, 3.6, 4.2, pleosLinked = true, isDefault = true),
+                    Vehicle(2, "경기81사5678", Tonnage.TON_1, BodyType.BOX, null, null, pleosLinked = false, isDefault = false),
+                ),
+                appVersion = "0.1.0",
+            ),
+            actions = PreviewSettingsActions,
+        )
+    }
+}
+
+private object PreviewSettingsActions : SettingsActions {
+    override fun refresh() = Unit
+    override fun openForm(form: SettingsForm) = Unit
+    override fun close() = Unit
+    override fun saveName(name: String) = Unit
+    override fun saveVehicle(tonnage: Tonnage, bodyType: BodyType, heightMeters: Double?) = Unit
+    override fun setDefault(vehicleId: Long) = Unit
+    override fun signOut() = Unit
+}

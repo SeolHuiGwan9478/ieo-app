@@ -7,33 +7,39 @@ import com.ieo.app.core.session.DeviceInfo
 import com.ieo.app.core.session.EncryptedTokenStore
 import com.ieo.app.core.session.KeystoreTokenCipher
 import com.ieo.app.core.session.SessionManager
+import com.ieo.app.data.account.AccountApi
+import com.ieo.app.data.account.DefaultAccountRepository
 import com.ieo.app.data.auth.AuthApi
 import com.ieo.app.data.auth.DefaultAuthRepository
 import com.ieo.app.data.auth.ServerTokenRefresher
-import com.ieo.app.data.trip.DefaultTripRepository
-import com.ieo.app.data.trip.TripApi
-import com.ieo.app.data.expense.DefaultExpenseRepository
-import com.ieo.app.data.expense.ExpenseApi
-import com.ieo.app.domain.expense.ExpenseRepository
-import com.ieo.app.data.ledger.DefaultLedgerRepository
-import com.ieo.app.data.ledger.LedgerApi
-import com.ieo.app.data.order.DefaultOrderRepository
-import com.ieo.app.data.order.OrderApi
-import com.ieo.app.domain.ledger.LedgerRepository
-import com.ieo.app.domain.order.OrderRepository
-import com.ieo.app.data.navi.NaviGuide
 import com.ieo.app.data.delivery.DefaultDeliveryProofRepository
 import com.ieo.app.data.delivery.DeliveryProofApi
+import com.ieo.app.data.expense.DefaultExpenseRepository
+import com.ieo.app.data.expense.ExpenseApi
+import com.ieo.app.data.ledger.DefaultLedgerRepository
+import com.ieo.app.data.ledger.LedgerApi
+import com.ieo.app.data.navi.NaviGuide
+import com.ieo.app.data.order.DefaultOrderRepository
+import com.ieo.app.data.order.OrderApi
 import com.ieo.app.data.site.DefaultSiteRepository
 import com.ieo.app.data.site.SiteApi
+import com.ieo.app.data.trip.DefaultTripRepository
+import com.ieo.app.data.trip.TripApi
+import com.ieo.app.data.vehicle.DefaultVehicleRepository
+import com.ieo.app.data.vehicle.VehicleApi
 import com.ieo.app.data.wait.DefaultWaitRepository
 import com.ieo.app.data.wait.WaitApi
-import com.ieo.app.domain.delivery.DeliveryProofRepository
-import com.ieo.app.domain.navi.Navigator
-import com.ieo.app.domain.site.SiteRepository
-import com.ieo.app.domain.wait.WaitRepository
+import com.ieo.app.domain.account.AccountRepository
 import com.ieo.app.domain.auth.AuthRepository
+import com.ieo.app.domain.delivery.DeliveryProofRepository
+import com.ieo.app.domain.expense.ExpenseRepository
+import com.ieo.app.domain.ledger.LedgerRepository
+import com.ieo.app.domain.navi.Navigator
+import com.ieo.app.domain.order.OrderRepository
+import com.ieo.app.domain.site.SiteRepository
 import com.ieo.app.domain.trip.TripRepository
+import com.ieo.app.domain.vehicle.VehicleRepository
+import com.ieo.app.domain.wait.WaitRepository
 
 /**
  * 앱 전체에서 하나씩만 있는 객체들. 화면(ViewModel)은 여기서 인터페이스를 받아 쓴다.
@@ -49,6 +55,8 @@ interface AppContainer {
     val expenseRepository: ExpenseRepository
     val siteRepository: SiteRepository
     val deliveryProofRepository: DeliveryProofRepository
+    val accountRepository: AccountRepository
+    val vehicleRepository: VehicleRepository
     val navigator: Navigator
 }
 
@@ -105,6 +113,14 @@ class DefaultAppContainer(context: Context) : AppContainer {
             caller = network.caller,
             publicBaseUrl = BuildConfig.API_BASE_URL,
         )
+    }
+
+    override val accountRepository: AccountRepository by lazy {
+        DefaultAccountRepository(network.authenticated.create(AccountApi::class.java), network.caller)
+    }
+
+    override val vehicleRepository: VehicleRepository by lazy {
+        DefaultVehicleRepository(network.authenticated.create(VehicleApi::class.java), network.caller)
     }
 
     override val navigator: Navigator by lazy { NaviGuide(appContext) }

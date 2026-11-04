@@ -1,0 +1,20 @@
+package com.ieo.app.data.vehicle
+
+import retrofit2.Response
+import retrofit2.http.Body
+import retrofit2.http.GET
+import retrofit2.http.PATCH
+import retrofit2.http.POST
+import retrofit2.http.Path
+
+interface VehicleApi {
+
+    @GET("api/vehicles")
+    suspend fun vehicles(): Response<List<VehicleResponse>>
+
+    @PATCH("api/vehicles/{vehicleId}")
+    suspend fun update(@Path("vehicleId") vehicleId: Long, @Body body: UpdateVehicleRequest): Response<VehicleResponse>
+
+    @POST("api/vehicles/{vehicleId}/default")
+    suspend fun setDefault(@Path("vehicleId") vehicleId: Long): Response<VehicleResponse>
+}
