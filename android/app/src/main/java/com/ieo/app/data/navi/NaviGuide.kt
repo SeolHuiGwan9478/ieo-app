@@ -2,9 +2,12 @@ package com.ieo.app.data.navi
 
 import ai.pleos.playground.navi.constants.NaviErrorCode
 import ai.pleos.playground.navi.constants.NavigationStatus
+import ai.pleos.playground.navi.data.BookmarkInfo
+import ai.pleos.playground.navi.data.CurrentLocationInfo
 import ai.pleos.playground.navi.data.DestinationArrivedInfo
 import ai.pleos.playground.navi.data.DestinationInfo
 import ai.pleos.playground.navi.data.DrivingInfo
+import ai.pleos.playground.navi.data.RecentDestinationInfo
 import ai.pleos.playground.navi.data.RouteInfo
 import ai.pleos.playground.navi.data.RouteStartInfo
 import ai.pleos.playground.navi.helper.NaviHelper
@@ -14,12 +17,16 @@ import android.os.Handler
 import android.os.Looper
 import android.util.Log
 import com.ieo.app.domain.navi.Destination
+import com.ieo.app.domain.navi.NaviPlace
+import com.ieo.app.domain.navi.NaviPlaceSource
 import com.ieo.app.domain.navi.NaviProgress
 import com.ieo.app.domain.navi.Navigator
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.withTimeoutOrNull
 
 /**
  * 차량 내비(Pleos Navigation)에 길 안내를 맡기고 진행 상황을 받는다.
@@ -28,7 +35,7 @@ import kotlinx.coroutines.flow.update
  * 거리는 미터, 시간은 초다 (에뮬레이터 확인: 75km → 75000, 1시간 42분 → 6120).
  * 경로가 정해지기 전에는 내비가 0을 보내므로, 0은 "아직 모름"으로 보고 버린다.
  */
-class NaviGuide(context: Context) : Navigator {
+class NaviGuide(context: Context) : Navigator, NaviPlaceSource {
 
     private val helper = NaviHelper(context.applicationContext)
     private val handler = Handler(Looper.getMainLooper())
@@ -86,6 +93,19 @@ class NaviGuide(context: Context) : Navigator {
 
         // onRouteEnded는 경로 탐색이 끝날 때(안내 시작 직후)에도 와서 안내 종료 신호로 쓰지 않는다
 
+        override fun onBookmarkInfo(bookmarkInfos: List<BookmarkInfo>) {
+            bookmarks?.complete(bookmarkInfos.map { place(it.name, it.address, it.latitude, it.longitude, NaviPlace.Kind.BOOKMARK) })
+        }
+
+        override fun onRecentDestinationInfo(recentDestinationInfos: List<RecentDestinationInfo>) {
+            recents?.complete(recentDestinationInfos.map { place(it.name, it.address, it.latitude, it.longitude, NaviPlace.Kind.RECENT) })
+        }
+
+        override fun onCurrentLocationInfo(currentLocationInfo: CurrentLocationInfo) {
+            val info = currentLocationInfo
+            current?.complete(place(info.address, info.address, info.latitude, info.longitude, NaviPlace.Kind.CURRENT))
+        }
+
         override fun onNavigationStatus(status: NavigationStatus) {
             Log.d(TAG, "onNavigationStatus $status")
         }
@@ -135,6 +155,33 @@ class NaviGuide(context: Context) : Navigator {
         }.isSuccess
     }
 
+    // 내비 정보는 요청하고 리스너로 받는다. 요청마다 기다릴 자리를 하나 만든다
+    @Volatile private var bookmarks: CompletableDeferred<List<NaviPlace>>? = null
+    @Volatile private var recents: CompletableDeferred<List<NaviPlace>>? = null
+    @Volatile private var current: CompletableDeferred<NaviPlace?>? = null
+
+    override suspend fun savedPlaces(): List<NaviPlace> {
+        val saved = CompletableDeferred<List<NaviPlace>>().also { bookmarks = it }
+        val recent = CompletableDeferred<List<NaviPlace>>().also { recents = it }
+        runCatching {
+            helper.getBookmarkInfo()
+            helper.getRecentDestinationInfo()
+        }.onFailure { Log.w(TAG, "내비 저장 장소 요청 실패", it) }
+        val all = withTimeoutOrNull(PLACES_TIMEOUT_MS) { saved.await() }.orEmpty() +
+            withTimeoutOrNull(PLACES_TIMEOUT_MS) { recent.await() }.orEmpty()
+        return all.filter { it.address.isNotBlank() && it.latitude != 0.0 }
+    }
+
+    override suspend fun currentPlace(): NaviPlace? {
+        val here = CompletableDeferred<NaviPlace?>().also { current = it }
+        runCatching { helper.getCurrentLocationInfo() }.onFailure { Log.w(TAG, "현재 위치 요청 실패", it) }
+        return withTimeoutOrNull(PLACES_TIMEOUT_MS) { here.await() }?.takeIf { it.address.isNotBlank() && it.latitude != 0.0 }
+    }
+
+    /** 이름이 비어 있으면 주소를 이름으로 쓴다 (서버는 상하차지 이름을 꼭 받는다) */
+    private fun place(name: String?, address: String?, lat: Double, lng: Double, kind: NaviPlace.Kind) =
+        NaviPlace(name = name?.takeIf { it.isNotBlank() } ?: address.orEmpty(), address = address.orEmpty(), latitude = lat, longitude = lng, kind = kind)
+
     override fun refresh() {
         runCatching { helper.getDestinationInfo() }
     }
@@ -153,5 +200,6 @@ class NaviGuide(context: Context) : Navigator {
     private companion object {
         const val TAG = "NaviGuide"
         const val ROUTE_TIMEOUT_MS = 30_000L
+        const val PLACES_TIMEOUT_MS = 3_000L
     }
 }

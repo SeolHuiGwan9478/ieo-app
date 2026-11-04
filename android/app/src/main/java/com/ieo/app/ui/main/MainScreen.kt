@@ -56,6 +56,8 @@ import com.ieo.app.ui.home.SampleHomeData
 import com.ieo.app.ui.home.HomeViewModel
 import com.ieo.app.ui.ledger.LedgerRoute
 import com.ieo.app.ui.orders.OrdersRoute
+import com.ieo.app.ui.register.RegisterTripSheet
+import com.ieo.app.ui.register.RegisterTripViewModel
 import com.ieo.app.ui.settings.SettingsRoute
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -69,7 +71,10 @@ private enum class Destination(val label: String, val icon: ImageVector) {
 
 /** 로그인 후 화면: 왼쪽 세로 메뉴 + 오른쪽 본문 */
 @Composable
-fun MainScreen(homeViewModel: HomeViewModel = viewModel(factory = HomeViewModel.Factory)) {
+fun MainScreen(
+    homeViewModel: HomeViewModel = viewModel(factory = HomeViewModel.Factory),
+    registerViewModel: RegisterTripViewModel = viewModel(factory = RegisterTripViewModel.Factory),
+) {
     val context = LocalContext.current
     var destination by rememberSaveable { mutableStateOf(Destination.HOME) }
     // 디버그 빌드에서만: 서버 없이 대기·주행 화면을 확인하는 샘플
@@ -92,6 +97,23 @@ fun MainScreen(homeViewModel: HomeViewModel = viewModel(factory = HomeViewModel.
 
     var confirmingTrip by remember { mutableStateOf<AssignedTrip?>(null) }
 
+    // 다른 앱에서 받은 배차 등록 창
+    var registering by remember { mutableStateOf(false) }
+    val registerState by registerViewModel.state.collectAsStateWithLifecycle()
+    LaunchedEffect(registerState.message) {
+        registerState.message?.let {
+            Toast.makeText(context, it, Toast.LENGTH_SHORT).show()
+            registerViewModel.messageShown()
+        }
+    }
+    LaunchedEffect(registerState.done) {
+        if (registerState.done) {
+            registering = false
+            homeViewModel.refresh()
+            registerViewModel.doneHandled()
+        }
+    }
+
     Box(modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
         Row(modifier = Modifier.fillMaxSize()) {
             NavRail(selected = destination, onSelect = { destination = it })
@@ -100,6 +122,10 @@ fun MainScreen(homeViewModel: HomeViewModel = viewModel(factory = HomeViewModel.
                     Destination.HOME -> HomeScreen(
                         state = homeState,
                         onTripClick = { confirmingTrip = it },
+                        onRegisterTrip = {
+                            registering = true
+                            registerViewModel.start()
+                        },
                         onStartWork = homeViewModel::startWork,
                         onDepart = homeViewModel::depart,
                         onSendWaitProof = homeViewModel::sendWaitProof,
@@ -130,6 +156,7 @@ fun MainScreen(homeViewModel: HomeViewModel = viewModel(factory = HomeViewModel.
             onDismiss = { confirmingTrip = null },
         )
         WaitProofSheet(link = status.proof, onDismiss = homeViewModel::proofShown)
+        RegisterTripSheet(visible = registering, state = registerState, actions = registerViewModel, onDismiss = { registering = false })
         DeliveryProofSheet(proof = status.deliveryProof, onDismiss = homeViewModel::closeDeliveryProof)
     }
 }

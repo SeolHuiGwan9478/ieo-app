@@ -14,6 +14,7 @@ import com.ieo.app.domain.order.DispatchRequest
 import com.ieo.app.domain.order.Order
 import com.ieo.app.domain.order.ReportType
 import com.ieo.app.domain.order.OrderRepository
+import com.ieo.app.domain.trip.NewTrip
 import com.ieo.app.domain.trip.StopType
 import com.ieo.app.domain.trip.Trip
 import com.ieo.app.domain.trip.TripRepository
@@ -52,6 +53,14 @@ class FakeTripServer(var trip: Trip) :
         calls += "start"
         trip = trip.copy(status = TripStatus.TO_PICKUP)
         return ApiResult.Success(trip)
+    }
+
+    /** 직접 등록한 운행 */
+    val registered = mutableListOf<NewTrip>()
+
+    override suspend fun register(trip: NewTrip): ApiResult<Trip> {
+        registered += trip
+        return ApiResult.Success(TripFixtures.trip(TripStatus.SCHEDULED, id = 99))
     }
 
     override suspend fun waits(tripId: Long) = ApiResult.Success(records.values.toList())

@@ -12,4 +12,7 @@ interface TripRepository {
 
     /** 출발 (예약 → 상차지로 이동 중). 진행 중인 운행이 이미 있으면 서버가 거절한다 */
     suspend fun start(tripId: Long): ApiResult<Trip>
+
+    /** 다른 앱에서 받은 배차 등록. 내 배차에 예약 상태로 들어간다 */
+    suspend fun register(trip: NewTrip): ApiResult<Trip>
 }

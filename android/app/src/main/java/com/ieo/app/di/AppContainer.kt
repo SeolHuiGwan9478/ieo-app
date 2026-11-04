@@ -34,6 +34,7 @@ import com.ieo.app.domain.auth.AuthRepository
 import com.ieo.app.domain.delivery.DeliveryProofRepository
 import com.ieo.app.domain.expense.ExpenseRepository
 import com.ieo.app.domain.ledger.LedgerRepository
+import com.ieo.app.domain.navi.NaviPlaceSource
 import com.ieo.app.domain.navi.Navigator
 import com.ieo.app.domain.order.OrderRepository
 import com.ieo.app.domain.site.SiteRepository
@@ -58,6 +59,7 @@ interface AppContainer {
     val accountRepository: AccountRepository
     val vehicleRepository: VehicleRepository
     val navigator: Navigator
+    val naviPlaces: NaviPlaceSource
 }
 
 class DefaultAppContainer(context: Context) : AppContainer {
@@ -123,5 +125,10 @@ class DefaultAppContainer(context: Context) : AppContainer {
         DefaultVehicleRepository(network.authenticated.create(VehicleApi::class.java), network.caller)
     }
 
-    override val navigator: Navigator by lazy { NaviGuide(appContext) }
+    // 내비 연결은 하나. 길 안내와 저장 장소를 같은 객체가 맡는다
+    private val naviGuide by lazy { NaviGuide(appContext) }
+
+    override val navigator: Navigator get() = naviGuide
+
+    override val naviPlaces: NaviPlaceSource get() = naviGuide
 }

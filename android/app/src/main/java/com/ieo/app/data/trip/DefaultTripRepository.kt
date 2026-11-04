@@ -3,6 +3,7 @@ package com.ieo.app.data.trip
 import com.ieo.app.core.network.ApiCaller
 import com.ieo.app.core.network.ApiResult
 import com.ieo.app.core.network.mapResponse
+import com.ieo.app.domain.trip.NewTrip
 import com.ieo.app.domain.trip.Trip
 import com.ieo.app.domain.trip.TripRepository
 
@@ -19,4 +20,7 @@ class DefaultTripRepository(
 
     override suspend fun start(tripId: Long): ApiResult<Trip> =
         caller.call { api.start(tripId) }.mapResponse { it.toDomain() }
+
+    override suspend fun register(trip: NewTrip): ApiResult<Trip> =
+        caller.call { api.register(CreateTripRequest.from(trip)) }.mapResponse { it.toDomain() }
 }

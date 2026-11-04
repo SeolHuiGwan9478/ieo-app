@@ -1,5 +1,7 @@
 package com.ieo.app.data.trip
 
+import com.ieo.app.domain.trip.NewTrip
+import com.ieo.app.domain.trip.StopChoice
 import com.ieo.app.domain.trip.Trip
 import com.ieo.app.domain.trip.TripStatus
 import com.ieo.app.domain.trip.TripStop
@@ -51,3 +53,44 @@ data class TripStopResponse(
         siteId = siteId,
     )
 }
+
+/** 다른 앱에서 받은 배차 등록 (서버 CreateTripRequest). 차량을 비우면 기본 차량 */
+@Serializable
+data class CreateTripRequest(
+    val pickup: TripStopRequest,
+    val dropoff: TripStopRequest,
+    val fare: Long,
+    val paymentType: String,
+    val brokerName: String? = null,
+) {
+    companion object {
+        fun from(trip: NewTrip) = CreateTripRequest(
+            pickup = TripStopRequest.from(trip.pickup, trip.pickupAt),
+            dropoff = TripStopRequest.from(trip.dropoff, plannedAt = null),
+            fare = trip.fare,
+            paymentType = trip.paymentType.name,
+            brokerName = trip.brokerName,
+        )
+    }
+}
+
+/** 이미 있는 상하차지면 siteId, 처음 가는 곳이면 site */
+@Serializable
+data class TripStopRequest(
+    val siteId: Long? = null,
+    val site: NewSiteRequest? = null,
+    val plannedAt: String? = null,
+) {
+    companion object {
+        fun from(choice: StopChoice, plannedAt: Instant?) = when (choice) {
+            is StopChoice.Known -> TripStopRequest(siteId = choice.siteId, plannedAt = plannedAt?.toString())
+            is StopChoice.New -> TripStopRequest(
+                site = NewSiteRequest(choice.name, choice.address, choice.latitude, choice.longitude),
+                plannedAt = plannedAt?.toString(),
+            )
+        }
+    }
+}
+
+@Serializable
+data class NewSiteRequest(val name: String, val address: String, val lat: Double, val lng: Double)
