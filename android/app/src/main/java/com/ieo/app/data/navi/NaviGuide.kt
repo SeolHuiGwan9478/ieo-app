@@ -142,7 +142,7 @@ class NaviGuide(context: Context) : Navigator, NaviPlaceSource {
                     latitude = destination.latitude,
                     longitude = destination.longitude,
                     poiName = destination.name,
-                    // TODO: 좌표만으로 안내가 되는지 확인 중. 장소 ID가 필요하면 주소 검색 API로 받는다
+                    // 장소 ID 없이 좌표만으로 안내된다 (에뮬레이터에서 확인)
                     poiId = "",
                     poiSubId = "",
                     address = destination.address,

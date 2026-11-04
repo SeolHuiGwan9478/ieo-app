@@ -56,6 +56,8 @@ import com.ieo.app.ui.home.SampleHomeData
 import com.ieo.app.ui.home.HomeViewModel
 import com.ieo.app.ui.ledger.LedgerRoute
 import com.ieo.app.ui.orders.OrdersRoute
+import com.ieo.app.ui.carlink.CarLinkSheet
+import com.ieo.app.ui.carlink.CarLinkViewModel
 import com.ieo.app.ui.register.RegisterTripSheet
 import com.ieo.app.ui.register.RegisterTripViewModel
 import com.ieo.app.ui.settings.SettingsRoute
@@ -74,6 +76,7 @@ private enum class Destination(val label: String, val icon: ImageVector) {
 fun MainScreen(
     homeViewModel: HomeViewModel = viewModel(factory = HomeViewModel.Factory),
     registerViewModel: RegisterTripViewModel = viewModel(factory = RegisterTripViewModel.Factory),
+    carLinkViewModel: CarLinkViewModel = viewModel(factory = CarLinkViewModel.Factory),
 ) {
     val context = LocalContext.current
     var destination by rememberSaveable { mutableStateOf(Destination.HOME) }
@@ -93,6 +96,15 @@ fun MainScreen(
         DemoState.LIVE -> liveState
         DemoState.WAITING -> SampleHomeData.waiting()
         DemoState.DRIVING -> SampleHomeData.driving()
+    }
+
+    // 이 트럭과 내 차량 잇기 (VEH-004). 차대번호는 MainActivity가 권한을 받은 뒤 읽기 시작한다
+    val carLinkState by carLinkViewModel.state.collectAsStateWithLifecycle()
+    LaunchedEffect(carLinkState.message) {
+        carLinkState.message?.let {
+            Toast.makeText(context, it, Toast.LENGTH_LONG).show()
+            carLinkViewModel.messageShown()
+        }
     }
 
     var confirmingTrip by remember { mutableStateOf<AssignedTrip?>(null) }
@@ -158,6 +170,7 @@ fun MainScreen(
         WaitProofSheet(link = status.proof, onDismiss = homeViewModel::proofShown)
         RegisterTripSheet(visible = registering, state = registerState, actions = registerViewModel, onDismiss = { registering = false })
         DeliveryProofSheet(proof = status.deliveryProof, onDismiss = homeViewModel::closeDeliveryProof)
+        CarLinkSheet(state = carLinkState, actions = carLinkViewModel)
     }
 }
 

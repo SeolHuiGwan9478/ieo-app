@@ -13,6 +13,8 @@
     <uses-permission android:name="android.car.permission.CAR_SPEED" />
     <uses-permission android:name="android.car.permission.CAR_POWERTRAIN" />
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <!-- 차대번호로 이 트럭과 내 차량을 잇는다 (VEH-004) -->
+    <uses-permission android:name="pleos.car.permission.CAR_INFO" />
 
     <!-- Ieo 서버 -->
     <uses-permission android:name="android.permission.INTERNET" />

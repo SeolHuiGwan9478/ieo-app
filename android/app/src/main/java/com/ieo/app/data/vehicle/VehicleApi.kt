@@ -17,4 +17,10 @@ interface VehicleApi {
 
     @POST("api/vehicles/{vehicleId}/default")
     suspend fun setDefault(@Path("vehicleId") vehicleId: Long): Response<VehicleResponse>
+
+    @POST("api/vehicles/pleos/resolve")
+    suspend fun resolvePleos(@Body body: PleosVinRequest): Response<PleosResolveResponse>
+
+    @POST("api/vehicles/{vehicleId}/pleos")
+    suspend fun linkPleos(@Path("vehicleId") vehicleId: Long, @Body body: PleosVinRequest): Response<VehicleResponse>
 }

@@ -1,6 +1,7 @@
 package com.ieo.app.data.vehicle
 
 import com.ieo.app.domain.vehicle.BodyType
+import com.ieo.app.domain.vehicle.PleosMatch
 import com.ieo.app.domain.vehicle.Tonnage
 import com.ieo.app.domain.vehicle.Vehicle
 import kotlinx.serialization.Serializable
@@ -33,3 +34,22 @@ data class VehicleResponse(
 /** heightM이 null이면 JSON에서 빠지고, 서버는 빠진 높이를 "비움"으로 받는다 */
 @Serializable
 data class UpdateVehicleRequest(val tonnage: String, val bodyType: String, val heightM: Double?)
+
+@Serializable
+data class PleosVinRequest(val vin: String)
+
+/** status: LINKED, SELECT, REGISTER, OTHER_OWNER */
+@Serializable
+data class PleosResolveResponse(
+    val status: String,
+    val autoLinked: Boolean = false,
+    val vehicle: VehicleResponse? = null,
+    val candidates: List<VehicleResponse> = emptyList(),
+) {
+    fun toDomain(): PleosMatch = when (status) {
+        "LINKED" -> vehicle?.let { PleosMatch.Linked(it.toDomain(), autoLinked) } ?: PleosMatch.OtherOwner(null)
+        "SELECT" -> PleosMatch.Select(candidates.map(VehicleResponse::toDomain))
+        "REGISTER" -> PleosMatch.Register
+        else -> PleosMatch.OtherOwner(vehicle?.toDomain())
+    }
+}

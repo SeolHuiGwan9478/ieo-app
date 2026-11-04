@@ -4,6 +4,7 @@ import com.ieo.app.core.network.ApiCaller
 import com.ieo.app.core.network.ApiResult
 import com.ieo.app.core.network.mapResponse
 import com.ieo.app.domain.vehicle.BodyType
+import com.ieo.app.domain.vehicle.PleosMatch
 import com.ieo.app.domain.vehicle.Tonnage
 import com.ieo.app.domain.vehicle.Vehicle
 import com.ieo.app.domain.vehicle.VehicleRepository
@@ -22,4 +23,10 @@ class DefaultVehicleRepository(
 
     override suspend fun setDefault(vehicleId: Long): ApiResult<Vehicle> =
         caller.call { api.setDefault(vehicleId) }.mapResponse { it.toDomain() }
+
+    override suspend fun resolvePleos(vin: String): ApiResult<PleosMatch> =
+        caller.call { api.resolvePleos(PleosVinRequest(vin)) }.mapResponse { it.toDomain() }
+
+    override suspend fun linkPleos(vehicleId: Long, vin: String): ApiResult<Vehicle> =
+        caller.call { api.linkPleos(vehicleId, PleosVinRequest(vin)) }.mapResponse { it.toDomain() }
 }

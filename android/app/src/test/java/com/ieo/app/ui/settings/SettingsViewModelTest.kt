@@ -7,6 +7,7 @@ import com.ieo.app.domain.account.AccountRepository
 import com.ieo.app.domain.account.Profile
 import com.ieo.app.domain.vehicle.BodyType
 import com.ieo.app.domain.vehicle.Tonnage
+import com.ieo.app.domain.vehicle.PleosMatch
 import com.ieo.app.domain.vehicle.Vehicle
 import com.ieo.app.domain.vehicle.VehicleRepository
 import com.ieo.app.testing.MainDispatcherRule
@@ -142,6 +143,10 @@ class SettingsViewModelTest {
             vehicles = vehicles.map { it.copy(isDefault = it.id == vehicleId) }
             return ApiResult.Success(vehicles.first { it.id == vehicleId })
         }
+
+        override suspend fun resolvePleos(vin: String): ApiResult<PleosMatch> = error("설정에서는 쓰지 않음")
+
+        override suspend fun linkPleos(vehicleId: Long, vin: String): ApiResult<Vehicle> = error("설정에서는 쓰지 않음")
     }
 
     private companion object {
