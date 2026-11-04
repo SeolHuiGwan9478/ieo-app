@@ -17,6 +17,8 @@ import com.ieo.app.data.delivery.DeliveryProofApi
 import com.ieo.app.data.expense.DefaultExpenseRepository
 import com.ieo.app.data.expense.ExpenseApi
 import com.ieo.app.data.ledger.DefaultLedgerRepository
+import com.ieo.app.data.link.DefaultDriverLinkRepository
+import com.ieo.app.data.link.DriverLinkApi
 import com.ieo.app.data.ledger.LedgerApi
 import com.ieo.app.data.navi.NaviGuide
 import com.ieo.app.data.order.DefaultOrderRepository
@@ -36,6 +38,7 @@ import com.ieo.app.domain.auth.AuthRepository
 import com.ieo.app.domain.delivery.DeliveryProofRepository
 import com.ieo.app.domain.expense.ExpenseRepository
 import com.ieo.app.domain.ledger.LedgerRepository
+import com.ieo.app.domain.link.DriverLinkRepository
 import com.ieo.app.domain.navi.NaviPlaceSource
 import com.ieo.app.domain.navi.Navigator
 import com.ieo.app.domain.order.OrderRepository
@@ -62,6 +65,7 @@ interface AppContainer {
     val deliveryProofRepository: DeliveryProofRepository
     val accountRepository: AccountRepository
     val vehicleRepository: VehicleRepository
+    val driverLinkRepository: DriverLinkRepository
     val navigator: Navigator
     val naviPlaces: NaviPlaceSource
     val vehicleSensors: VehicleSensors
@@ -129,6 +133,10 @@ class DefaultAppContainer(context: Context) : AppContainer {
 
     override val vehicleRepository: VehicleRepository by lazy {
         DefaultVehicleRepository(network.authenticated.create(VehicleApi::class.java), network.caller)
+    }
+
+    override val driverLinkRepository: DriverLinkRepository by lazy {
+        DefaultDriverLinkRepository(network.authenticated.create(DriverLinkApi::class.java), network.caller)
     }
 
     // 내비 연결은 하나. 길 안내와 저장 장소를 같은 객체가 맡는다

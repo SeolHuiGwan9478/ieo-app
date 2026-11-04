@@ -58,6 +58,9 @@ import com.ieo.app.ui.ledger.LedgerRoute
 import com.ieo.app.ui.orders.OrdersRoute
 import com.ieo.app.ui.carlink.CarLinkSheet
 import com.ieo.app.ui.carlink.CarLinkViewModel
+import com.ieo.app.ui.links.DriverLinksViewModel
+import com.ieo.app.ui.links.LinkInvitationSheet
+import com.ieo.app.ui.links.UnlinkSheet
 import com.ieo.app.ui.register.RegisterTripSheet
 import com.ieo.app.ui.register.RegisterTripViewModel
 import com.ieo.app.ui.settings.SettingsRoute
@@ -77,6 +80,7 @@ fun MainScreen(
     homeViewModel: HomeViewModel = viewModel(factory = HomeViewModel.Factory),
     registerViewModel: RegisterTripViewModel = viewModel(factory = RegisterTripViewModel.Factory),
     carLinkViewModel: CarLinkViewModel = viewModel(factory = CarLinkViewModel.Factory),
+    linksViewModel: DriverLinksViewModel = viewModel(factory = DriverLinksViewModel.Factory),
 ) {
     val context = LocalContext.current
     var destination by rememberSaveable { mutableStateOf(Destination.HOME) }
@@ -104,6 +108,17 @@ fun MainScreen(
         carLinkState.message?.let {
             Toast.makeText(context, it, Toast.LENGTH_LONG).show()
             carLinkViewModel.messageShown()
+        }
+    }
+
+    // 단골 주선사 요청 (BRK-002). 정차 중에만 묻는다: 주행이 끝날 때마다 새로 받고, 주행 중에는 창을 감춘다
+    val isDriving = liveState is HomeState.Driving
+    val linksState by linksViewModel.state.collectAsStateWithLifecycle()
+    LaunchedEffect(isDriving) { if (!isDriving) linksViewModel.refresh() }
+    LaunchedEffect(linksState.message) {
+        linksState.message?.let {
+            Toast.makeText(context, it, Toast.LENGTH_SHORT).show()
+            linksViewModel.messageShown()
         }
     }
 
@@ -171,6 +186,8 @@ fun MainScreen(
         RegisterTripSheet(visible = registering, state = registerState, actions = registerViewModel, onDismiss = { registering = false })
         DeliveryProofSheet(proof = status.deliveryProof, onDismiss = homeViewModel::closeDeliveryProof)
         CarLinkSheet(state = carLinkState, actions = carLinkViewModel)
+        LinkInvitationSheet(invitation = linksState.prompt?.takeUnless { isDriving }, busy = linksState.isBusy, actions = linksViewModel)
+        UnlinkSheet(link = linksState.unlinking, busy = linksState.isBusy, actions = linksViewModel)
     }
 }
 

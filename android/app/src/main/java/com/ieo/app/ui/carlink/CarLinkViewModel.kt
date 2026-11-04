@@ -7,6 +7,7 @@ import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import com.ieo.app.core.network.ApiResult
 import com.ieo.app.di.appContainer
+import com.ieo.app.ui.common.josa
 import com.ieo.app.domain.vehicle.CarIdentity
 import com.ieo.app.domain.vehicle.PleosMatch
 import com.ieo.app.domain.vehicle.Vehicle
@@ -100,7 +101,7 @@ class CarLinkViewModel(
         fun linkedMessage(vehicle: Vehicle) = "이 트럭을 ${vehicle.plateNumber} 차량으로 연결했어요. 설정에서 바꿀 수 있어요"
 
         fun otherOwnerMessage(myDefault: Vehicle?) =
-            "이 트럭은 다른 차주 계정에 연결돼 있어요" + (myDefault?.let { ". 기본 차량 ${it.plateNumber}으로 시작해요" } ?: "")
+            "이 트럭은 다른 차주 계정에 연결돼 있어요" + (myDefault?.let { ". 기본 차량 ${josa(it.plateNumber, "으로", "로")} 시작해요" } ?: "")
 
         val Factory: ViewModelProvider.Factory = viewModelFactory {
             initializer {

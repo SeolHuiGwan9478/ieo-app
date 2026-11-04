@@ -82,7 +82,7 @@ class CarLinkViewModelTest {
         viewModel.resolve()
         advanceUntilIdle()
 
-        assertTrue(viewModel.state.value.message!!.endsWith("기본 차량 경기80바1234으로 시작해요"))
+        assertTrue(viewModel.state.value.message!!.endsWith("기본 차량 경기80바1234로 시작해요"))
     }
 
     @Test

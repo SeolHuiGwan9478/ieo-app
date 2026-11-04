@@ -28,3 +28,29 @@ fun formatMinutesKorean(totalMinutes: Long): String {
         else -> "${hours}시간 ${rest}분"
     }
 }
+
+/**
+ * 받침에 맞는 조사를 붙인다: josa("한빛물류", "과", "와") → "한빛물류와", josa("대한운송", "이", "가") → "대한운송이".
+ * 숫자는 읽는 소리로 본다 ("경기80바1234" → 사). "으로"는 ㄹ 받침 뒤에서 "로"가 된다.
+ * 한글·숫자가 아닌 글자로 끝나면 받침이 있는 쪽을 쓴다.
+ */
+fun josa(word: String, withFinal: String, withoutFinal: String): String {
+    val last = word.lastOrNull() ?: return word + withFinal
+    val finalConsonant = when (last) {
+        in '가'..'힣' -> (last - '가') % 28
+        in '0'..'9' -> DIGIT_FINALS[last - '0']
+        else -> -1
+    }
+    val particle = when {
+        finalConsonant == 0 -> withoutFinal
+        finalConsonant == RIEUL && withFinal == "으로" -> withoutFinal
+        else -> withFinal
+    }
+    return word + particle
+}
+
+/** 받침 번호 (0 = 없음). ㄹ은 8 */
+private const val RIEUL = 8
+
+/** 영(ㅇ) 일(ㄹ) 이 삼(ㅁ) 사 오 육(ㄱ) 칠(ㄹ) 팔(ㄹ) 구 */
+private val DIGIT_FINALS = intArrayOf(21, 8, 0, 16, 0, 0, 1, 8, 8, 0)

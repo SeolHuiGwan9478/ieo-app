@@ -40,11 +40,12 @@ import com.ieo.app.ui.theme.TextSub
 private val ScreenPadding = 28.dp
 
 /**
- * 설정 탭: 내 정보 / 내 차량 / 앱. 고치기는 아래에서 올라오는 창에서 한다.
+ * 설정 탭: 내 정보 / 내 차량 / 단골 주선사 / 앱. 고치기는 아래에서 올라오는 창에서 한다.
  * 상태는 [SettingsViewModel]이 정하고, 이 화면은 그리기만 한다.
+ * [linksSection]: 단골 주선사 칸. 상태를 따로 가진 ui/links가 그린다
  */
 @Composable
-fun SettingsScreen(state: SettingsUiState, actions: SettingsActions) {
+fun SettingsScreen(state: SettingsUiState, actions: SettingsActions, linksSection: @Composable () -> Unit = {}) {
     Box(modifier = Modifier.fillMaxSize().background(CanvasGray)) {
         Column(
             verticalArrangement = Arrangement.spacedBy(16.dp),
@@ -56,6 +57,7 @@ fun SettingsScreen(state: SettingsUiState, actions: SettingsActions) {
         ) {
             ProfileSection(state.profile, onEdit = { actions.openForm(SettingsForm.EditName(state.profile?.name.orEmpty())) })
             VehicleSection(state.vehicles, isLoading = state.isLoading, onEdit = { actions.openForm(SettingsForm.EditVehicle(it)) })
+            linksSection()
             AppSection(state.appVersion, onSignOut = { actions.openForm(SettingsForm.ConfirmSignOut) })
         }
         IeoBottomSheet(item = state.form, onDismiss = actions::close) { form ->
