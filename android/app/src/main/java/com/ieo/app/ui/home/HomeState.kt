@@ -53,6 +53,8 @@ sealed interface HomeState {
         val recommendation: Recommendation?,
         /** 내비가 길 안내 중인지. 안내가 꺼졌거나 실패했으면 "길 안내 다시"·"도착했어요" 버튼을 보여 준다 */
         val naviActive: Boolean = true,
+        /** 상하차지 반경 안에서 멈춰 있다. 이만큼 더 서 있으면 자동으로 도착 처리 (WAIT-001) */
+        val arrivingInSeconds: Long? = null,
     ) : HomeState
 }
 

@@ -4,13 +4,15 @@ import androidx.lifecycle.viewModelScope
 import com.ieo.app.domain.delivery.DeliveryProofStatus
 import com.ieo.app.domain.trip.StopType
 import com.ieo.app.domain.trip.TripStatus
+import com.ieo.app.domain.vehicle.GeoPoint
 import com.ieo.app.testing.FakeNavigator
+import com.ieo.app.testing.FakeSensors
 import com.ieo.app.testing.FakeTripServer
 import com.ieo.app.testing.MainDispatcherRule
+import com.ieo.app.testing.MutableClock
 import com.ieo.app.testing.TripFixtures
 import com.ieo.app.testing.TripFixtures.NOW
-import java.time.Clock
-import java.time.ZoneOffset
+import java.time.Instant
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.test.TestScope
@@ -31,6 +33,8 @@ class HomeViewModelTest {
 
     private val server = FakeTripServer(TripFixtures.trip(TripStatus.SCHEDULED))
     private val navigator = FakeNavigator()
+    private val sensors = FakeSensors()
+    private val clock = MutableClock(NOW)
 
     /**
      * [status] 상태의 운행으로 ViewModel을 만들어 [body]를 돌린다.
@@ -43,7 +47,6 @@ class HomeViewModelTest {
     ) = runTest(main.dispatcher) {
         server.trip = TripFixtures.trip(status)
         prepare()
-        val clock = Clock.fixed(NOW, ZoneOffset.UTC)
         val vm = HomeViewModel(
             tripRepository = server,
             waitRepository = server,
@@ -52,6 +55,8 @@ class HomeViewModelTest {
             siteRepository = server,
             deliveryProofRepository = server,
             navigator = navigator,
+            sensors = sensors,
+            clock = clock,
             stateFactory = HomeStateFactory(clock) { 1_000_000L },
         )
         runCurrent()
@@ -85,6 +90,34 @@ class HomeViewModelTest {
         assertNull(navigator.progress.value)
         val state = vm.state.value as HomeState.Waiting
         assertTrue(state.isPickup)
+    }
+
+    @Test
+    fun `상차지 반경 안에서 3분 서 있으면 멈추기 시작한 시각으로 도착한다`() = homeTest(TripStatus.TO_PICKUP) { vm ->
+        // 상차지(평택 포승)에서 약 110m
+        sensors.parkAt(GeoPoint(TripFixtures.PICKUP.latitude + 0.001, TripFixtures.PICKUP.longitude))
+        advanceTimeBy(1_001)
+        runCurrent()
+        assertEquals(180L, (vm.state.value as HomeState.Driving).arrivingInSeconds)
+
+        clock.instant = NOW.plusSeconds(180)
+        advanceTimeBy(1_000)
+        runCurrent()
+
+        assertEquals(listOf("arrive PICKUP"), server.calls)
+        assertEquals(listOf<Instant?>(NOW), server.arrivedAt)
+        assertTrue(vm.state.value is HomeState.Waiting)
+    }
+
+    @Test
+    fun `상차지에서 멀리 서 있으면 도착하지 않는다`() = homeTest(TripStatus.TO_PICKUP) { vm ->
+        sensors.parkAt(GeoPoint(TripFixtures.PICKUP.latitude + 0.05, TripFixtures.PICKUP.longitude))
+        clock.instant = NOW.plusSeconds(600)
+        advanceTimeBy(5_000)
+        runCurrent()
+
+        assertTrue(server.calls.isEmpty())
+        assertNull((vm.state.value as HomeState.Driving).arrivingInSeconds)
     }
 
     @Test

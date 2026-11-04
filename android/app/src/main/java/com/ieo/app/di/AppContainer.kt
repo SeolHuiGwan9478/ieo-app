@@ -25,6 +25,7 @@ import com.ieo.app.data.site.DefaultSiteRepository
 import com.ieo.app.data.site.SiteApi
 import com.ieo.app.data.trip.DefaultTripRepository
 import com.ieo.app.data.trip.TripApi
+import com.ieo.app.data.vehicle.CarSensors
 import com.ieo.app.data.vehicle.DefaultVehicleRepository
 import com.ieo.app.data.vehicle.VehicleApi
 import com.ieo.app.data.wait.DefaultWaitRepository
@@ -40,6 +41,7 @@ import com.ieo.app.domain.order.OrderRepository
 import com.ieo.app.domain.site.SiteRepository
 import com.ieo.app.domain.trip.TripRepository
 import com.ieo.app.domain.vehicle.VehicleRepository
+import com.ieo.app.domain.vehicle.VehicleSensors
 import com.ieo.app.domain.wait.WaitRepository
 
 /**
@@ -60,6 +62,7 @@ interface AppContainer {
     val vehicleRepository: VehicleRepository
     val navigator: Navigator
     val naviPlaces: NaviPlaceSource
+    val vehicleSensors: VehicleSensors
 }
 
 class DefaultAppContainer(context: Context) : AppContainer {
@@ -131,4 +134,6 @@ class DefaultAppContainer(context: Context) : AppContainer {
     override val navigator: Navigator get() = naviGuide
 
     override val naviPlaces: NaviPlaceSource get() = naviGuide
+
+    override val vehicleSensors: VehicleSensors by lazy { CarSensors(appContext) }
 }

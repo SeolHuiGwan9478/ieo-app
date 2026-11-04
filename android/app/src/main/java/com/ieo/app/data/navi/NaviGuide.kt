@@ -13,6 +13,7 @@ import ai.pleos.playground.navi.data.RouteStartInfo
 import ai.pleos.playground.navi.helper.NaviHelper
 import ai.pleos.playground.navi.helper.listener.NaviHelperEventListener
 import android.content.Context
+import android.content.Intent
 import android.os.Handler
 import android.os.Looper
 import android.util.Log
@@ -37,7 +38,8 @@ import kotlinx.coroutines.withTimeoutOrNull
  */
 class NaviGuide(context: Context) : Navigator, NaviPlaceSource {
 
-    private val helper = NaviHelper(context.applicationContext)
+    private val appContext = context.applicationContext
+    private val helper = NaviHelper(appContext)
     private val handler = Handler(Looper.getMainLooper())
 
     /**
@@ -193,13 +195,24 @@ class NaviGuide(context: Context) : Navigator, NaviPlaceSource {
     override fun stopGuidance() {
         handler.removeCallbacks(routeTimeout)
         val guiding = _progress.value?.let { !it.arrived } ?: false
-        if (guiding) runCatching { helper.cancelRoute() }
+        if (guiding) {
+            runCatching { helper.cancelRoute() }
+            // 자동 도착으로 안내를 끝내면 내비가 대기 화면을 덮는다. 잠시 뒤 이에오를 다시 앞으로 (에뮬레이터 확인)
+            handler.postDelayed(::bringAppToFront, BRING_BACK_DELAY_MS)
+        }
         _progress.value = null
+    }
+
+    private fun bringAppToFront() {
+        val launch = appContext.packageManager.getLaunchIntentForPackage(appContext.packageName) ?: return
+        launch.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_REORDER_TO_FRONT)
+        runCatching { appContext.startActivity(launch) }.onFailure { Log.w(TAG, "이에오를 앞으로 가져오지 못했습니다", it) }
     }
 
     private companion object {
         const val TAG = "NaviGuide"
         const val ROUTE_TIMEOUT_MS = 30_000L
         const val PLACES_TIMEOUT_MS = 3_000L
+        const val BRING_BACK_DELAY_MS = 800L
     }
 }

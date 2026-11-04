@@ -2,6 +2,7 @@ package com.ieo.app.domain.wait
 
 import com.ieo.app.core.network.ApiResult
 import com.ieo.app.domain.trip.StopType
+import java.time.Instant
 
 /**
  * 상하차지 대기 기록. 시각은 서버가 받은 때로 남긴다.
@@ -11,8 +12,11 @@ interface WaitRepository {
 
     suspend fun waits(tripId: Long): ApiResult<List<WaitRecord>>
 
-    /** 상하차지 도착. 이미 도착했으면 있던 기록을 준다 */
-    suspend fun arrive(tripId: Long, stop: StopType): ApiResult<WaitRecord>
+    /**
+     * 상하차지 도착. 이미 도착했으면 있던 기록을 준다.
+     * [at]: 자동 도착이면 멈추기 시작한 때. 비우면 서버가 받은 때
+     */
+    suspend fun arrive(tripId: Long, stop: StopType, at: Instant? = null): ApiResult<WaitRecord>
 
     /** "상차 시작" · "하차 시작" */
     suspend fun startWork(tripId: Long, stop: StopType): ApiResult<WaitRecord>

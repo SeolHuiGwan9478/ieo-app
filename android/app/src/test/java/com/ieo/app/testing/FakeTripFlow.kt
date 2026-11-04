@@ -28,6 +28,7 @@ import com.ieo.app.domain.site.SiteRepository
 import com.ieo.app.domain.wait.WaitProofLink
 import com.ieo.app.domain.wait.WaitRepository
 import com.ieo.app.domain.wait.WaitStatus
+import java.time.Instant
 import java.time.LocalDate
 import kotlinx.coroutines.flow.MutableStateFlow
 
@@ -87,8 +88,12 @@ class FakeTripServer(var trip: Trip) :
 
     override suspend fun report(orderId: Long, type: ReportType): ApiResult<Unit> = error("홈에서는 쓰지 않음")
 
-    override suspend fun arrive(tripId: Long, stop: StopType): ApiResult<WaitRecord> {
+    /** 자동 도착이 보낸 시각 */
+    val arrivedAt = mutableListOf<Instant?>()
+
+    override suspend fun arrive(tripId: Long, stop: StopType, at: Instant?): ApiResult<WaitRecord> {
         calls += "arrive $stop"
+        arrivedAt += at
         trip = trip.copy(status = if (stop == StopType.PICKUP) TripStatus.AT_PICKUP else TripStatus.AT_DROPOFF)
         return ApiResult.Success(records.getOrPut(stop) { TripFixtures.wait(stop) })
     }

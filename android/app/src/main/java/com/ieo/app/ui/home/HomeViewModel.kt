@@ -19,9 +19,15 @@ import com.ieo.app.domain.trip.Trip
 import com.ieo.app.domain.trip.TripRepository
 import com.ieo.app.domain.trip.TripStatus
 import com.ieo.app.domain.trip.TripStop
+import com.ieo.app.domain.vehicle.GeoPoint
+import com.ieo.app.domain.vehicle.VehicleSensors
+import com.ieo.app.domain.wait.ArrivalCheck
+import com.ieo.app.domain.wait.ArrivalDetector
+import com.ieo.app.domain.wait.GeoFence
 import com.ieo.app.domain.wait.WaitProofLink
 import com.ieo.app.domain.wait.WaitRecord
 import com.ieo.app.domain.wait.WaitRepository
+import java.time.Clock
 import java.time.Instant
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
@@ -81,8 +87,8 @@ interface HomeActions {
  * 홈 화면: 운행 진행(출발 → 상차지 도착 → 상차 → 출발 → 하차지 도착 → 하차 → 완료)을 서버에 알리고,
  * 그 결과로 화면 상태를 바꾼다. 화면을 고르는 규칙은 [HomeStateFactory]가 갖고 있다.
  *
- * 상하차지 도착은 차량 내비가 "목적지 도착"을 알리면 자동으로 처리한다.
- * TODO: 위치 반경(지오펜스) + 3분 정차(기어·속도)로 판단하기 (WAIT-001, 에뮬레이터 확인 뒤)
+ * 상하차지 도착은 셋 중 먼저 오는 것으로 처리한다: 상하차지 반경 안 3분 정차(WAIT-001),
+ * 차량 내비의 "목적지 도착", "도착했어요" 버튼.
  */
 class HomeViewModel(
     private val tripRepository: TripRepository,
@@ -92,12 +98,18 @@ class HomeViewModel(
     private val siteRepository: SiteRepository,
     private val deliveryProofRepository: DeliveryProofRepository,
     private val navigator: Navigator,
+    private val sensors: VehicleSensors,
+    private val clock: Clock = Clock.systemUTC(),
     private val stateFactory: HomeStateFactory = HomeStateFactory(),
 ) : ViewModel(), HomeActions {
 
     private val snapshot = MutableStateFlow(HomeSnapshot())
 
-    val state: StateFlow<HomeState> = combine(snapshot, navigator.progress, stateFactory::create)
+    /** 상하차지 반경 안에서 멈춘 동안 남은 시간을 화면에 보여 준다 */
+    private val arrivalCheck = MutableStateFlow<ArrivalCheck>(ArrivalCheck.NotYet)
+    private val arrivalDetector = ArrivalDetector()
+
+    val state: StateFlow<HomeState> = combine(snapshot, navigator.progress, arrivalCheck, stateFactory::create)
         .stateIn(viewModelScope, SharingStarted.Eagerly, stateFactory.create(HomeSnapshot(), null))
 
     private val _status = MutableStateFlow(HomeStatus())
@@ -106,6 +118,7 @@ class HomeViewModel(
     init {
         refresh()
         arriveWhenNaviArrives()
+        arriveWhenStoppedAtStop()
         keepNaviProgressFresh()
     }
 
@@ -120,10 +133,13 @@ class HomeViewModel(
         started.currentStop?.let { guideTo(started.stop(it)) }
     }
 
-    override fun arrive() = runAction {
+    override fun arrive() = arriveAt(at = null)
+
+    /** [at]: 자동 도착이면 멈추기 시작한 때. 버튼·내비 도착이면 null(서버가 받은 때) */
+    private fun arriveAt(at: Instant?) = runAction {
         val trip = snapshot.value.current?.takeIf { it.status.isDriving } ?: return@runAction
         val stop = trip.currentStop ?: return@runAction
-        val record = waitRepository.arrive(trip.id, stop).orShow() ?: return@runAction
+        val record = waitRepository.arrive(trip.id, stop, at).orShow() ?: return@runAction
         navigator.stopGuidance()
         reloadCurrent(record)
     }
@@ -267,6 +283,38 @@ class HomeViewModel(
         }
     }
 
+    /**
+     * 자동 도착 (WAIT-001): 1초마다 지금 가는 상하차지 반경 안에서 멈춰 있는지 본다.
+     * 3분이 차면 멈추기 시작한 시각으로 도착을 알린다. 가는 곳이 바뀌면 처음부터 센다.
+     */
+    private fun arriveWhenStoppedAtStop() {
+        viewModelScope.launch {
+            var fenceOf: Pair<Long, StopType>? = null
+            while (true) {
+                delay(ARRIVAL_CHECK_MILLIS)
+                val trip = snapshot.value.current?.takeIf { it.status.isDriving }
+                val stop = trip?.currentStop
+                if (trip == null || stop == null) {
+                    fenceOf = null
+                    arrivalCheck.value = ArrivalCheck.NotYet
+                    continue
+                }
+                if (fenceOf != trip.id to stop) {
+                    fenceOf = trip.id to stop
+                    arrivalDetector.reset()
+                }
+                val target = trip.stop(stop)
+                val fence = GeoFence(GeoPoint(target.latitude, target.longitude), target.geofenceRadiusMeters)
+                val check = arrivalDetector.check(clock.instant(), fence, sensors.location.value, sensors.motion.value)
+                arrivalCheck.value = check
+                if (check is ArrivalCheck.Arrived && !_status.value.isBusy) {
+                    arrivalDetector.reset()
+                    arriveAt(check.at)
+                }
+            }
+        }
+    }
+
     /** 내비가 주행 정보를 띄엄띄엄 보내서, 안내 중에만 10초마다 남은 거리·시간을 다시 묻는다 */
     private fun keepNaviProgressFresh() {
         viewModelScope.launch {
@@ -309,6 +357,7 @@ class HomeViewModel(
         const val DELIVERY_SIGNED_MESSAGE = "인수증 서명을 받았어요. 운행을 마쳤어요"
         private const val SIGNATURE_POLL_MILLIS = 3_000L
         private const val NAVI_REFRESH_MILLIS = 10_000L
+        private const val ARRIVAL_CHECK_MILLIS = 1_000L
 
         /** 홈에는 오더를 이만큼만. 나머지는 오더 탭에서 */
         private const val HOME_ORDER_COUNT = 5
@@ -329,6 +378,7 @@ class HomeViewModel(
                     siteRepository = container.siteRepository,
                     deliveryProofRepository = container.deliveryProofRepository,
                     navigator = container.navigator,
+                    sensors = container.vehicleSensors,
                 )
             }
         }

@@ -427,6 +427,15 @@ private fun DrivingHome(state: HomeState.Driving, onArrive: () -> Unit, onResume
                     Stat("남은 시간", state.remainingMinutes?.let { formatMinutesKorean(it.toLong()) } ?: "-")
                     Stat("진행", state.progress?.let { "${(it * 100).toInt()}%" } ?: "-")
                 }
+                state.arrivingInSeconds?.let { seconds ->
+                    Spacer(Modifier.height(20.dp))
+                    Text(
+                        "${if (state.isPickup) "상차지" else "하차지"}에 멈췄어요 · ${formatDuration(seconds).takeLast(5)} 뒤 대기를 시작해요",
+                        fontSize = 22.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = IeoStatus.colors.waiting,
+                    )
+                }
                 if (state.etaShared) {
                     Spacer(Modifier.height(20.dp))
                     Row(verticalAlignment = Alignment.CenterVertically) {
