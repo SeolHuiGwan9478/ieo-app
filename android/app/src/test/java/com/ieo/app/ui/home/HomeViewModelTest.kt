@@ -281,6 +281,35 @@ class HomeViewModelTest {
     }
 
     @Test
+    fun `5km 넘게 움직이면 근처 오더를 다시 찾고 가까이 움직이면 그대로 둔다`() = homeTest { vm ->
+        val here = GeoPoint(TripFixtures.PICKUP.latitude, TripFixtures.PICKUP.longitude)
+        sensors.parkAt(here)
+        runCurrent()
+
+        // 약 1km 북쪽
+        val near = GeoPoint(here.latitude + 0.01, here.longitude)
+        sensors.drive(near)
+        runCurrent()
+        assertEquals(listOf(null, here), server.ordersNear)
+
+        // 약 11km 북쪽
+        val far = GeoPoint(here.latitude + 0.1, here.longitude)
+        sensors.drive(far)
+        runCurrent()
+        assertEquals(listOf(null, here, far), server.ordersNear)
+        assertTrue((vm.state.value as HomeState.Idle).nearby)
+    }
+
+    @Test
+    fun `운행 중에는 움직여도 근처 오더를 찾지 않는다`() = homeTest(TripStatus.TO_PICKUP) { vm ->
+        sensors.drive(GeoPoint(TripFixtures.PICKUP.latitude + 0.1, TripFixtures.PICKUP.longitude))
+        runCurrent()
+
+        assertEquals(listOf<GeoPoint?>(null), server.ordersNear)
+        assertTrue(vm.state.value is HomeState.Driving)
+    }
+
+    @Test
     fun `운행 전 화면에 오늘 요약과 모집 중 오더를 서버에서 받아 보여 준다`() = homeTest { vm ->
         val state = vm.state.value as HomeState.Idle
 

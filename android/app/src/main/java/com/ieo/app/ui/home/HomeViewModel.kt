@@ -43,7 +43,6 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.filterNotNull
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
@@ -130,7 +129,7 @@ class HomeViewModel(
         arriveWhenStoppedAtStop()
         departWhenLeavingStop()
         keepNaviProgressFresh()
-        findNearbyOrdersOnceLocated()
+        keepNearbyOrdersFresh()
     }
 
     override fun refresh() {
@@ -364,13 +363,23 @@ class HomeViewModel(
 
     private fun fenceOf(stop: TripStop) = GeoFence(GeoPoint(stop.latitude, stop.longitude), stop.geofenceRadiusMeters)
 
-    /** 위치를 받기 전에 오더를 찾았으면, 처음 위치가 들어올 때 근처 오더로 다시 찾는다 */
-    private fun findNearbyOrdersOnceLocated() {
+    /**
+     * 운행 전 화면의 근처 오더를 차 위치에 맞춘다: 처음 위치가 들어올 때, 그리고 찾은 곳에서 5km 넘게 움직였을 때 다시 찾는다.
+     * 운행 중에는 오더를 보여 주지 않으니 찾지 않는다 (운행이 끝나면 [load]가 지금 위치로 찾는다).
+     * 실패하면 조용히 넘어가고, 다시 5km 움직이면 또 찾는다. 통신이 끊긴 동안 몇 초마다 묻지 않게 하려는 것이다.
+     */
+    private fun keepNearbyOrdersFresh() {
         viewModelScope.launch {
-            val near = sensors.location.filterNotNull().first()
-            if (snapshot.value.ordersNear != null) return@launch
-            orderRepository.openOrders(limit = HOME_ORDER_COUNT, near = near).orShow()
-                ?.let { list -> snapshot.update { it.copy(orders = list, ordersNear = near) } }
+            var lastTried: GeoPoint? = null
+            sensors.location.filterNotNull().collect { here ->
+                if (snapshot.value.current != null) return@collect
+                val from = snapshot.value.ordersNear ?: lastTried
+                if (from != null && from.distanceTo(here) < NEARBY_REFRESH_METERS) return@collect
+                lastTried = here
+                val list = (orderRepository.openOrders(limit = HOME_ORDER_COUNT, near = here) as? ApiResult.Success)?.data
+                    ?: return@collect
+                snapshot.update { it.copy(orders = list, ordersNear = here) }
+            }
         }
     }
 
@@ -417,6 +426,9 @@ class HomeViewModel(
         private const val SIGNATURE_POLL_MILLIS = 3_000L
         private const val NAVI_REFRESH_MILLIS = 10_000L
         private const val SENSOR_CHECK_MILLIS = 1_000L
+
+        /** 근처 오더를 찾은 곳에서 이만큼 움직이면 다시 찾는다 */
+        private const val NEARBY_REFRESH_METERS = 5_000.0
 
         /** 홈에는 오더를 이만큼만. 나머지는 오더 탭에서 */
         private const val HOME_ORDER_COUNT = 5
