@@ -21,6 +21,7 @@ import com.ieo.app.domain.trip.TripStatus
 import com.ieo.app.domain.trip.TripStop
 import com.ieo.app.domain.vehicle.GeoPoint
 import com.ieo.app.domain.vehicle.VehicleSensors
+import com.ieo.app.domain.voice.Announcer
 import com.ieo.app.domain.wait.ArrivalCheck
 import com.ieo.app.domain.wait.ArrivalDetector
 import com.ieo.app.domain.wait.DepartureCheck
@@ -30,6 +31,7 @@ import com.ieo.app.domain.wait.WaitProofLink
 import com.ieo.app.domain.wait.WaitRecord
 import com.ieo.app.domain.wait.WaitRepository
 import java.time.Clock
+import java.time.Duration
 import java.time.Instant
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
@@ -93,6 +95,7 @@ interface HomeActions {
  * 상하차지 도착은 셋 중 먼저 오는 것으로 처리한다: 상하차지 반경 안 3분 정차(WAIT-001),
  * 차량 내비의 "목적지 도착", "도착했어요" 버튼.
  * 떠남은 반경을 벗어나거나 시속 20km 이상으로 1분 달린 때(WAIT-005), 또는 "출발"·"운행 완료" 버튼.
+ * 상하차지 3km 전, 도착, 대기비 시작, 떠남, 인수증 서명은 음성으로도 알린다 (문장은 [HomeAnnouncements]).
  */
 class HomeViewModel(
     private val tripRepository: TripRepository,
@@ -103,6 +106,7 @@ class HomeViewModel(
     private val deliveryProofRepository: DeliveryProofRepository,
     private val navigator: Navigator,
     private val sensors: VehicleSensors,
+    private val announcer: Announcer,
     private val clock: Clock = Clock.systemUTC(),
     private val stateFactory: HomeStateFactory = HomeStateFactory(),
 ) : ViewModel(), HomeActions {
@@ -128,6 +132,7 @@ class HomeViewModel(
         arriveWhenNaviArrives()
         arriveWhenStoppedAtStop()
         departWhenLeavingStop()
+        announceChargeableStart()
         keepNaviProgressFresh()
         keepNearbyOrdersFresh()
     }
@@ -150,6 +155,7 @@ class HomeViewModel(
         val trip = snapshot.value.current?.takeIf { it.status.isDriving } ?: return@runAction
         val stop = trip.currentStop ?: return@runAction
         val record = waitRepository.arrive(trip.id, stop, at).orShow() ?: return@runAction
+        announcer.say(HomeAnnouncements.arrived(trip.stop(stop).name, record.policy))
         navigator.stopGuidance()
         reloadCurrent(record)
     }
@@ -171,10 +177,12 @@ class HomeViewModel(
         waitRepository.depart(trip.id, stop, departedAt).orShow() ?: return@runAction
         when (stop) {
             StopType.PICKUP -> {
+                announcer.say(HomeAnnouncements.leftPickup(trip.pickup.name, trip.dropoff.name))
                 reloadCurrent(wait = null)
                 guideTo(trip.dropoff)
             }
             StopType.DROPOFF -> {
+                announcer.say(HomeAnnouncements.tripCompleted(trip.fare))
                 closeDeliveryProof()
                 snapshot.update { it.copy(current = null, wait = null, site = null) }
                 show(TRIP_COMPLETED_MESSAGE)
@@ -201,7 +209,7 @@ class HomeViewModel(
         if (stop != StopType.DROPOFF) return@runAction
         val proof = deliveryProofRepository.issue(trip.id).orShow() ?: return@runAction
         _status.update { it.copy(deliveryProof = proof) }
-        if (proof.isConfirmed) onDeliveryConfirmed() else watchSignature(trip.id)
+        if (proof.isConfirmed) onDeliveryConfirmed(proof) else watchSignature(trip.id)
     }
 
     /** 창을 닫으면 서명 확인도 멈춘다. 다시 누르면 같은 링크로 이어서 기다린다 */
@@ -219,7 +227,7 @@ class HomeViewModel(
                 val proof = (deliveryProofRepository.get(tripId) as? ApiResult.Success)?.data ?: continue
                 _status.update { it.copy(deliveryProof = proof) }
                 if (proof.isConfirmed) {
-                    onDeliveryConfirmed()
+                    onDeliveryConfirmed(proof)
                     return@launch
                 }
             }
@@ -227,7 +235,8 @@ class HomeViewModel(
     }
 
     /** 서명하면 서버가 운행을 끝낸다 (POD-008). 창은 그대로 두고 뒤의 홈을 새로 받는다 */
-    private suspend fun onDeliveryConfirmed() {
+    private suspend fun onDeliveryConfirmed(proof: DeliveryProof) {
+        announcer.say(HomeAnnouncements.deliverySigned(proof.signerName))
         show(DELIVERY_SIGNED_MESSAGE)
         load()
     }
@@ -321,6 +330,7 @@ class HomeViewModel(
                     fenceOf = trip.id to stop
                     arrivalDetector.reset()
                 }
+                announceApproach(trip, stop, sensors.location.value)
                 val check = arrivalDetector.check(clock.instant(), fenceOf(trip.stop(stop)), sensors.location.value, sensors.motion.value)
                 arrivalCheck.value = check
                 if (check is ArrivalCheck.Arrived && !_status.value.isBusy) {
@@ -357,6 +367,39 @@ class HomeViewModel(
                     departureDetector.reset()
                     departAt(check.at)
                 }
+            }
+        }
+    }
+
+    /** 정보 카드를 읽어 준 정차 지점. 운행·지점마다 한 번만 */
+    private val approachAnnounced = mutableSetOf<Pair<Long, StopType>>()
+
+    /** 가는 상하차지 3km 안에 처음 들어오면 정보 카드를 읽어 준다 (SITE-006). 높이 제한이 걸리면 경고로 */
+    private fun announceApproach(trip: Trip, stop: StopType, here: GeoPoint?) {
+        val target = trip.stop(stop)
+        if (here == null || trip.id to stop in approachAnnounced) return
+        if (GeoPoint(target.latitude, target.longitude).distanceTo(here) > APPROACH_ANNOUNCE_METERS) return
+        approachAnnounced += trip.id to stop
+        viewModelScope.launch {
+            val card = (siteRepository.card(target.siteId) as? ApiResult.Success)?.data ?: return@launch
+            HomeAnnouncements.approaching(card)?.let(announcer::say)
+        }
+    }
+
+    /**
+     * 무료 대기 시간이 끝나는 순간 "지금부터 대기비가 붙어요" (WAIT-012).
+     * 작업을 시작하면 대기 기록이 바뀌어 취소된다. 앱을 켰을 때 이미 지났으면 말하지 않는다.
+     */
+    private fun announceChargeableStart() {
+        viewModelScope.launch {
+            snapshot.map { it.wait }.distinctUntilChanged().collectLatest { wait ->
+                val policy = wait?.policy ?: return@collectLatest
+                if (wait.workStartedAt != null || wait.departedAt != null) return@collectLatest
+                val startsAt = wait.chargeableFrom.plus(Duration.ofMinutes(policy.freeMinutes.toLong()))
+                val millis = Duration.between(clock.instant(), startsAt).toMillis()
+                if (millis <= 0) return@collectLatest
+                delay(millis)
+                announcer.say(HomeAnnouncements.chargeableStarted(policy))
             }
         }
     }
@@ -427,6 +470,9 @@ class HomeViewModel(
         private const val NAVI_REFRESH_MILLIS = 10_000L
         private const val SENSOR_CHECK_MILLIS = 1_000L
 
+        /** 상하차지 정보 카드를 읽어 주는 거리 (SITE-006) */
+        private const val APPROACH_ANNOUNCE_METERS = 3_000.0
+
         /** 근처 오더를 찾은 곳에서 이만큼 움직이면 다시 찾는다 */
         private const val NEARBY_REFRESH_METERS = 5_000.0
 
@@ -450,6 +496,7 @@ class HomeViewModel(
                     deliveryProofRepository = container.deliveryProofRepository,
                     navigator = container.navigator,
                     sensors = container.vehicleSensors,
+                    announcer = container.announcer,
                 )
             }
         }

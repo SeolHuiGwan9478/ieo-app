@@ -19,6 +19,16 @@
     <!-- Ieo 서버 -->
     <uses-permission android:name="android.permission.INTERNET" />
 
+    <!-- 음성 안내: Pleos 차량의 TTS 엔진(SpeechService)에 연결하는 권한 -->
+    <uses-permission android:name="pleos.car.permission.TTS_SERVICE" />
+
+    <!-- 음성 안내: 차량의 TTS 엔진을 찾는다 (Android 11부터 필요) -->
+    <queries>
+        <intent>
+            <action android:name="android.intent.action.TTS_SERVICE" />
+        </intent>
+    </queries>
+
     <application
         android:name=".IeoApplication"
         android:networkSecurityConfig="@xml/network_security_config"

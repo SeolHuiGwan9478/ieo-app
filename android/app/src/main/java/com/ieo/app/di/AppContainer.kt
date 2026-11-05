@@ -31,6 +31,7 @@ import com.ieo.app.data.vehicle.CarSensors
 import com.ieo.app.data.vehicle.DefaultVehicleRepository
 import com.ieo.app.data.vehicle.PleosCarIdentity
 import com.ieo.app.data.vehicle.VehicleApi
+import com.ieo.app.data.voice.TtsAnnouncer
 import com.ieo.app.data.wait.DefaultWaitRepository
 import com.ieo.app.data.wait.WaitApi
 import com.ieo.app.domain.account.AccountRepository
@@ -47,6 +48,7 @@ import com.ieo.app.domain.trip.TripRepository
 import com.ieo.app.domain.vehicle.CarIdentity
 import com.ieo.app.domain.vehicle.VehicleRepository
 import com.ieo.app.domain.vehicle.VehicleSensors
+import com.ieo.app.domain.voice.Announcer
 import com.ieo.app.domain.wait.WaitRepository
 
 /**
@@ -70,6 +72,7 @@ interface AppContainer {
     val naviPlaces: NaviPlaceSource
     val vehicleSensors: VehicleSensors
     val carIdentity: CarIdentity
+    val announcer: Announcer
 }
 
 class DefaultAppContainer(context: Context) : AppContainer {
@@ -149,4 +152,6 @@ class DefaultAppContainer(context: Context) : AppContainer {
     override val vehicleSensors: VehicleSensors by lazy { CarSensors(appContext) }
 
     override val carIdentity: CarIdentity by lazy { PleosCarIdentity(appContext) }
+
+    override val announcer: Announcer by lazy { TtsAnnouncer(appContext) }
 }

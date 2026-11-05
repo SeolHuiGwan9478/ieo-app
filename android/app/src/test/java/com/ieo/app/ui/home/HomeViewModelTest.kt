@@ -5,6 +5,8 @@ import com.ieo.app.domain.delivery.DeliveryProofStatus
 import com.ieo.app.domain.trip.StopType
 import com.ieo.app.domain.trip.TripStatus
 import com.ieo.app.domain.vehicle.GeoPoint
+import com.ieo.app.domain.voice.AnnouncementPriority
+import com.ieo.app.testing.FakeAnnouncer
 import com.ieo.app.testing.FakeNavigator
 import com.ieo.app.testing.FakeSensors
 import com.ieo.app.testing.FakeTripServer
@@ -35,6 +37,7 @@ class HomeViewModelTest {
     private val navigator = FakeNavigator()
     private val sensors = FakeSensors()
     private val clock = MutableClock(NOW)
+    private val announcer = FakeAnnouncer()
 
     /**
      * [status] 상태의 운행으로 ViewModel을 만들어 [body]를 돌린다.
@@ -56,6 +59,7 @@ class HomeViewModelTest {
             deliveryProofRepository = server,
             navigator = navigator,
             sensors = sensors,
+            announcer = announcer,
             clock = clock,
             stateFactory = HomeStateFactory(clock) { 1_000_000L },
         )
@@ -307,6 +311,74 @@ class HomeViewModelTest {
 
         assertEquals(listOf<GeoPoint?>(null), server.ordersNear)
         assertTrue(vm.state.value is HomeState.Driving)
+    }
+
+    @Test
+    fun `도착하면 대기 시작과 무료 대기 시간을 말한다`() = homeTest(TripStatus.TO_PICKUP) { vm ->
+        vm.arrive()
+        runCurrent()
+
+        assertEquals(listOf("평택 포승에 도착했어요. 대기를 시작해요. 무료 대기는 2시간이에요."), announcer.texts)
+        assertEquals(AnnouncementPriority.TRIP, announcer.said.single().priority)
+    }
+
+    @Test
+    fun `상차지 3km 안에 들어오면 정보 카드를 한 번만 읽어 준다`() = homeTest(TripStatus.TO_PICKUP) { vm ->
+        // 약 5.5km 밖에서는 읽지 않는다
+        sensors.drive(GeoPoint(TripFixtures.PICKUP.latitude + 0.05, TripFixtures.PICKUP.longitude))
+        advanceTimeBy(1_001)
+        runCurrent()
+        assertTrue(announcer.said.isEmpty())
+
+        // 약 2.2km
+        sensors.drive(GeoPoint(TripFixtures.PICKUP.latitude + 0.02, TripFixtures.PICKUP.longitude))
+        advanceTimeBy(5_000)
+        runCurrent()
+
+        val said = announcer.said.single()
+        // 픽스처 정보 카드는 높이 여유가 아슬아슬(CAUTION)해서 경고로 말한다
+        assertEquals(AnnouncementPriority.WARNING, said.priority)
+        assertTrue(said.text.endsWith("평택 포승은 높이 제한 3.5미터, 지게차 있음, 평균 대기 1시간 20분."))
+    }
+
+    @Test
+    fun `무료 대기가 끝나는 순간 대기비가 붙는다고 말한다`() = homeTest(TripStatus.TO_PICKUP) { vm ->
+        vm.arrive()
+        runCurrent()
+        // 픽스처 대기: 10분 전 도착, 무료 2시간 → 1시간 50분 뒤
+        clock.instant = NOW.plusSeconds(6_600)
+        advanceTimeBy(6_600_000)
+        runCurrent()
+
+        assertEquals("지금부터 대기비가 붙어요. 30분마다 1만 원이에요.", announcer.texts.last())
+    }
+
+    @Test
+    fun `작업을 시작했으면 대기비 시작을 말하지 않는다`() = homeTest(TripStatus.TO_PICKUP) { vm ->
+        vm.arrive()
+        runCurrent()
+        vm.startWork()
+        runCurrent()
+
+        advanceTimeBy(7_200_000)
+        runCurrent()
+
+        assertTrue(announcer.texts.none { it.startsWith("지금부터 대기비") })
+    }
+
+    @Test
+    fun `상차지를 떠나면 하차지 안내를, 하차지를 떠나면 운행 완료를 말한다`() = homeTest(TripStatus.TO_PICKUP) { vm ->
+        vm.arrive()
+        runCurrent()
+        vm.depart()
+        runCurrent()
+        assertEquals("평택 포승을 떠났어요. 대구 성서로 안내할게요.", announcer.texts.last())
+
+        vm.arrive()
+        runCurrent()
+        vm.depart()
+        runCurrent()
+        assertEquals("운행을 마쳤어요. 장부에 45만 원을 기록했어요.", announcer.texts.last())
     }
 
     @Test
