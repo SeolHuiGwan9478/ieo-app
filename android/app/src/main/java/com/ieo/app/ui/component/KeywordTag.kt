@@ -37,6 +37,15 @@ data class Keyword(val text: String, val color: TagColor) {
             IeoTag.Gray,
         )
 
+        /** 하차지에서 다음 상차지까지 빈 차로 가는 거리 (배차 추천) */
+        fun emptyRun(meters: Long) = Keyword(
+            if (meters < 1_000) "공차 1km 안" else "공차 ${(meters + 500) / 1_000}km",
+            IeoTag.Gray,
+        )
+
+        /** 상차지 평균 대기가 길었던 곳 (REC-012) */
+        fun longWait() = Keyword("대기 길었던 곳", IeoTag.Plum)
+
         /** 주선사 평균 지급 소요일. 15일 이하는 빠름, 20일 초과는 늦음, 그 사이와 이력 없음은 보통 */
         fun paymentDays(days: Int?) = when {
             days == null -> Keyword("지급 이력 없음", IeoTag.Gray)

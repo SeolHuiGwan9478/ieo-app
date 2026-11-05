@@ -248,6 +248,33 @@ class HomeViewModelTest {
     }
 
     @Test
+    fun `하차지에 도착하면 추천 5건을 카드로 보여 주고 수락하면 배차 요청을 보낸다`() = homeTest(TripStatus.IN_TRANSIT, prepare = {
+        server.nextOrders = ApiResult.Success(
+            NextOrders(
+                freeAt = NOW,
+                items = listOf(NextOrder(TripFixtures.order(), emptyMeters = 17_000, fuelCost = 7_771, netProfit = 372_229, longWait = true)),
+            ),
+        )
+    }) { vm ->
+        assertTrue(server.recommendRequests.isEmpty())
+        vm.arrive()
+        runCurrent()
+
+        val card = (vm.state.value as HomeState.Waiting).nextOrders.single()
+        assertEquals("칠곡 → 부산 강서", card.route)
+        assertEquals("06:00", card.pickupTime)
+        assertEquals(372_229L, card.netProfit)
+        assertEquals(listOf(1L), server.recommendRequests)
+
+        vm.acceptNextOrder(card.orderId)
+        runCurrent()
+
+        assertEquals(listOf(Triple(1L, 11L, RecommendationAnswer.ACCEPTED as RecommendationAnswer?)), server.answers)
+        assertTrue((vm.state.value as HomeState.Waiting).nextOrders.isEmpty())
+        assertEquals(HomeViewModel.NEXT_ORDER_REQUESTED_MESSAGE, vm.status.value.message)
+    }
+
+    @Test
     fun `하차지를 떠나면 운행을 마치고 내 배차 목록으로 돌아간다`() = homeTest(TripStatus.IN_TRANSIT) { vm ->
         vm.arrive()
         runCurrent()

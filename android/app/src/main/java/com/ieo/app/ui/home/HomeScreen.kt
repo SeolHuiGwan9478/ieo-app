@@ -102,13 +102,14 @@ fun HomeScreen(
     onRequestDeliveryProof: () -> Unit = {},
     onArrive: () -> Unit = {},
     onResumeGuidance: () -> Unit = {},
+    onNextOrderClick: (NextOrderCard) -> Unit = {},
 ) {
     // 내비 옆 반 화면(좁은 창)이 기본 사용 형태다. 앱 영역 전체를 쓸 때만 두 칸으로 펼친다
     BoxWithConstraints(modifier = Modifier.fillMaxSize().background(CanvasGray)) {
         val compact = maxWidth < WideLayoutMinWidth
         when (state) {
             is HomeState.Idle -> IdleHome(state, compact, onTripClick, onOrderClick, onUnpaidClick, onRegisterTrip)
-            is HomeState.Waiting -> WaitingHome(state, compact, WaitActions(onStartWork, onDepart, onSendWaitProof, onRequestDeliveryProof))
+            is HomeState.Waiting -> WaitingHome(state, compact, WaitActions(onStartWork, onDepart, onSendWaitProof, onRequestDeliveryProof, onNextOrderClick))
             is HomeState.Driving -> DrivingHome(state, onArrive, onResumeGuidance)
         }
     }
@@ -272,6 +273,7 @@ private class WaitActions(
     val onDepart: () -> Unit,
     val onSendWaitProof: () -> Unit,
     val onRequestDeliveryProof: () -> Unit,
+    val onNextOrderClick: (NextOrderCard) -> Unit,
 )
 
 @Composable
@@ -293,7 +295,7 @@ private fun WaitingHome(state: HomeState.Waiting, compact: Boolean, actions: Wai
             modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(ScreenPadding),
         ) {
             WaitTimer(state, timerSeconds, chargeableMinutes, actions)
-            WaitDetails(state)
+            WaitDetails(state, actions.onNextOrderClick)
         }
     } else {
         Row(
@@ -302,7 +304,9 @@ private fun WaitingHome(state: HomeState.Waiting, compact: Boolean, actions: Wai
             modifier = Modifier.fillMaxSize().padding(ScreenPadding),
         ) {
             Box(modifier = Modifier.weight(0.55f)) { WaitTimer(state, timerSeconds, chargeableMinutes, actions) }
-            Box(modifier = Modifier.weight(0.45f)) { WaitDetails(state) }
+            Box(modifier = Modifier.weight(0.45f).fillMaxHeight().verticalScroll(rememberScrollState())) {
+                WaitDetails(state, actions.onNextOrderClick)
+            }
         }
     }
 }
@@ -365,8 +369,9 @@ private fun WaitFeeLine(policy: WaitPolicy?, chargeableMinutes: Long, waitEnded:
 }
 
 @Composable
-private fun WaitDetails(state: HomeState.Waiting) {
+private fun WaitDetails(state: HomeState.Waiting, onNextOrderClick: (NextOrderCard) -> Unit) {
     Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+        if (state.nextOrders.isNotEmpty()) NextOrders(state.nextOrders, onNextOrderClick)
         WhiteSection {
             SectionTitle(title = "이번 운행")
             DetailLine("구간", state.trip.route)
@@ -374,6 +379,30 @@ private fun WaitDetails(state: HomeState.Waiting) {
             DetailLine("주선사", state.trip.brokerName)
         }
         state.site?.let { site -> SiteSection(site, isPickup = state.isPickup) }
+    }
+}
+
+/** 하차지에서 이어서 할 배차 후보. 실수익 높은 순. 누르면 수락 확인 창 (REC-021, 022) */
+@Composable
+private fun NextOrders(orders: List<NextOrderCard>, onClick: (NextOrderCard) -> Unit) {
+    WhiteSection {
+        SectionTitle(title = "다음 배차 추천", count = orders.size, note = "하차 끝나고 바로 실을 수 있는 것만, 실수익 높은 순")
+        orders.forEach { order ->
+            ListRow(
+                time = order.pickupTime,
+                day = order.pickupDay,
+                title = order.route,
+                tags = listOfNotNull(
+                    Keyword.vehicle(order.vehicle),
+                    Keyword.emptyRun(order.emptyMeters),
+                    Keyword.longWait().takeIf { order.longWait },
+                ),
+                subtitle = order.brokerName,
+                amount = formatWon(order.netProfit),
+                amountNote = "실수익",
+                onClick = { onClick(order) },
+            )
+        }
     }
 }
 
@@ -539,6 +568,12 @@ private fun WaitingHomeCompactPreview() {
 @Composable
 private fun DrivingHomeCompactPreview() {
     IeoTheme { HomeScreen(SampleHomeData.driving()) }
+}
+
+@Preview(name = "하차지 대기 + 다음 배차 추천", widthDp = 1280, heightDp = 720)
+@Composable
+private fun UnloadingHomePreview() {
+    IeoTheme { HomeScreen(SampleHomeData.unloading()) }
 }
 
 @Preview(widthDp = 1600, heightDp = 1000)

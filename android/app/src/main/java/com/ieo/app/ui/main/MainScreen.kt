@@ -1,5 +1,6 @@
 package com.ieo.app.ui.main
 
+import com.ieo.app.ui.home.AcceptNextOrderSheet
 import com.ieo.app.ui.home.DeliveryProofSheet
 import com.ieo.app.ui.home.StartGuidanceSheet
 import com.ieo.app.ui.home.WaitProofSheet
@@ -54,6 +55,7 @@ import com.ieo.app.ui.home.HomeScreen
 import com.ieo.app.ui.home.HomeState
 import com.ieo.app.ui.home.SampleHomeData
 import com.ieo.app.ui.home.HomeViewModel
+import com.ieo.app.ui.home.NextOrderCard
 import com.ieo.app.ui.ledger.LedgerRoute
 import com.ieo.app.ui.orders.OrdersRoute
 import com.ieo.app.ui.carlink.CarLinkSheet
@@ -123,6 +125,7 @@ fun MainScreen(
     }
 
     var confirmingTrip by remember { mutableStateOf<AssignedTrip?>(null) }
+    var acceptingOrder by remember { mutableStateOf<NextOrderCard?>(null) }
 
     // 다른 앱에서 받은 배차 등록 창
     var registering by remember { mutableStateOf(false) }
@@ -159,6 +162,7 @@ fun MainScreen(
                         onRequestDeliveryProof = homeViewModel::requestDeliveryProof,
                         onArrive = homeViewModel::arrive,
                         onResumeGuidance = homeViewModel::resumeGuidance,
+                        onNextOrderClick = { acceptingOrder = it },
                     )
                     // 주행 중에는 오더 목록을 보여 주지 않는다 (DSP-012)
                     Destination.ORDERS -> OrdersRoute(isDriving = liveState is HomeState.Driving)
@@ -181,6 +185,14 @@ fun MainScreen(
                 homeViewModel.startTrip(trip.id)
             },
             onDismiss = { confirmingTrip = null },
+        )
+        AcceptNextOrderSheet(
+            order = acceptingOrder,
+            onAccept = { order ->
+                acceptingOrder = null
+                homeViewModel.acceptNextOrder(order.orderId)
+            },
+            onDismiss = { acceptingOrder = null },
         )
         WaitProofSheet(link = status.proof, onDismiss = homeViewModel::proofShown)
         RegisterTripSheet(visible = registering, state = registerState, actions = registerViewModel, onDismiss = { registering = false })

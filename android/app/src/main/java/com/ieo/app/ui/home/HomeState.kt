@@ -35,6 +35,8 @@ sealed interface HomeState {
         val workStartedAt: Long? = null,
         /** 상하차지를 떠나는 중이다. 이만큼 더 이어지면 자동으로 떠남 처리 (WAIT-005) */
         val departingInSeconds: Long? = null,
+        /** 하차지에 서 있을 때 보여 주는 다음 배차 추천. 실수익 높은 순 최대 5건 (REC-021) */
+        val nextOrders: List<NextOrderCard> = emptyList(),
     ) : HomeState {
         val isWorking: Boolean get() = workStartedAt != null
     }
@@ -111,6 +113,24 @@ data class TripSummary(
 )
 
 data class Recommendation(val route: String, val pickupTime: String, val netProfit: Long)
+
+/** 하차지 정차 중 다음 배차 추천 카드 하나 (REC-021). 누르면 수락 확인 창이 뜬다 */
+data class NextOrderCard(
+    val orderId: Long,
+    val pickup: String,
+    val dropoff: String,
+    val pickupDay: String,
+    val pickupTime: String,
+    val vehicle: String,
+    val netProfit: Long,
+    val fare: Long,
+    val brokerName: String,
+    /** 하차지 → 상차지 공차 거리(m) */
+    val emptyMeters: Long,
+    val longWait: Boolean,
+) {
+    val route: String get() = "$pickup → $dropoff"
+}
 
 /** 상하차지 정보 카드. 아무도 남기지 않은 항목은 null */
 data class SiteInfo(

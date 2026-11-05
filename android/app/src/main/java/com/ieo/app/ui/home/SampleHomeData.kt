@@ -41,6 +41,16 @@ object SampleHomeData {
         site = SiteInfo(heightLimitMeters = 3.5, forklift = true, averageWaitMinutes = 80),
     )
 
+    /** 하차지에서 기다리는 중. 다음 배차 추천 카드가 있다 (REC-021) */
+    fun unloading() = waiting().copy(
+        stopName = "대구 성서 하차지",
+        isPickup = false,
+        nextOrders = listOf(
+            NextOrderCard(1, "칠곡", "부산 강서", "내일", "06:00", "5톤 윙", 372_229, 380_000, "한빛로지스", 17_000, longWait = true),
+            NextOrderCard(2, "대구 북구", "울산 남구", "오늘", "18:30", "5톤 카고", 268_000, 280_000, "○○물류", 12_000, longWait = false),
+        ),
+    )
+
     fun driving() = HomeState.Driving(
         trip = myTrips[0].toSummary(),
         destinationName = "대구 성서",

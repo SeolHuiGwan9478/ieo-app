@@ -35,6 +35,8 @@ data class HomeSnapshot(
     val orders: List<Order> = emptyList(),
     /** [orders]를 찾은 차량 위치. 위치를 몰라 전체에서 찾았으면 null */
     val ordersNear: GeoPoint? = null,
+    /** 하차지에 서 있을 때 받은 다음 배차 추천 (REC-021) */
+    val nextOrders: List<NextOrder> = emptyList(),
 )
 
 /**
@@ -67,7 +69,7 @@ class HomeStateFactory(
         // 상하차지에 있는데 대기 기록을 못 받았으면 주행 화면의 "도착했어요"로 다시 받게 한다 (도착은 여러 번 불러도 같다)
         if (!trip.status.isAtStop || wait == null) return driving(trip, stop, navi, arrival, next)
         val site = snapshot.site?.takeIf { it.id == trip.stop(stop).siteId }
-        return waiting(trip, stop, wait, site, departure)
+        return waiting(trip, stop, wait, site, departure, snapshot.nextOrders.takeIf { stop == StopType.DROPOFF }.orEmpty())
     }
 
     private fun idle(snapshot: HomeSnapshot) = HomeState.Idle(
@@ -106,7 +108,14 @@ class HomeStateFactory(
     /** 음성 안내에 쓰는 상차 시각 */
     fun pickupTime(next: NextOrder): String = labels.time(next.order.pickupFrom)
 
-    private fun waiting(trip: Trip, stop: StopType, wait: WaitRecord, site: SiteCard?, departure: DepartureCheck) = HomeState.Waiting(
+    private fun waiting(
+        trip: Trip,
+        stop: StopType,
+        wait: WaitRecord,
+        site: SiteCard?,
+        departure: DepartureCheck,
+        nextOrders: List<NextOrder>,
+    ) = HomeState.Waiting(
         trip = tripMapper.map(trip).toSummary(),
         stopName = trip.stop(stop).name,
         isPickup = stop == StopType.PICKUP,
@@ -116,6 +125,22 @@ class HomeStateFactory(
         policy = wait.policy,
         site = site?.let(::siteInfo),
         departingInSeconds = (departure as? DepartureCheck.Leaving)?.remaining?.seconds,
+        nextOrders = nextOrders.map(::nextOrderCard),
+    )
+
+    /** 하차지 정차 중 추천 카드 (REC-021): 상차지, 하차지, 상차 시각, 톤수, 실수익, 주선사 */
+    fun nextOrderCard(next: NextOrder) = NextOrderCard(
+        orderId = next.order.id,
+        pickup = next.order.pickup.name,
+        dropoff = next.order.dropoff.name,
+        pickupDay = labels.day(next.order.pickupFrom),
+        pickupTime = labels.time(next.order.pickupFrom),
+        vehicle = next.order.vehicleLabel,
+        netProfit = next.netProfit,
+        fare = next.order.fare,
+        brokerName = next.order.brokerName,
+        emptyMeters = next.emptyMeters,
+        longWait = next.longWait,
     )
 
     private fun siteInfo(card: SiteCard) = SiteInfo(

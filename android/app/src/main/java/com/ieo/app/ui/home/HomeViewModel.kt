@@ -14,6 +14,7 @@ import com.ieo.app.domain.navi.Destination
 import com.ieo.app.domain.navi.Navigator
 import com.ieo.app.domain.order.OrderRepository
 import com.ieo.app.domain.recommendation.NextOrderAdvisor
+import com.ieo.app.domain.recommendation.RecommendationAnswer
 import com.ieo.app.domain.recommendation.RecommendationRepository
 import com.ieo.app.domain.site.SiteRepository
 import com.ieo.app.domain.trip.LocationTracker
@@ -88,6 +89,9 @@ interface HomeActions {
     /** 하차지에서 "인수증 받기": QR을 보여 주고 수하인 서명을 기다린다 (POD-003) */
     fun requestDeliveryProof()
 
+    /** 하차지 추천 카드에서 확인까지 마친 "수락": 그 오더에 배차 요청을 보낸다 (REC-022, 023) */
+    fun acceptNextOrder(orderId: Long)
+
     fun refresh()
 }
 
@@ -111,7 +115,7 @@ class HomeViewModel(
     private val sensors: VehicleSensors,
     private val announcer: Announcer,
     private val locationTracker: LocationTracker,
-    recommendationRepository: RecommendationRepository,
+    private val recommendationRepository: RecommendationRepository,
     private val clock: Clock = Clock.systemUTC(),
     private val stateFactory: HomeStateFactory = HomeStateFactory(),
 ) : ViewModel(), HomeActions {
@@ -148,6 +152,7 @@ class HomeViewModel(
         keepNearbyOrdersFresh()
         reportLocationWhileOnTrip()
         recommendNextOrder()
+        recommendAtDropoff()
     }
 
     override fun refresh() {
@@ -252,6 +257,18 @@ class HomeViewModel(
         announcer.say(HomeAnnouncements.deliverySigned(proof.signerName))
         show(DELIVERY_SIGNED_MESSAGE)
         load()
+    }
+
+    override fun acceptNextOrder(orderId: Long) = runAction {
+        val trip = snapshot.value.current?.takeIf { it.status == TripStatus.AT_DROPOFF } ?: return@runAction
+        // 성공이어도 돌려받는 배차 요청은 null일 수 있다. 실패만 막는다
+        val result = recommendationRepository.answer(trip.id, orderId, RecommendationAnswer.ACCEPTED)
+        if (result is ApiResult.Failure) {
+            show(result.error.message)
+            return@runAction
+        }
+        snapshot.update { it.copy(nextOrders = it.nextOrders.filterNot { next -> next.order.id == orderId }) }
+        show(NEXT_ORDER_REQUESTED_MESSAGE)
     }
 
     fun messageShown() = _status.update { it.copy(message = null) }
@@ -456,6 +473,21 @@ class HomeViewModel(
         }
     }
 
+    /**
+     * 하차지에 도착하면 다음 배차 추천 5건을 받아 카드로 보여 준다 (REC-021). 운행·도착마다 한 번.
+     * 하차지를 떠나거나 운행이 끝나면 비운다. 못 받으면 카드 없이 대기 화면만 보여 준다
+     */
+    private fun recommendAtDropoff() {
+        viewModelScope.launch {
+            snapshot.map { trip -> trip.current?.takeIf { it.status == TripStatus.AT_DROPOFF }?.id }
+                .distinctUntilChanged()
+                .collectLatest { tripId ->
+                    val items = tripId?.let { (recommendationRepository.recommend(it) as? ApiResult.Success)?.data?.items }
+                    snapshot.update { it.copy(nextOrders = items.orEmpty()) }
+                }
+        }
+    }
+
     private fun keepNaviProgressFresh() {
         viewModelScope.launch {
             navigator.progress.map { it != null }.distinctUntilChanged().collectLatest { guiding ->
@@ -494,6 +526,7 @@ class HomeViewModel(
     companion object {
         const val TRIP_COMPLETED_MESSAGE = "운행을 마쳤어요. 장부에 기록했어요"
         const val NAVI_FAILED_MESSAGE = "차량 내비에 연결하지 못했습니다"
+        const val NEXT_ORDER_REQUESTED_MESSAGE = "배차 요청을 보냈어요. 주선사가 확정하면 내 배차에 들어와요"
         const val DELIVERY_SIGNED_MESSAGE = "인수증 서명을 받았어요. 운행을 마쳤어요"
         private const val SIGNATURE_POLL_MILLIS = 3_000L
         private const val NAVI_REFRESH_MILLIS = 10_000L
