@@ -5,6 +5,7 @@ import com.ieo.app.domain.ledger.DailySummary
 import com.ieo.app.domain.ledger.Receivables
 import com.ieo.app.domain.navi.NaviProgress
 import com.ieo.app.domain.order.Order
+import com.ieo.app.domain.recommendation.NextOrder
 import com.ieo.app.domain.site.SiteCard
 import com.ieo.app.domain.trip.StopType
 import com.ieo.app.domain.trip.Trip
@@ -58,12 +59,13 @@ class HomeStateFactory(
         navi: NaviProgress?,
         arrival: ArrivalCheck = ArrivalCheck.NotYet,
         departure: DepartureCheck = DepartureCheck.Staying,
+        next: NextOrder? = null,
     ): HomeState {
         val trip = snapshot.current ?: return idle(snapshot)
         val stop = trip.currentStop ?: return idle(snapshot)
         val wait = snapshot.wait?.takeIf { it.stopType == stop }
         // 상하차지에 있는데 대기 기록을 못 받았으면 주행 화면의 "도착했어요"로 다시 받게 한다 (도착은 여러 번 불러도 같다)
-        if (!trip.status.isAtStop || wait == null) return driving(trip, stop, navi, arrival)
+        if (!trip.status.isAtStop || wait == null) return driving(trip, stop, navi, arrival, next)
         val site = snapshot.site?.takeIf { it.id == trip.stop(stop).siteId }
         return waiting(trip, stop, wait, site, departure)
     }
@@ -76,7 +78,7 @@ class HomeStateFactory(
         orders = snapshot.orders.map(orderMapper::map),
     )
 
-    private fun driving(trip: Trip, stop: StopType, navi: NaviProgress?, arrival: ArrivalCheck): HomeState.Driving {
+    private fun driving(trip: Trip, stop: StopType, navi: NaviProgress?, arrival: ArrivalCheck, next: NextOrder?): HomeState.Driving {
         val remainSeconds = navi?.remainSeconds
         return HomeState.Driving(
             trip = tripMapper.map(trip).toSummary(),
@@ -88,11 +90,21 @@ class HomeStateFactory(
             remainingMinutes = remainSeconds?.let { (it + 59) / 60 },
             // TODO: ETA 알림(09 알림)을 만들면 서버 값으로 바꾼다
             etaShared = false,
-            recommendation = null,
+            recommendation = next?.let(::recommendation),
             naviActive = navi != null && !navi.failed,
             arrivingInSeconds = (arrival as? ArrivalCheck.Stopping)?.remaining?.seconds,
         )
     }
+
+    /** 다음 배차 추천 카드 (03 배차 추천) */
+    fun recommendation(next: NextOrder) = Recommendation(
+        route = "${next.order.pickup.name} → ${next.order.dropoff.name}",
+        pickupTime = labels.time(next.order.pickupFrom),
+        netProfit = next.netProfit,
+    )
+
+    /** 음성 안내에 쓰는 상차 시각 */
+    fun pickupTime(next: NextOrder): String = labels.time(next.order.pickupFrom)
 
     private fun waiting(trip: Trip, stop: StopType, wait: WaitRecord, site: SiteCard?, departure: DepartureCheck) = HomeState.Waiting(
         trip = tripMapper.map(trip).toSummary(),

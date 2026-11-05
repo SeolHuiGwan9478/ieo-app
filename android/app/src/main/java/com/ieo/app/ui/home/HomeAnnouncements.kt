@@ -1,5 +1,6 @@
 package com.ieo.app.ui.home
 
+import com.ieo.app.domain.recommendation.NextOrder
 import com.ieo.app.domain.site.HeightWarning
 import com.ieo.app.domain.site.SiteCard
 import com.ieo.app.domain.voice.Announcement
@@ -58,6 +59,23 @@ object HomeAnnouncements {
     /** 수하인 서명으로 운행이 끝남 (POD-008) */
     fun deliverySigned(signerName: String?): Announcement =
         trip("${signerName?.let { "${it}님이 " } ?: ""}인수증에 서명했어요. 운행을 마쳤어요.")
+
+    /**
+     * 다음 배차 추천 (REC-020). 요구사항의 예를 따른다:
+     * "대구 성서 공단 하차 후 17분 거리, 칠곡 물류센터 16:00 상차, 부산 신항행 5톤, 실수익 28만 원 건이 있어요."
+     * 공차 이동 시간은 서버와 같은 평균 시속 60km로 어림한다
+     */
+    fun nextOrder(dropoffName: String, next: NextOrder, pickupTime: String): Announcement {
+        val order = next.order
+        val minutes = (next.emptyMeters + 999) / 1000
+        val wait = if (next.longWait) " 대기가 길었던 곳이에요." else ""
+        return Announcement(
+            "다음 배차 추천이에요. $dropoffName 하차 후 ${formatMinutesKorean(minutes)} 거리, " +
+                "${order.pickup.name} $pickupTime 상차, ${order.dropoff.name}행 ${order.tonnageLabel}, " +
+                "실수익 ${formatWon(next.netProfit)} 건이 있어요.$wait",
+            AnnouncementPriority.INFO,
+        )
+    }
 
     private fun trip(text: String) = Announcement(text, AnnouncementPriority.TRIP)
 

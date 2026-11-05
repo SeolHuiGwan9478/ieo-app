@@ -13,6 +13,8 @@ import com.ieo.app.domain.ledger.LedgerRepository
 import com.ieo.app.domain.navi.Destination
 import com.ieo.app.domain.navi.Navigator
 import com.ieo.app.domain.order.OrderRepository
+import com.ieo.app.domain.recommendation.NextOrderAdvisor
+import com.ieo.app.domain.recommendation.RecommendationRepository
 import com.ieo.app.domain.site.SiteRepository
 import com.ieo.app.domain.trip.LocationTracker
 import com.ieo.app.domain.trip.StopType
@@ -109,6 +111,7 @@ class HomeViewModel(
     private val sensors: VehicleSensors,
     private val announcer: Announcer,
     private val locationTracker: LocationTracker,
+    recommendationRepository: RecommendationRepository,
     private val clock: Clock = Clock.systemUTC(),
     private val stateFactory: HomeStateFactory = HomeStateFactory(),
 ) : ViewModel(), HomeActions {
@@ -123,7 +126,13 @@ class HomeViewModel(
     private val departureCheck = MutableStateFlow<DepartureCheck>(DepartureCheck.Staying)
     private val departureDetector = DepartureDetector()
 
-    val state: StateFlow<HomeState> = combine(snapshot, navigator.progress, arrivalCheck, departureCheck, stateFactory::create)
+    /** 운송 중 다음 배차 추천: 50%에서 찾고 67%에서 음성으로 안내한다 (REC-001) */
+    private val nextOrderAdvisor = NextOrderAdvisor(recommendationRepository) { trip, next ->
+        announcer.say(HomeAnnouncements.nextOrder(trip.dropoff.name, next, stateFactory.pickupTime(next)))
+    }
+
+    val state: StateFlow<HomeState> =
+        combine(snapshot, navigator.progress, arrivalCheck, departureCheck, nextOrderAdvisor.current, stateFactory::create)
         .stateIn(viewModelScope, SharingStarted.Eagerly, stateFactory.create(HomeSnapshot(), null))
 
     private val _status = MutableStateFlow(HomeStatus())
@@ -138,6 +147,7 @@ class HomeViewModel(
         keepNaviProgressFresh()
         keepNearbyOrdersFresh()
         reportLocationWhileOnTrip()
+        recommendNextOrder()
     }
 
     override fun refresh() {
@@ -437,6 +447,15 @@ class HomeViewModel(
         }
     }
 
+    /** 운송 중 진행률을 추천에 알려 준다. 찾기·안내는 [NextOrderAdvisor]가 정한다 */
+    private fun recommendNextOrder() {
+        viewModelScope.launch {
+            combine(snapshot.map { it.current }.distinctUntilChanged(), navigator.progress.map { it?.fraction }) { trip, fraction ->
+                trip to fraction
+            }.distinctUntilChanged().collect { (trip, fraction) -> nextOrderAdvisor.onProgress(trip, fraction) }
+        }
+    }
+
     private fun keepNaviProgressFresh() {
         viewModelScope.launch {
             navigator.progress.map { it != null }.distinctUntilChanged().collectLatest { guiding ->
@@ -508,6 +527,7 @@ class HomeViewModel(
                     sensors = container.vehicleSensors,
                     announcer = container.announcer,
                     locationTracker = container.locationTracker,
+                    recommendationRepository = container.recommendationRepository,
                 )
             }
         }

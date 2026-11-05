@@ -23,6 +23,8 @@ import com.ieo.app.data.ledger.LedgerApi
 import com.ieo.app.data.navi.NaviGuide
 import com.ieo.app.data.order.DefaultOrderRepository
 import com.ieo.app.data.order.OrderApi
+import com.ieo.app.data.recommendation.DefaultRecommendationRepository
+import com.ieo.app.data.recommendation.RecommendationApi
 import com.ieo.app.data.site.DefaultSiteRepository
 import com.ieo.app.data.site.SiteApi
 import com.ieo.app.data.trip.DefaultTripRepository
@@ -44,6 +46,7 @@ import com.ieo.app.domain.link.DriverLinkRepository
 import com.ieo.app.domain.navi.NaviPlaceSource
 import com.ieo.app.domain.navi.Navigator
 import com.ieo.app.domain.order.OrderRepository
+import com.ieo.app.domain.recommendation.RecommendationRepository
 import com.ieo.app.domain.site.SiteRepository
 import com.ieo.app.domain.trip.LocationTracker
 import com.ieo.app.domain.trip.TripLocationReporter
@@ -68,6 +71,7 @@ interface AppContainer {
     val waitRepository: WaitRepository
     val ledgerRepository: LedgerRepository
     val orderRepository: OrderRepository
+    val recommendationRepository: RecommendationRepository
     val expenseRepository: ExpenseRepository
     val siteRepository: SiteRepository
     val deliveryProofRepository: DeliveryProofRepository
@@ -119,6 +123,10 @@ class DefaultAppContainer(context: Context) : AppContainer {
 
     override val orderRepository: OrderRepository by lazy {
         DefaultOrderRepository(network.authenticated.create(OrderApi::class.java), network.caller)
+    }
+
+    override val recommendationRepository: RecommendationRepository by lazy {
+        DefaultRecommendationRepository(network.authenticated.create(RecommendationApi::class.java), network.caller)
     }
 
     override val expenseRepository: ExpenseRepository by lazy {

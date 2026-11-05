@@ -15,6 +15,9 @@ import com.ieo.app.domain.order.Order
 import com.ieo.app.domain.vehicle.GeoPoint
 import com.ieo.app.domain.order.ReportType
 import com.ieo.app.domain.order.OrderRepository
+import com.ieo.app.domain.recommendation.NextOrders
+import com.ieo.app.domain.recommendation.RecommendationAnswer
+import com.ieo.app.domain.recommendation.RecommendationRepository
 import com.ieo.app.domain.trip.LocationSample
 import com.ieo.app.domain.trip.LocationTracker
 import com.ieo.app.domain.trip.NewTrip
@@ -40,7 +43,8 @@ import kotlinx.coroutines.flow.MutableStateFlow
  * 장부와 오더는 고정된 값을 준다.
  */
 class FakeTripServer(var trip: Trip) :
-    TripRepository, WaitRepository, LedgerRepository, OrderRepository, SiteRepository, DeliveryProofRepository {
+    TripRepository, WaitRepository, LedgerRepository, OrderRepository, SiteRepository, DeliveryProofRepository,
+    RecommendationRepository {
 
     val calls = mutableListOf<String>()
 
@@ -76,6 +80,21 @@ class FakeTripServer(var trip: Trip) :
     override suspend fun sendLocations(tripId: Long, samples: List<LocationSample>): ApiResult<Unit> {
         locationBatches += samples
         return locationResult
+    }
+
+    /** 추천 결과. 기본은 후보 없음 */
+    var nextOrders: ApiResult<NextOrders> = ApiResult.Success(NextOrders(freeAt = null, items = emptyList()))
+    val recommendRequests = mutableListOf<Long>()
+    val answers = mutableListOf<Triple<Long, Long, RecommendationAnswer?>>()
+
+    override suspend fun recommend(tripId: Long): ApiResult<NextOrders> {
+        recommendRequests += tripId
+        return nextOrders
+    }
+
+    override suspend fun answer(tripId: Long, orderId: Long, answer: RecommendationAnswer?): ApiResult<DispatchRequest?> {
+        answers += Triple(tripId, orderId, answer)
+        return ApiResult.Success(null)
     }
 
     override suspend fun waits(tripId: Long) = ApiResult.Success(records.values.toList())

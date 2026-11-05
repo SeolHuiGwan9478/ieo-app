@@ -1,7 +1,12 @@
 package com.ieo.app.ui.home
 
 import androidx.lifecycle.viewModelScope
+import com.ieo.app.core.network.ApiResult
 import com.ieo.app.domain.delivery.DeliveryProofStatus
+import com.ieo.app.domain.navi.NaviProgress
+import com.ieo.app.domain.recommendation.NextOrder
+import com.ieo.app.domain.recommendation.NextOrders
+import com.ieo.app.domain.recommendation.RecommendationAnswer
 import com.ieo.app.domain.trip.StopType
 import com.ieo.app.domain.trip.TripStatus
 import com.ieo.app.domain.vehicle.GeoPoint
@@ -63,6 +68,7 @@ class HomeViewModelTest {
             sensors = sensors,
             announcer = announcer,
             locationTracker = tracker,
+            recommendationRepository = server,
             clock = clock,
             stateFactory = HomeStateFactory(clock) { 1_000_000L },
         )
@@ -218,6 +224,27 @@ class HomeViewModelTest {
 
         assertTrue(server.calls.none { it.startsWith("proof") })
         assertNull(vm.status.value.proof)
+    }
+
+    @Test
+    fun `운송 중 67%를 지나면 다음 배차 추천을 말하고 주행 화면에 보여 준다`() = homeTest(TripStatus.IN_TRANSIT, prepare = {
+        server.nextOrders = ApiResult.Success(
+            NextOrders(
+                freeAt = NOW,
+                items = listOf(NextOrder(TripFixtures.order(), emptyMeters = 17_000, fuelCost = 7_771, netProfit = 372_229, longWait = true)),
+            ),
+        )
+    }) { vm ->
+        navigator.progress.value = NaviProgress("대구 성서", totalMeters = 300_000, remainMeters = 90_000, remainSeconds = 3_600)
+        runCurrent()
+
+        val driving = vm.state.value as HomeState.Driving
+        assertEquals(Recommendation("칠곡 → 부산 강서", "06:00", 372_229), driving.recommendation)
+        assertEquals(
+            "다음 배차 추천이에요. 대구 성서 하차 후 17분 거리, 칠곡 06:00 상차, 부산 강서행 5톤, 실수익 372,229원 건이 있어요. 대기가 길었던 곳이에요.",
+            announcer.texts.last(),
+        )
+        assertEquals(listOf(Triple(1L, 11L, null as RecommendationAnswer?)), server.answers)
     }
 
     @Test
