@@ -12,6 +12,8 @@ import com.ieo.app.domain.delivery.DeliveryProofRepository
 import com.ieo.app.domain.ledger.LedgerRepository
 import com.ieo.app.domain.navi.Destination
 import com.ieo.app.domain.navi.Navigator
+import com.ieo.app.domain.notification.AppNotification
+import com.ieo.app.domain.notification.NotificationType
 import com.ieo.app.domain.order.OrderRepository
 import com.ieo.app.domain.recommendation.NextOrderAdvisor
 import com.ieo.app.domain.recommendation.RecommendationAnswer
@@ -40,6 +42,7 @@ import java.time.Instant
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -47,6 +50,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.map
@@ -116,6 +120,8 @@ class HomeViewModel(
     private val announcer: Announcer,
     private val locationTracker: LocationTracker,
     private val recommendationRepository: RecommendationRepository,
+    /** 서버 알림 (09 알림). 앱 전체의 [com.ieo.app.domain.notification.NotificationListener]가 받는다 */
+    private val notifications: Flow<AppNotification> = emptyFlow(),
     private val clock: Clock = Clock.systemUTC(),
     private val stateFactory: HomeStateFactory = HomeStateFactory(),
 ) : ViewModel(), HomeActions {
@@ -153,6 +159,7 @@ class HomeViewModel(
         reportLocationWhileOnTrip()
         recommendNextOrder()
         recommendAtDropoff()
+        tellNotifications()
     }
 
     override fun refresh() {
@@ -272,6 +279,17 @@ class HomeViewModel(
     }
 
     fun messageShown() = _status.update { it.copy(message = null) }
+
+    /** 배차 확정·마감·만료 알림을 말하고 화면에 띄운다. 확정이면 내 배차가 늘었으니 홈을 새로 받는다 */
+    private fun tellNotifications() {
+        viewModelScope.launch {
+            notifications.collect { notification ->
+                announcer.say(HomeAnnouncements.notification(notification))
+                show(notification.message)
+                if (notification.type == NotificationType.DISPATCH_CONFIRMED) load()
+            }
+        }
+    }
 
     fun proofShown() = _status.update { it.copy(proof = null) }
 
@@ -561,6 +579,7 @@ class HomeViewModel(
                     announcer = container.announcer,
                     locationTracker = container.locationTracker,
                     recommendationRepository = container.recommendationRepository,
+                    notifications = container.notifications.received,
                 )
             }
         }

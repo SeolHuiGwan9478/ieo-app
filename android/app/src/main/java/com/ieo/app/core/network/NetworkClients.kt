@@ -42,7 +42,8 @@ class NetworkClients(
 
     val public: Retrofit = retrofit(baseUrl, baseClient)
 
-    private val authenticatedClient: OkHttpClient = baseClient.newBuilder()
+    /** 로그인 후 클라이언트. Retrofit을 거치지 않는 연결(알림 SSE)이 쓴다 */
+    val authenticatedClient: OkHttpClient = baseClient.newBuilder()
         .addInterceptor(BearerTokenInterceptor(session))
         .addInterceptor(RevokedSessionInterceptor(session))
         .authenticator(TokenRefreshAuthenticator(session, refresherFactory(public)))

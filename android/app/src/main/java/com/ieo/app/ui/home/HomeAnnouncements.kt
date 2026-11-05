@@ -1,5 +1,7 @@
 package com.ieo.app.ui.home
 
+import com.ieo.app.domain.notification.AppNotification
+import com.ieo.app.domain.notification.NotificationType
 import com.ieo.app.domain.recommendation.NextOrder
 import com.ieo.app.domain.site.HeightWarning
 import com.ieo.app.domain.site.SiteCard
@@ -15,6 +17,13 @@ import com.ieo.app.ui.common.josa
  * 언제 말할지는 [HomeViewModel]이 정한다.
  */
 object HomeAnnouncements {
+
+    /** 배차 확정은 운행 안내로, 마감·만료는 추천과 같은 순서로 말한다 (09 알림: 주행 중 음성) */
+    fun notification(notification: AppNotification): Announcement = Announcement(
+        text = notification.message,
+        priority = if (notification.type == NotificationType.DISPATCH_CONFIRMED) AnnouncementPriority.TRIP
+        else AnnouncementPriority.RECOMMENDATION,
+    )
 
     /**
      * 상하차지 3km 전 (SITE-006). 정보가 없으면 null(말하지 않는다).

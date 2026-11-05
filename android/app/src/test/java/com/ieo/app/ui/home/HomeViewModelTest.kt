@@ -4,6 +4,8 @@ import androidx.lifecycle.viewModelScope
 import com.ieo.app.core.network.ApiResult
 import com.ieo.app.domain.delivery.DeliveryProofStatus
 import com.ieo.app.domain.navi.NaviProgress
+import com.ieo.app.domain.notification.AppNotification
+import com.ieo.app.domain.notification.NotificationType
 import com.ieo.app.domain.recommendation.NextOrder
 import com.ieo.app.domain.recommendation.NextOrders
 import com.ieo.app.domain.recommendation.RecommendationAnswer
@@ -23,6 +25,7 @@ import com.ieo.app.testing.TripFixtures.NOW
 import java.time.Instant
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.runCurrent
@@ -45,6 +48,7 @@ class HomeViewModelTest {
     private val clock = MutableClock(NOW)
     private val announcer = FakeAnnouncer()
     private val tracker = FakeLocationTracker()
+    private val notifications = MutableSharedFlow<AppNotification>()
 
     /**
      * [status] 상태의 운행으로 ViewModel을 만들어 [body]를 돌린다.
@@ -69,6 +73,7 @@ class HomeViewModelTest {
             announcer = announcer,
             locationTracker = tracker,
             recommendationRepository = server,
+            notifications = notifications,
             clock = clock,
             stateFactory = HomeStateFactory(clock) { 1_000_000L },
         )
@@ -272,6 +277,25 @@ class HomeViewModelTest {
         assertEquals(listOf(Triple(1L, 11L, RecommendationAnswer.ACCEPTED as RecommendationAnswer?)), server.answers)
         assertTrue((vm.state.value as HomeState.Waiting).nextOrders.isEmpty())
         assertEquals(HomeViewModel.NEXT_ORDER_REQUESTED_MESSAGE, vm.status.value.message)
+    }
+
+    @Test
+    fun `배차 확정 알림이 오면 말하고 화면에 띄우고 홈을 새로 받는다`() = homeTest { vm ->
+        assertEquals(listOf<Long?>(null), tracker.tracked)
+        server.trip = server.trip.copy(status = TripStatus.TO_PICKUP)
+
+        val confirmed = AppNotification(7, NotificationType.DISPATCH_CONFIRMED, "한빛로지스에서 배차를 확정했어요", 1, 11, NOW)
+        notifications.emit(confirmed)
+        runCurrent()
+
+        assertEquals(confirmed.message, announcer.texts.last())
+        assertEquals(AnnouncementPriority.TRIP, announcer.said.last().priority)
+        assertEquals(confirmed.message, vm.status.value.message)
+        assertEquals(listOf<Long?>(null, 1), tracker.tracked)
+
+        notifications.emit(confirmed.copy(id = 8, type = NotificationType.DISPATCH_EXPIRED, message = "확정되지 않았어요"))
+        runCurrent()
+        assertEquals(AnnouncementPriority.RECOMMENDATION, announcer.said.last().priority)
     }
 
     @Test

@@ -21,6 +21,8 @@ import com.ieo.app.data.link.DefaultDriverLinkRepository
 import com.ieo.app.data.link.DriverLinkApi
 import com.ieo.app.data.ledger.LedgerApi
 import com.ieo.app.data.navi.NaviGuide
+import com.ieo.app.data.notification.PrefsLastNotificationStore
+import com.ieo.app.data.notification.SseNotificationRepository
 import com.ieo.app.data.order.DefaultOrderRepository
 import com.ieo.app.data.order.OrderApi
 import com.ieo.app.data.recommendation.DefaultRecommendationRepository
@@ -45,6 +47,7 @@ import com.ieo.app.domain.ledger.LedgerRepository
 import com.ieo.app.domain.link.DriverLinkRepository
 import com.ieo.app.domain.navi.NaviPlaceSource
 import com.ieo.app.domain.navi.Navigator
+import com.ieo.app.domain.notification.NotificationListener
 import com.ieo.app.domain.order.OrderRepository
 import com.ieo.app.domain.recommendation.RecommendationRepository
 import com.ieo.app.domain.site.SiteRepository
@@ -59,6 +62,7 @@ import com.ieo.app.domain.wait.WaitRepository
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.launch
 
 /**
  * 앱 전체에서 하나씩만 있는 객체들. 화면(ViewModel)은 여기서 인터페이스를 받아 쓴다.
@@ -84,6 +88,7 @@ interface AppContainer {
     val carIdentity: CarIdentity
     val announcer: Announcer
     val locationTracker: LocationTracker
+    val notifications: NotificationListener
 }
 
 class DefaultAppContainer(context: Context) : AppContainer {
@@ -175,5 +180,16 @@ class DefaultAppContainer(context: Context) : AppContainer {
 
     override val locationTracker: LocationTracker by lazy {
         ForegroundLocationTracker(appContext, TripLocationReporter(appScope, vehicleSensors, navigator, tripRepository))
+    }
+
+    /** 로그인한 동안 서버 알림(SSE)을 받는다. 로그아웃하면 끊는다 */
+    override val notifications: NotificationListener = NotificationListener(
+        scope = appScope,
+        repository = SseNotificationRepository(network.authenticatedClient, BuildConfig.API_BASE_URL, network.json),
+        store = PrefsLastNotificationStore(appContext),
+    ).also { listener ->
+        appScope.launch {
+            session.isLoggedIn.collect { loggedIn -> if (loggedIn) listener.start() else listener.stop() }
+        }
     }
 }

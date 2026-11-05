@@ -65,6 +65,7 @@ dependencies {
     implementation(libs.retrofit)
     implementation(libs.retrofit.kotlinx.serialization)
     implementation(libs.okhttp.logging)
+    implementation(libs.okhttp.sse)
     implementation(libs.kotlinx.serialization.json)
     // 화면 상태(ViewModel)
     implementation(libs.androidx.lifecycle.viewmodel.compose)

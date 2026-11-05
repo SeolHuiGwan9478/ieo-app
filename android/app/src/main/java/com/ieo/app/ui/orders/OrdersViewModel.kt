@@ -8,6 +8,7 @@ import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import com.ieo.app.core.network.ApiResult
 import com.ieo.app.di.appContainer
+import com.ieo.app.domain.notification.AppNotification
 import com.ieo.app.domain.order.Order
 import com.ieo.app.domain.order.OrderRepository
 import com.ieo.app.domain.order.ReportType
@@ -15,9 +16,11 @@ import com.ieo.app.domain.vehicle.VehicleSensors
 import com.ieo.app.ui.common.DayTimeFormatter
 import java.time.Clock
 import java.time.Duration
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
@@ -66,6 +69,8 @@ class OrdersViewModel(
     private val sensors: VehicleSensors,
     private val clock: Clock = Clock.system(DayTimeFormatter.KOREA),
     private val elapsedRealtime: () -> Long = SystemClock::elapsedRealtime,
+    /** 배차 확정·마감·만료 알림이 오면 내 요청 상태가 바뀌었으니 목록을 새로 받는다 */
+    private val notifications: Flow<AppNotification> = emptyFlow(),
 ) : ViewModel(), OrdersActions {
 
     private val mapper = OrderUiMapper(DayTimeFormatter(clock))
@@ -76,7 +81,14 @@ class OrdersViewModel(
     private val _state = MutableStateFlow(OrdersUiState())
     val state: StateFlow<OrdersUiState> = _state.asStateFlow()
 
+    private var listening = false
+
     override fun refresh() {
+        // 탭을 처음 열 때부터 알림을 듣는다
+        if (!listening) {
+            listening = true
+            viewModelScope.launch { notifications.collect { reload() } }
+        }
         _state.update { it.copy(isLoading = true) }
         viewModelScope.launch {
             reload()
@@ -191,7 +203,7 @@ class OrdersViewModel(
         val Factory: ViewModelProvider.Factory = viewModelFactory {
             initializer {
                 val container = appContainer()
-                OrdersViewModel(container.orderRepository, container.vehicleSensors)
+                OrdersViewModel(container.orderRepository, container.vehicleSensors, notifications = container.notifications.received)
             }
         }
     }
