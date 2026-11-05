@@ -19,6 +19,10 @@ interface TripApi {
     @POST("api/trips/{tripId}/start")
     suspend fun start(@Path("tripId") tripId: Long): Response<TripResponse>
 
+    /** 위치 묶음 보내기 (204) */
+    @POST("api/trips/{tripId}/locations")
+    suspend fun sendLocations(@Path("tripId") tripId: Long, @Body body: TripLocationRequest): Response<Unit>
+
     @POST("api/trips")
     suspend fun register(@Body body: CreateTripRequest): Response<TripResponse>
 }

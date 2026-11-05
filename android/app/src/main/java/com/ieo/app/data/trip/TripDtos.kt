@@ -1,5 +1,6 @@
 package com.ieo.app.data.trip
 
+import com.ieo.app.domain.trip.LocationSample
 import com.ieo.app.domain.trip.NewTrip
 import com.ieo.app.domain.trip.StopChoice
 import com.ieo.app.domain.trip.Trip
@@ -94,3 +95,25 @@ data class TripStopRequest(
 
 @Serializable
 data class NewSiteRequest(val name: String, val address: String, val lat: Double, val lng: Double)
+
+/** 위치 묶음 (서버 TripLocationRequest) */
+@Serializable
+data class TripLocationRequest(val points: List<Point>) {
+
+    @Serializable
+    data class Point(
+        val recordedAt: String,
+        val lat: Double,
+        val lng: Double,
+        val remainMeters: Int? = null,
+        val remainSeconds: Int? = null,
+    )
+
+    companion object {
+        fun from(samples: List<LocationSample>) = TripLocationRequest(
+            samples.map {
+                Point(it.recordedAt.toString(), it.point.latitude, it.point.longitude, it.remainMeters, it.remainSeconds)
+            },
+        )
+    }
+}

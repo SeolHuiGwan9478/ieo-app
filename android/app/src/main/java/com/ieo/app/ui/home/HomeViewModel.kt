@@ -14,6 +14,7 @@ import com.ieo.app.domain.navi.Destination
 import com.ieo.app.domain.navi.Navigator
 import com.ieo.app.domain.order.OrderRepository
 import com.ieo.app.domain.site.SiteRepository
+import com.ieo.app.domain.trip.LocationTracker
 import com.ieo.app.domain.trip.StopType
 import com.ieo.app.domain.trip.Trip
 import com.ieo.app.domain.trip.TripRepository
@@ -107,6 +108,7 @@ class HomeViewModel(
     private val navigator: Navigator,
     private val sensors: VehicleSensors,
     private val announcer: Announcer,
+    private val locationTracker: LocationTracker,
     private val clock: Clock = Clock.systemUTC(),
     private val stateFactory: HomeStateFactory = HomeStateFactory(),
 ) : ViewModel(), HomeActions {
@@ -135,6 +137,7 @@ class HomeViewModel(
         announceChargeableStart()
         keepNaviProgressFresh()
         keepNearbyOrdersFresh()
+        reportLocationWhileOnTrip()
     }
 
     override fun refresh() {
@@ -427,6 +430,13 @@ class HomeViewModel(
     }
 
     /** 내비가 주행 정보를 띄엄띄엄 보내서, 안내 중에만 10초마다 남은 거리·시간을 다시 묻는다 */
+    /** 출발한 운행이 있는 동안 위치를 서버로 보낸다 (TRIP-013). 끝나거나 취소되면 멈춘다 */
+    private fun reportLocationWhileOnTrip() {
+        viewModelScope.launch {
+            snapshot.map { it.current?.id }.distinctUntilChanged().collect(locationTracker::track)
+        }
+    }
+
     private fun keepNaviProgressFresh() {
         viewModelScope.launch {
             navigator.progress.map { it != null }.distinctUntilChanged().collectLatest { guiding ->
@@ -497,6 +507,7 @@ class HomeViewModel(
                     navigator = container.navigator,
                     sensors = container.vehicleSensors,
                     announcer = container.announcer,
+                    locationTracker = container.locationTracker,
                 )
             }
         }

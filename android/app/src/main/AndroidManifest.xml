@@ -16,6 +16,10 @@
     <!-- 차대번호로 이 트럭과 내 차량을 잇는다 (VEH-004) -->
     <uses-permission android:name="pleos.car.permission.CAR_INFO" />
 
+    <!-- 운행 위치 보내기 (TRIP-013): 내비가 앞에 떠도 GPS를 받도록 운행 중에만 포그라운드 서비스를 켠다 -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_LOCATION" />
+
     <!-- Ieo 서버 -->
     <uses-permission android:name="android.permission.INTERNET" />
 
@@ -51,5 +55,10 @@
                 android:name="distractionOptimized"
                 android:value="true" />
         </activity>
+
+        <service
+            android:name=".data.trip.TripLocationService"
+            android:exported="false"
+            android:foregroundServiceType="location" />
     </application>
 </manifest>

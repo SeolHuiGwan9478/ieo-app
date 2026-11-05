@@ -7,6 +7,7 @@ import com.ieo.app.domain.trip.TripStatus
 import com.ieo.app.domain.vehicle.GeoPoint
 import com.ieo.app.domain.voice.AnnouncementPriority
 import com.ieo.app.testing.FakeAnnouncer
+import com.ieo.app.testing.FakeLocationTracker
 import com.ieo.app.testing.FakeNavigator
 import com.ieo.app.testing.FakeSensors
 import com.ieo.app.testing.FakeTripServer
@@ -38,6 +39,7 @@ class HomeViewModelTest {
     private val sensors = FakeSensors()
     private val clock = MutableClock(NOW)
     private val announcer = FakeAnnouncer()
+    private val tracker = FakeLocationTracker()
 
     /**
      * [status] 상태의 운행으로 ViewModel을 만들어 [body]를 돌린다.
@@ -60,6 +62,7 @@ class HomeViewModelTest {
             navigator = navigator,
             sensors = sensors,
             announcer = announcer,
+            locationTracker = tracker,
             clock = clock,
             stateFactory = HomeStateFactory(clock) { 1_000_000L },
         )
@@ -69,6 +72,20 @@ class HomeViewModelTest {
         } finally {
             vm.viewModelScope.cancel()
         }
+    }
+
+    @Test
+    fun `출발하면 그 운행의 위치를 보내기 시작하고 하차지를 떠나 끝나면 멈춘다`() = homeTest { vm ->
+        assertEquals(listOf<Long?>(null), tracker.tracked)
+
+        vm.startTrip("1")
+        runCurrent()
+        assertEquals(listOf<Long?>(null, 1), tracker.tracked)
+
+        server.trip = server.trip.copy(status = TripStatus.COMPLETED)
+        vm.refresh()
+        runCurrent()
+        assertEquals(listOf<Long?>(null, 1, null), tracker.tracked)
     }
 
     @Test

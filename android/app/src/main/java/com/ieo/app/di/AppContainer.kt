@@ -26,6 +26,7 @@ import com.ieo.app.data.order.OrderApi
 import com.ieo.app.data.site.DefaultSiteRepository
 import com.ieo.app.data.site.SiteApi
 import com.ieo.app.data.trip.DefaultTripRepository
+import com.ieo.app.data.trip.ForegroundLocationTracker
 import com.ieo.app.data.trip.TripApi
 import com.ieo.app.data.vehicle.CarSensors
 import com.ieo.app.data.vehicle.DefaultVehicleRepository
@@ -44,12 +45,17 @@ import com.ieo.app.domain.navi.NaviPlaceSource
 import com.ieo.app.domain.navi.Navigator
 import com.ieo.app.domain.order.OrderRepository
 import com.ieo.app.domain.site.SiteRepository
+import com.ieo.app.domain.trip.LocationTracker
+import com.ieo.app.domain.trip.TripLocationReporter
 import com.ieo.app.domain.trip.TripRepository
 import com.ieo.app.domain.vehicle.CarIdentity
 import com.ieo.app.domain.vehicle.VehicleRepository
 import com.ieo.app.domain.vehicle.VehicleSensors
 import com.ieo.app.domain.voice.Announcer
 import com.ieo.app.domain.wait.WaitRepository
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
 
 /**
  * 앱 전체에서 하나씩만 있는 객체들. 화면(ViewModel)은 여기서 인터페이스를 받아 쓴다.
@@ -73,6 +79,7 @@ interface AppContainer {
     val vehicleSensors: VehicleSensors
     val carIdentity: CarIdentity
     val announcer: Announcer
+    val locationTracker: LocationTracker
 }
 
 class DefaultAppContainer(context: Context) : AppContainer {
@@ -154,4 +161,11 @@ class DefaultAppContainer(context: Context) : AppContainer {
     override val carIdentity: CarIdentity by lazy { PleosCarIdentity(appContext) }
 
     override val announcer: Announcer by lazy { TtsAnnouncer(appContext) }
+
+    /** 앱이 살아 있는 동안 도는 일. 화면이 바뀌거나 내비가 앞에 떠도 이어진다 */
+    private val appScope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
+
+    override val locationTracker: LocationTracker by lazy {
+        ForegroundLocationTracker(appContext, TripLocationReporter(appScope, vehicleSensors, navigator, tripRepository))
+    }
 }

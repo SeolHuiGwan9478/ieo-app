@@ -2,6 +2,11 @@
     <string name="app_name">Ieo</string>
 
     <!-- 첫 화면 -->
+    <!-- 운행 위치 알림 (TRIP-013) -->
+    <string name="trip_location_channel">운행 위치</string>
+    <string name="trip_location_title">운행 중</string>
+    <string name="trip_location_text">주선사가 진행 상황을 볼 수 있게 위치를 보내고 있어요</string>
+
     <string name="splash_tagline">끝나는 곳에서, 다음이 이어집니다</string>
     <string name="splash_start">시작하기</string>
 

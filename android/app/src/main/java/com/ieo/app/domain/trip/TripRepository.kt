@@ -15,4 +15,7 @@ interface TripRepository {
 
     /** 다른 앱에서 받은 배차 등록. 내 배차에 예약 상태로 들어간다 */
     suspend fun register(trip: NewTrip): ApiResult<Trip>
+
+    /** 위치 묶음 보내기 (TRIP-013). 끝난 운행이면 서버가 받기만 하고 버린다 */
+    suspend fun sendLocations(tripId: Long, samples: List<LocationSample>): ApiResult<Unit>
 }

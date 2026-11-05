@@ -15,6 +15,8 @@ import com.ieo.app.domain.order.Order
 import com.ieo.app.domain.vehicle.GeoPoint
 import com.ieo.app.domain.order.ReportType
 import com.ieo.app.domain.order.OrderRepository
+import com.ieo.app.domain.trip.LocationSample
+import com.ieo.app.domain.trip.LocationTracker
 import com.ieo.app.domain.trip.NewTrip
 import com.ieo.app.domain.trip.StopType
 import com.ieo.app.domain.trip.Trip
@@ -63,6 +65,17 @@ class FakeTripServer(var trip: Trip) :
     override suspend fun register(trip: NewTrip): ApiResult<Trip> {
         registered += trip
         return ApiResult.Success(TripFixtures.trip(TripStatus.SCHEDULED, id = 99))
+    }
+
+    /** 받은 위치 묶음 */
+    val locationBatches = mutableListOf<List<LocationSample>>()
+
+    /** 위치 보내기 결과. 통신 끊김 등을 흉내 낸다 */
+    var locationResult: ApiResult<Unit> = ApiResult.Success(Unit)
+
+    override suspend fun sendLocations(tripId: Long, samples: List<LocationSample>): ApiResult<Unit> {
+        locationBatches += samples
+        return locationResult
     }
 
     override suspend fun waits(tripId: Long) = ApiResult.Success(records.values.toList())
@@ -175,5 +188,14 @@ class FakeNavigator : Navigator {
     /** 내비가 "목적지 도착"을 알린 것처럼 */
     fun arrive() {
         progress.value = progress.value?.copy(arrived = true, remainMeters = 0, remainSeconds = 0)
+    }
+}
+
+/** 홈이 알려 준 진행 중 운행을 기록한다 */
+class FakeLocationTracker : LocationTracker {
+    val tracked = mutableListOf<Long?>()
+
+    override fun track(tripId: Long?) {
+        tracked += tripId
     }
 }
