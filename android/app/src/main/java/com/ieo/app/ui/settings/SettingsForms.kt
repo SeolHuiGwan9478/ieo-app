@@ -23,6 +23,7 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.ieo.app.domain.recommendation.RecommendationPreference
 import com.ieo.app.domain.vehicle.BodyType
 import com.ieo.app.domain.vehicle.Tonnage
 import com.ieo.app.domain.vehicle.Vehicle
@@ -89,6 +90,73 @@ fun ColumnScope.VehicleForm(
         IeoTonalButton(text = "기본 차량으로 정하기", onClick = { if (!busy) onSetDefault() })
     }
     FormButtons(busy, onCancel = onCancel, onSave = { onSubmit(tonnage, bodyType, height) })
+}
+
+/**
+ * 다음 배차 추천 설정 창. 키보드 없이 고치도록 반경은 ± 5km, 최소 실수익은 고르기로 한다.
+ * 추천을 끄면 반경·실수익 칸을 숨긴다 (값은 그대로 저장)
+ */
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+fun ColumnScope.RecommendationForm(
+    current: RecommendationPreference,
+    busy: Boolean,
+    onSubmit: (RecommendationPreference) -> Unit,
+    onCancel: () -> Unit,
+) {
+    var enabled by remember(current) { mutableStateOf(current.enabled) }
+    var radiusKm by remember(current) { mutableStateOf(current.radiusKm) }
+    var minNetProfit by remember(current) { mutableStateOf(current.minNetProfit) }
+
+    SheetTitle("다음 배차 추천")
+    Spacer(Modifier.height(24.dp))
+    FieldLabel("추천")
+    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        FilterChip("켬", selected = enabled, onClick = { enabled = true })
+        FilterChip("끔", selected = !enabled, onClick = { enabled = false })
+    }
+    if (enabled) {
+        Spacer(Modifier.height(20.dp))
+        FieldLabel("찾는 범위 (하차지에서)")
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            IeoTonalButton(text = "−", onClick = { radiusKm = stepRadius(radiusKm, -RADIUS_STEP_KM) }, modifier = Modifier.width(88.dp))
+            Text(
+                text = "${radiusKm}km",
+                fontSize = 32.sp,
+                fontWeight = FontWeight.ExtraBold,
+                color = TextStrong,
+                style = Tnum,
+                modifier = Modifier.width(140.dp),
+            )
+            IeoTonalButton(text = "+", onClick = { radiusKm = stepRadius(radiusKm, RADIUS_STEP_KM) }, modifier = Modifier.width(88.dp))
+        }
+        Text("넓히면 후보가 늘지만 빈 차로 가는 거리도 길어져요", fontSize = 18.sp, color = TextSub)
+        Spacer(Modifier.height(20.dp))
+        FieldLabel("최소 실수익 (운임에서 공차 기름값을 뺀 것)")
+        FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            MIN_NET_PROFIT_CHOICES.forEach { won ->
+                FilterChip(minNetProfitChip(won), selected = minNetProfit == won, onClick = { minNetProfit = won })
+            }
+        }
+    } else {
+        Spacer(Modifier.height(12.dp))
+        Text("다음 배차를 음성과 카드로 알려 드리지 않아요", fontSize = 18.sp, color = TextSub)
+    }
+    FormButtons(busy, onCancel = onCancel, onSave = { onSubmit(RecommendationPreference(enabled, radiusKm, minNetProfit)) })
+}
+
+/** 반경을 바꾸는 단위 */
+private const val RADIUS_STEP_KM = 5
+
+/** 최소 실수익 고르기. null은 조건 없음 */
+internal val MIN_NET_PROFIT_CHOICES: List<Long?> = listOf(null, 100_000, 200_000, 300_000, 400_000, 500_000)
+
+private fun minNetProfitChip(won: Long?): String = won?.let { "${it / 10_000}만 원" } ?: "조건 없음"
+
+/** 5km 단위로 맞추고 5~100km 안으로 자른다 */
+internal fun stepRadius(radiusKm: Int, delta: Int): Int {
+    val next = (radiusKm + delta) / RADIUS_STEP_KM * RADIUS_STEP_KM
+    return next.coerceIn(RecommendationPreference.MIN_RADIUS_KM, RecommendationPreference.MAX_RADIUS_KM)
 }
 
 @Composable

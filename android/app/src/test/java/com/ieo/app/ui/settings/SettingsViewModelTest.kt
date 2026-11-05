@@ -5,13 +5,17 @@ import com.ieo.app.core.session.AuthTokens
 import com.ieo.app.core.session.SessionManager
 import com.ieo.app.domain.account.AccountRepository
 import com.ieo.app.domain.account.Profile
+import com.ieo.app.domain.recommendation.RecommendationPreference
+import com.ieo.app.domain.trip.TripStatus
 import com.ieo.app.domain.vehicle.BodyType
 import com.ieo.app.domain.vehicle.Tonnage
 import com.ieo.app.domain.vehicle.PleosMatch
 import com.ieo.app.domain.vehicle.Vehicle
 import com.ieo.app.domain.vehicle.VehicleRepository
+import com.ieo.app.testing.FakeTripServer
 import com.ieo.app.testing.MainDispatcherRule
 import com.ieo.app.testing.MemoryTokenStore
+import com.ieo.app.testing.TripFixtures
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
@@ -31,7 +35,34 @@ class SettingsViewModelTest {
     private val account = FakeAccount()
     private val garage = FakeGarage()
     private val session = SessionManager(MemoryTokenStore(AuthTokens("access", "refresh")))
-    private val vm = SettingsViewModel(account, garage, session, appVersion = "0.1.0")
+    private val recommendations = FakeTripServer(TripFixtures.trip(TripStatus.IN_TRANSIT))
+    private val vm = SettingsViewModel(account, garage, recommendations, session, appVersion = "0.1.0")
+
+    @Test
+    fun `추천 설정을 받아 보여 주고 고치면 서버에 저장한다`() = runTest(main.dispatcher) {
+        vm.refresh()
+        runCurrent()
+        assertEquals(RecommendationPreference(enabled = true, radiusKm = 30, minNetProfit = null), vm.state.value.recommendation)
+
+        vm.openForm(SettingsForm.EditRecommendation(vm.state.value.recommendation!!))
+        vm.saveRecommendation(RecommendationPreference(enabled = true, radiusKm = 50, minNetProfit = 200_000))
+        runCurrent()
+
+        val saved = RecommendationPreference(enabled = true, radiusKm = 50, minNetProfit = 200_000)
+        assertEquals(saved, recommendations.recommendationPreference)
+        assertEquals(saved, vm.state.value.recommendation)
+        assertNull(vm.state.value.form)
+        assertEquals(SettingsViewModel.RECOMMENDATION_SAVED_MESSAGE, vm.state.value.message)
+    }
+
+    @Test
+    fun `추천 반경이 범위를 벗어나면 서버에 보내지 않는다`() = runTest(main.dispatcher) {
+        vm.saveRecommendation(RecommendationPreference(enabled = true, radiusKm = 200))
+        runCurrent()
+
+        assertEquals(SettingsViewModel.RADIUS_RANGE_MESSAGE, vm.state.value.message)
+        assertEquals(RecommendationPreference(), recommendations.recommendationPreference)
+    }
 
     @Test
     fun `내 정보와 차량을 받고 기본 차량을 맨 앞에 둔다`() = runTest(main.dispatcher) {

@@ -11,6 +11,8 @@ import com.ieo.app.core.session.SessionManager
 import com.ieo.app.di.appContainer
 import com.ieo.app.domain.account.AccountRepository
 import com.ieo.app.domain.account.Profile
+import com.ieo.app.domain.recommendation.RecommendationPreference
+import com.ieo.app.domain.recommendation.RecommendationRepository
 import com.ieo.app.domain.vehicle.BodyType
 import com.ieo.app.domain.vehicle.Tonnage
 import com.ieo.app.domain.vehicle.Vehicle
@@ -26,6 +28,7 @@ import kotlinx.coroutines.launch
 sealed interface SettingsForm {
     data class EditName(val current: String) : SettingsForm
     data class EditVehicle(val vehicle: Vehicle) : SettingsForm
+    data class EditRecommendation(val current: RecommendationPreference) : SettingsForm
     data object ConfirmSignOut : SettingsForm
 }
 
@@ -33,6 +36,8 @@ data class SettingsUiState(
     val profile: Profile? = null,
     /** 기본 차량이 맨 앞 */
     val vehicles: List<Vehicle> = emptyList(),
+    /** 다음 배차 추천 설정. 못 받았으면 null */
+    val recommendation: RecommendationPreference? = null,
     val appVersion: String = "",
     val form: SettingsForm? = null,
     val isLoading: Boolean = false,
@@ -47,16 +52,18 @@ interface SettingsActions {
     fun saveName(name: String)
     fun saveVehicle(tonnage: Tonnage, bodyType: BodyType, heightMeters: Double?)
     fun setDefault(vehicleId: Long)
+    fun saveRecommendation(preference: RecommendationPreference)
     fun signOut()
 }
 
 /**
- * 설정 탭 (ACC-003, VEH-001·002): 내 정보, 내 차량, 로그아웃.
+ * 설정 탭 (ACC-003, VEH-001·002, REC-004·025): 내 정보, 내 차량, 다음 배차 추천, 로그아웃.
  * 차량 추가·삭제와 탈퇴는 휴대폰 앱에서 한다. 차량 화면에서 긴 입력을 하지 않게.
  */
 class SettingsViewModel(
     private val accountRepository: AccountRepository,
     private val vehicleRepository: VehicleRepository,
+    private val recommendationRepository: RecommendationRepository,
     private val session: SessionManager,
     appVersion: String,
 ) : ViewModel(), SettingsActions {
@@ -99,6 +106,16 @@ class SettingsViewModel(
         load()
     }
 
+    override fun saveRecommendation(preference: RecommendationPreference) {
+        if (preference.radiusKm !in RecommendationPreference.MIN_RADIUS_KM..RecommendationPreference.MAX_RADIUS_KM) {
+            return show(RADIUS_RANGE_MESSAGE)
+        }
+        runAction {
+            val saved = recommendationRepository.changePreference(preference).orShow() ?: return@runAction
+            _state.update { it.copy(recommendation = saved, form = null, message = RECOMMENDATION_SAVED_MESSAGE) }
+        }
+    }
+
     /** 이 기기의 토큰만 지운다. 로그인 화면으로는 SessionManager를 따라 넘어간다 */
     override fun signOut() {
         _state.update { it.copy(form = null) }
@@ -111,10 +128,13 @@ class SettingsViewModel(
         _state.update { it.copy(isLoading = true) }
         val profile = viewModelScope.async { accountRepository.me() }
         val vehicles = viewModelScope.async { vehicleRepository.vehicles() }
+        val recommendation = viewModelScope.async { recommendationRepository.preference() }
         profile.await().orShow()?.let { me -> _state.update { it.copy(profile = me) } }
         vehicles.await().orShow()?.let { list ->
             _state.update { it.copy(vehicles = list.sortedByDescending(Vehicle::isDefault)) }
         }
+        // 추천 설정을 못 받아도 다른 칸은 보여 준다. 메시지를 두 번 띄우지 않게 조용히 넘긴다
+        (recommendation.await() as? ApiResult.Success)?.data?.let { pref -> _state.update { it.copy(recommendation = pref) } }
         _state.update { it.copy(isLoading = false) }
     }
 
@@ -143,6 +163,8 @@ class SettingsViewModel(
     companion object {
         const val NAME_REQUIRED_MESSAGE = "이름을 입력해 주세요"
         const val HEIGHT_RANGE_MESSAGE = "높이는 1.5m에서 4.2m 사이로 정해 주세요"
+        const val RADIUS_RANGE_MESSAGE = "반경은 5km에서 100km 사이로 정해 주세요"
+        const val RECOMMENDATION_SAVED_MESSAGE = "추천 설정을 바꿨어요"
 
         val Factory: ViewModelProvider.Factory = viewModelFactory {
             initializer {
@@ -150,6 +172,7 @@ class SettingsViewModel(
                 SettingsViewModel(
                     accountRepository = container.accountRepository,
                     vehicleRepository = container.vehicleRepository,
+                    recommendationRepository = container.recommendationRepository,
                     session = container.session,
                     appVersion = BuildConfig.VERSION_NAME,
                 )

@@ -4,6 +4,7 @@ import com.ieo.app.data.order.DispatchRequestResponse
 import com.ieo.app.data.order.OrderResponse
 import com.ieo.app.domain.recommendation.NextOrder
 import com.ieo.app.domain.recommendation.NextOrders
+import com.ieo.app.domain.recommendation.RecommendationPreference
 import java.time.Instant
 import kotlinx.serialization.Serializable
 import retrofit2.Response
@@ -23,6 +24,12 @@ interface RecommendationApi {
         @Path("orderId") orderId: Long,
         @Body body: AnswerRecommendationRequest,
     ): Response<RecommendationAnswerResponse>
+
+    @GET("api/recommendation-preference")
+    suspend fun preference(): Response<RecommendationPreferenceBody>
+
+    @PUT("api/recommendation-preference")
+    suspend fun changePreference(@Body body: RecommendationPreferenceBody): Response<RecommendationPreferenceBody>
 }
 
 // 서버 domain/recommendation/dto와 같은 모양
@@ -47,6 +54,17 @@ data class RecommendationResponse(
         netProfit = netProfit,
         longWait = longWait,
     )
+}
+
+/** 서버 RecommendationPreferenceRequest·Response. 주고받는 모양이 같다 */
+@Serializable
+data class RecommendationPreferenceBody(val enabled: Boolean, val radiusKm: Int, val minNetProfit: Long? = null) {
+    fun toDomain() = RecommendationPreference(enabled, radiusKm, minNetProfit)
+
+    companion object {
+        fun of(preference: RecommendationPreference) =
+            RecommendationPreferenceBody(preference.enabled, preference.radiusKm, preference.minNetProfit)
+    }
 }
 
 @Serializable

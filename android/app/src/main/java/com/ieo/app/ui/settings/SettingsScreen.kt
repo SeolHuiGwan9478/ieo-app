@@ -21,6 +21,8 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.ieo.app.domain.account.Profile
+import com.ieo.app.domain.recommendation.RecommendationPreference
+import com.ieo.app.ui.common.formatWon
 import com.ieo.app.domain.vehicle.BodyType
 import com.ieo.app.domain.vehicle.Tonnage
 import com.ieo.app.domain.vehicle.Vehicle
@@ -57,6 +59,7 @@ fun SettingsScreen(state: SettingsUiState, actions: SettingsActions, linksSectio
         ) {
             ProfileSection(state.profile, onEdit = { actions.openForm(SettingsForm.EditName(state.profile?.name.orEmpty())) })
             VehicleSection(state.vehicles, isLoading = state.isLoading, onEdit = { actions.openForm(SettingsForm.EditVehicle(it)) })
+            RecommendationSection(state.recommendation, onEdit = { actions.openForm(SettingsForm.EditRecommendation(it)) })
             linksSection()
             AppSection(state.appVersion, onSignOut = { actions.openForm(SettingsForm.ConfirmSignOut) })
         }
@@ -68,6 +71,12 @@ fun SettingsScreen(state: SettingsUiState, actions: SettingsActions, linksSectio
                     busy = state.isBusy,
                     onSubmit = actions::saveVehicle,
                     onSetDefault = { actions.setDefault(form.vehicle.id) },
+                    onCancel = actions::close,
+                )
+                is SettingsForm.EditRecommendation -> RecommendationForm(
+                    current = form.current,
+                    busy = state.isBusy,
+                    onSubmit = actions::saveRecommendation,
                     onCancel = actions::close,
                 )
                 SettingsForm.ConfirmSignOut -> SignOutConfirm(onSignOut = actions::signOut, onCancel = actions::close)
@@ -113,6 +122,27 @@ private fun VehicleRow(vehicle: Vehicle, onClick: () -> Unit) {
     }
 }
 
+/** 다음 배차 추천 설정 (REC-004, 025). 못 받았으면 버튼 없이 안내만 */
+@Composable
+private fun RecommendationSection(preference: RecommendationPreference?, onEdit: (RecommendationPreference) -> Unit) {
+    WhiteSection {
+        SectionTitle(title = "다음 배차 추천", note = "운송 중 음성으로, 하차지에서 카드로 알려 드려요")
+        if (preference == null) {
+            Text("설정을 불러오지 못했어요", fontSize = 20.sp, color = TextSub, modifier = Modifier.padding(8.dp))
+            return@WhiteSection
+        }
+        DetailLine("추천", if (preference.enabled) "켬" else "끔")
+        if (preference.enabled) {
+            DetailLine("찾는 범위", "하차지에서 ${preference.radiusKm}km 안")
+            DetailLine("최소 실수익", minNetProfitLabel(preference.minNetProfit))
+        }
+        Spacer(Modifier.height(12.dp))
+        IeoTonalButton(text = "고치기", onClick = { onEdit(preference) })
+    }
+}
+
+internal fun minNetProfitLabel(won: Long?): String = won?.let { "${formatWon(it)} 이상" } ?: "조건 없음"
+
 @Composable
 private fun AppSection(appVersion: String, onSignOut: () -> Unit) {
     WhiteSection {
@@ -150,6 +180,7 @@ private fun SettingsScreenPreview() {
                     Vehicle(1, "경기80바1234", Tonnage.TON_5, BodyType.CARGO, 3.6, 4.2, pleosLinked = true, isDefault = true),
                     Vehicle(2, "경기81사5678", Tonnage.TON_1, BodyType.BOX, null, null, pleosLinked = false, isDefault = false),
                 ),
+                recommendation = RecommendationPreference(enabled = true, radiusKm = 30, minNetProfit = 200_000),
                 appVersion = "0.1.0",
             ),
             actions = PreviewSettingsActions,
@@ -164,5 +195,6 @@ private object PreviewSettingsActions : SettingsActions {
     override fun saveName(name: String) = Unit
     override fun saveVehicle(tonnage: Tonnage, bodyType: BodyType, heightMeters: Double?) = Unit
     override fun setDefault(vehicleId: Long) = Unit
+    override fun saveRecommendation(preference: RecommendationPreference) = Unit
     override fun signOut() = Unit
 }

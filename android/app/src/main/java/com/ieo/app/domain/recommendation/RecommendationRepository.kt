@@ -13,4 +13,9 @@ interface RecommendationRepository {
      * 수락이면 배차 요청이 가고 그 요청을 돌려준다
      */
     suspend fun answer(tripId: Long, orderId: Long, answer: RecommendationAnswer?): ApiResult<DispatchRequest?>
+
+    /** 내 추천 설정. 정한 적 없으면 서버 기본값 */
+    suspend fun preference(): ApiResult<RecommendationPreference>
+
+    suspend fun changePreference(preference: RecommendationPreference): ApiResult<RecommendationPreference>
 }

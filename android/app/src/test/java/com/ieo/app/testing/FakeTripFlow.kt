@@ -17,6 +17,7 @@ import com.ieo.app.domain.order.ReportType
 import com.ieo.app.domain.order.OrderRepository
 import com.ieo.app.domain.recommendation.NextOrders
 import com.ieo.app.domain.recommendation.RecommendationAnswer
+import com.ieo.app.domain.recommendation.RecommendationPreference
 import com.ieo.app.domain.recommendation.RecommendationRepository
 import com.ieo.app.domain.trip.LocationSample
 import com.ieo.app.domain.trip.LocationTracker
@@ -95,6 +96,16 @@ class FakeTripServer(var trip: Trip) :
     override suspend fun answer(tripId: Long, orderId: Long, answer: RecommendationAnswer?): ApiResult<DispatchRequest?> {
         answers += Triple(tripId, orderId, answer)
         return ApiResult.Success(null)
+    }
+
+    /** 추천 설정. 바꾸면 그대로 돌려준다 */
+    var recommendationPreference = RecommendationPreference()
+
+    override suspend fun preference() = ApiResult.Success(recommendationPreference)
+
+    override suspend fun changePreference(preference: RecommendationPreference): ApiResult<RecommendationPreference> {
+        recommendationPreference = preference
+        return ApiResult.Success(preference)
     }
 
     override suspend fun waits(tripId: Long) = ApiResult.Success(records.values.toList())
