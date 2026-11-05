@@ -58,19 +58,22 @@ class TripLocationReporterTest {
     }
 
     @Test
-    fun `정차 중이거나 속도를 모르면 2분마다 보낸다`() = reporterTest { reporter ->
+    fun `정차 중이거나 속도를 모르면 5분마다 보낸다`() = reporterTest { reporter ->
         sensors.parkAt(here)
         reporter.track(7)
         runCurrent()
-        pass(90)
+        pass(270)
         assertEquals(1, server.locationBatches.size)
 
         pass(30)
         assertEquals(2, server.locationBatches.size)
 
         sensors.motion.value = null
-        pass(60)
+        pass(270)
         assertEquals(2, server.locationBatches.size)
+
+        pass(30)
+        assertEquals(3, server.locationBatches.size)
     }
 
     @Test

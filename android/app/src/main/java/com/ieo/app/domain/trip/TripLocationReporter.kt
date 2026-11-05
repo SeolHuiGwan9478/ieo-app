@@ -30,7 +30,7 @@ data class LocationSample(
 
 /**
  * 진행 중인 운행의 위치를 서버로 보낸다 (TRIP-013).
- * - 주행 중 30초, 정차 중(또는 속도를 모를 때) 2분마다 위치를 하나 잰다
+ * - 주행 중 30초, 정차 중(또는 속도를 모를 때) 5분마다 위치를 하나 잰다
  * - 잰 위치는 쌓아 두고 보낸다. 보내지 못하면(통신 끊김) 다음에 묶어서 다시 보낸다. 최대 [MAX_BUFFERED]개, 넘치면 오래된 것부터 버린다
  * - 서버가 거절하면(운행이 없음 등) 쌓인 것을 버린다. 끝난 운행이면 서버가 받기만 하고 버린다
  *
@@ -97,7 +97,7 @@ class TripLocationReporter(
     companion object {
         /** 주행 중 간격이자 확인 간격 */
         val TICK: Duration = Duration.ofSeconds(30)
-        val STOPPED_INTERVAL: Duration = Duration.ofMinutes(2)
+        val STOPPED_INTERVAL: Duration = Duration.ofMinutes(5)
 
         /** 서버가 한 번에 받는 최대 개수. 주행 중 30초 간격이면 2시간 분량 */
         const val MAX_BUFFERED = 240
