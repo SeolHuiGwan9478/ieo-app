@@ -46,20 +46,8 @@ class TripLocationReporterTest {
     }
 
     @Test
-    fun `주행 중에는 30초마다 보낸다`() = reporterTest { reporter ->
+    fun `주행이든 정차든 5분마다 보낸다`() = reporterTest { reporter ->
         sensors.drive(here)
-        reporter.track(7)
-        runCurrent()
-        pass(30)
-        pass(30)
-
-        assertEquals(3, server.locationBatches.size)
-        assertEquals(0, reporter.pending)
-    }
-
-    @Test
-    fun `정차 중이거나 속도를 모르면 5분마다 보낸다`() = reporterTest { reporter ->
-        sensors.parkAt(here)
         reporter.track(7)
         runCurrent()
         pass(270)
@@ -68,12 +56,13 @@ class TripLocationReporterTest {
         pass(30)
         assertEquals(2, server.locationBatches.size)
 
-        sensors.motion.value = null
+        sensors.parkAt(here)
         pass(270)
         assertEquals(2, server.locationBatches.size)
 
         pass(30)
         assertEquals(3, server.locationBatches.size)
+        assertEquals(0, reporter.pending)
     }
 
     @Test
@@ -106,12 +95,12 @@ class TripLocationReporterTest {
         server.locationResult = ApiResult.Failure(ApiError.Network)
         reporter.track(7)
         runCurrent()
-        pass(30)
-        pass(30)
+        pass(300)
+        pass(300)
         assertEquals(3, reporter.pending)
 
         server.locationResult = ApiResult.Success(Unit)
-        pass(30)
+        pass(300)
 
         assertEquals(4, server.locationBatches.last().size)
         assertEquals(0, reporter.pending)
@@ -123,7 +112,7 @@ class TripLocationReporterTest {
         server.locationResult = ApiResult.Failure(ApiError.Network)
         reporter.track(7)
         runCurrent()
-        repeat(250) { pass(30) }
+        repeat(250) { pass(300) }
 
         assertEquals(TripLocationReporter.MAX_BUFFERED, reporter.pending)
     }
@@ -142,13 +131,13 @@ class TripLocationReporterTest {
     fun `운행이 끝나면 멈추고 위치를 모르면 보내지 않는다`() = reporterTest { reporter ->
         reporter.track(7)
         runCurrent()
-        pass(30)
+        pass(300)
         assertEquals(0, server.locationBatches.size)
 
         sensors.drive(here)
-        pass(30)
+        pass(300)
         reporter.track(null)
-        pass(120)
+        pass(600)
 
         assertEquals(1, server.locationBatches.size)
     }
