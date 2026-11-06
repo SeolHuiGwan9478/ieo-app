@@ -45,8 +45,9 @@ class NextOrderAdvisor(
         val list = candidates ?: return
         presented = true
         val first = list.firstOrNull() ?: return
-        _current.value = first
+        // 먼저 말한다: 기어 P로 세워 둔 채 이 시점이 오면 current를 올리는 순간 수락 창이 뜬다. 말한 것을 알아야 두 번 말하지 않는다
         present(inTransit, first)
+        _current.value = first
         repository.answer(inTransit.id, first.order.id, answer = null)
     }
 

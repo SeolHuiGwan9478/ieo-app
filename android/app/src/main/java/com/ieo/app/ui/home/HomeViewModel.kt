@@ -170,10 +170,16 @@ class HomeViewModel(
     private val offers = NextOrderOffers()
     private val announcedOffers = mutableSetOf<Long>()
 
-    /** 지금 띄울 수락 창. 정차 중에만 있고, 차가 움직이면 바로 null이 된다. 그 후보는 다음에 멈추면 다시 나온다 */
+    /** 지금 띄울 수락 창. 정차 중이고 QR 창이 닫혀 있을 때만 있고, 차가 움직이면 바로 null이 된다. 그 후보는 다음에 멈추면 다시 나온다 */
     val nextOffer: StateFlow<NextOrderCard?> =
-        combine(offers.current, snapshot.map { it.current?.status }.distinctUntilChanged(), sensors.motion) { next, status, motion ->
-            next?.takeIf { canOffer(status, motion) }?.let(stateFactory::nextOrderCard)
+        combine(
+            offers.current,
+            snapshot.map { it.current?.status }.distinctUntilChanged(),
+            sensors.motion,
+            // 수하인이 QR로 서명하는 동안 창도 음성도 끼어들지 않는다
+            _status.map { it.proof != null || it.deliveryProof != null }.distinctUntilChanged(),
+        ) { next, status, motion, sheetOpen ->
+            next?.takeUnless { sheetOpen }?.takeIf { canOffer(status, motion) }?.let(stateFactory::nextOrderCard)
         }.distinctUntilChanged().stateIn(viewModelScope, SharingStarted.Eagerly, null)
 
     init {
@@ -307,8 +313,9 @@ class HomeViewModel(
             reloadOffers()
             return@runAction
         }
-        snapshot.update { it.copy(nextOrders = it.nextOrders.filterNot { next -> next.order.id == orderId }) }
+        // 이 순서여야 한다: 카드를 먼저 지우면 그 사이 다음 후보가 잠깐 잡혀 안내까지 나간다
         offers.accepted(orderId)
+        snapshot.update { it.copy(nextOrders = it.nextOrders.filterNot { next -> next.order.id == orderId }) }
         show(NEXT_ORDER_REQUESTED_MESSAGE)
     }
 

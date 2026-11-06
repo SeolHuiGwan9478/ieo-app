@@ -356,6 +356,45 @@ class HomeViewModelTest {
     }
 
     @Test
+    fun `인수증 QR 창이 열려 있으면 수락 창도 음성도 끼어들지 않고 닫으면 나온다`() = homeTest(TripStatus.IN_TRANSIT, prepare = {
+        server.nextOrders = candidates(11, 12)
+    }) { vm ->
+        vm.arrive()
+        runCurrent()
+        vm.acceptNextOrder(11)
+        runCurrent()
+        vm.requestDeliveryProof()
+        runCurrent()
+        val spoken = announcer.texts.count { it.startsWith("다음 배차 추천") }
+
+        notifications.emit(confirmedOr(NotificationType.DISPATCH_DECLINED, 11))
+        runCurrent()
+        assertNull(vm.nextOffer.value)
+        assertEquals(spoken, announcer.texts.count { it.startsWith("다음 배차 추천") })
+        assertTrue(server.answers.none { it.second == 12L })
+
+        vm.closeDeliveryProof()
+        runCurrent()
+        assertEquals(12L, vm.nextOffer.value?.orderId)
+        assertEquals(spoken + 1, announcer.texts.count { it.startsWith("다음 배차 추천") })
+    }
+
+    @Test
+    fun `기어 P로 세워 둔 채 안내 시점이 와도 한 번만 말하고 한 번만 적는다`() = homeTest(TripStatus.IN_TRANSIT, prepare = {
+        server.nextOrders = candidates(11)
+    }) { vm ->
+        sensors.parkAt(GeoPoint(36.0, 128.0))
+        runCurrent()
+
+        navigator.progress.value = NaviProgress("대구 성서", totalMeters = 300_000, remainMeters = 90_000, remainSeconds = 3_600)
+        runCurrent()
+
+        assertEquals(11L, vm.nextOffer.value?.orderId)
+        assertEquals(1, announcer.texts.count { it.startsWith("다음 배차 추천") })
+        assertEquals(1, server.answers.count { it.second == 11L })
+    }
+
+    @Test
     fun `운송 중에는 기어 P일 때만 띄우고 움직이면 닫았다가 멈추면 다시 띄운다`() = homeTest(TripStatus.IN_TRANSIT, prepare = {
         server.nextOrders = candidates(11)
     }) { vm ->

@@ -173,8 +173,8 @@ fun MainScreen(
         CarLinkSheet(state = carLinkState, actions = carLinkViewModel)
         LinkInvitationSheet(invitation = linksState.prompt?.takeUnless { isDriving }, busy = linksState.isBusy, actions = linksViewModel)
         UnlinkSheet(link = linksState.unlinking, busy = linksState.isBusy, actions = linksViewModel)
-        // 인수증 QR처럼 다른 창을 쓰는 동안에는 끼어들지 않는다
-        val sheetOpen = confirmingTrip != null || status.proof != null || status.deliveryProof != null || registering
+        // 다른 창을 쓰는 동안에는 끼어들지 않는다. QR 창은 ViewModel이 음성까지 함께 막는다
+        val sheetOpen = confirmingTrip != null || registering
         NextOrderOfferModal(
             offer = nextOffer.takeUnless { sheetOpen || demo != DemoState.LIVE },
             busy = status.isBusy,
