@@ -1,3 +1,5 @@
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
@@ -15,6 +17,13 @@ android {
         targetSdk = 35
         versionCode = 1
         versionName = "0.1.0"
+
+        // Pleos 콘솔에서 받은 인증 정보. git에 올라가지 않는 local.properties에서 읽는다 (없으면 빈 값: 앱은 돌지만 서버 음성 합성이 안 된다)
+        val localProperties = Properties().apply {
+            rootProject.file("local.properties").takeIf { it.exists() }?.inputStream()?.use(::load)
+        }
+        buildConfigField("String", "PLEOS_CLIENT_ID", "\"${localProperties.getProperty("pleos.clientId", "")}\"")
+        buildConfigField("String", "PLEOS_CLIENT_SECRET", "\"${localProperties.getProperty("pleos.clientSecret", "")}\"")
     }
 
     // 속도·기어는 Android 표준 차량 API(CarPropertyManager)로 읽음

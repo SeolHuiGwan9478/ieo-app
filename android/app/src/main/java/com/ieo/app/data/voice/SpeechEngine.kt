@@ -2,15 +2,20 @@ package com.ieo.app.data.voice
 
 import android.content.Context
 import android.media.AudioAttributes
+import android.os.Handler
+import android.os.Looper
 import android.speech.tts.TextToSpeech
 import android.speech.tts.UtteranceProgressListener
 import android.util.Log
+import com.ieo.app.BuildConfig
 import java.util.Locale
+import java.util.concurrent.atomic.AtomicBoolean
 import ai.pleos.playground.tts.TextToSpeech as PleosTextToSpeech
 import ai.pleos.playground.tts.constant.ErrorType
 import ai.pleos.playground.tts.constant.Mode
 import ai.pleos.playground.tts.listener.EventListener
 import ai.pleos.playground.tts.listener.OnInitializeListener
+import ai.pleos.playground.tts.listener.OnServerConnectionListener
 
 /**
  * 문장을 소리로 바꾸는 엔진. [TtsAnnouncer]가 차례를 정하고, 엔진은 받은 문장을 말하기만 한다.
@@ -30,7 +35,12 @@ interface SpeechEngine {
  * Pleos 차량 TTS (TextToSpeech SDK). 차량 음성(한국어 화자)으로 말한다.
  * 권한 pleos.car.permission.TTS_SERVICE가 필요하다. 에뮬레이터의 Android 기본 TTS는 이 엔진에 붙지 못해서 이쪽을 먼저 쓴다.
  */
-class PleosSpeechEngine(context: Context, private val attributes: AudioAttributes) : SpeechEngine {
+class PleosSpeechEngine(
+    context: Context,
+    private val attributes: AudioAttributes,
+    private val clientId: String = BuildConfig.PLEOS_CLIENT_ID,
+    private val clientSecret: String = BuildConfig.PLEOS_CLIENT_SECRET,
+) : SpeechEngine {
 
     private val tts = PleosTextToSpeech(context.applicationContext, Mode.HYBRID)
 
@@ -53,10 +63,10 @@ class PleosSpeechEngine(context: Context, private val attributes: AudioAttribute
         try {
             tts.initialize(object : OnInitializeListener {
                 override fun onSuccess() {
-                    tts.setLocale(Locale.KOREAN)
+                    tts.setLocale(Locale.KOREA)
                     tts.setAudioAttributes(attributes)
                     tts.addEventListener(events)
-                    onReady(true)
+                    registerThen { onReady(true) }
                 }
 
                 override fun onFailure(error: ErrorType) {
@@ -69,6 +79,35 @@ class PleosSpeechEngine(context: Context, private val attributes: AudioAttribute
             Log.w(TAG, "Pleos TTS를 쓸 수 없음", e)
             onReady(false)
         }
+    }
+
+    /**
+     * 앱 인증을 받은 뒤 [next]. 서버 음성 합성에 필요하다. 인증 정보가 없거나 실패해도 말하기는 시도한다 (기기 안 합성이 있을 수 있다).
+     * 응답이 오지 않아도 음성 안내가 멈추지 않게 [REGISTER_TIMEOUT_MS] 뒤에는 넘어간다
+     */
+    private fun registerThen(next: () -> Unit) {
+        if (clientId.isBlank() || clientSecret.isBlank()) {
+            Log.w(TAG, "Pleos 인증 정보가 없음 (local.properties)")
+            next()
+            return
+        }
+        val handler = Handler(Looper.getMainLooper())
+        val once = AtomicBoolean(false)
+        val proceed = { if (once.compareAndSet(false, true)) next() }
+        handler.postDelayed({ Log.w(TAG, "Pleos 앱 인증 응답 없음"); proceed() }, REGISTER_TIMEOUT_MS)
+        tts.registerApp(clientId, clientSecret, object : OnServerConnectionListener {
+            override fun onConnected() {
+                Log.i(TAG, "Pleos 앱 인증 성공")
+                handler.removeCallbacksAndMessages(null)
+                proceed()
+            }
+
+            override fun onFailed(error: ErrorType) {
+                Log.w(TAG, "Pleos 앱 인증 실패: $error")
+                handler.removeCallbacksAndMessages(null)
+                proceed()
+            }
+        })
     }
 
     override fun speak(text: String, onDone: () -> Unit) {
@@ -99,6 +138,7 @@ class PleosSpeechEngine(context: Context, private val attributes: AudioAttribute
     }
 
     private companion object {
+        const val REGISTER_TIMEOUT_MS = 5_000L
         const val TAG = "PleosSpeechEngine"
     }
 }

@@ -22,7 +22,7 @@ import java.util.PriorityQueue
  */
 class TtsAnnouncer(
     context: Context,
-    private val engines: List<(Context, AudioAttributes) -> SpeechEngine> = listOf(::PleosSpeechEngine, ::AndroidSpeechEngine),
+    private val engines: List<(Context, AudioAttributes) -> SpeechEngine> = listOf({ c, a -> PleosSpeechEngine(c, a) }, ::AndroidSpeechEngine),
 ) : Announcer {
 
     private val appContext = context.applicationContext
