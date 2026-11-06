@@ -7,10 +7,18 @@ package com.ieo.app.domain.voice
 interface Announcer {
     /** 말할 차례가 되면 말한다. 겹치면 [Announcement.priority]가 높은 것부터, 같으면 들어온 순서로 */
     fun say(announcement: Announcement)
+
+    /** [key]가 같은 안내를 말하는 중이면 멈추고, 차례를 기다리면 뺀다. 화면이 바뀌어 맞지 않게 된 안내에 쓴다 */
+    fun cancel(key: String)
 }
 
 /** 15초 안에 끝나는 짧은 문장 하나 (UX-011) */
-data class Announcement(val text: String, val priority: AnnouncementPriority)
+data class Announcement(
+    val text: String,
+    val priority: AnnouncementPriority,
+    /** [Announcer.cancel]로 취소할 수 있게 붙이는 이름. 같은 이름의 새 안내는 이전 것을 대신한다 */
+    val key: String? = null,
+)
 
 /** 안내 우선순위 (UX-010). 위에 있을수록 먼저 말한다 */
 enum class AnnouncementPriority {

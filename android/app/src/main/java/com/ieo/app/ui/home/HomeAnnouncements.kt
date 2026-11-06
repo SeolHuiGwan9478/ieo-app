@@ -10,6 +10,7 @@ import com.ieo.app.domain.voice.AnnouncementPriority
 import com.ieo.app.domain.wait.WaitPolicy
 import com.ieo.app.ui.common.formatMinutesKorean
 import com.ieo.app.ui.common.formatWon
+import com.ieo.app.ui.common.formatWonSpoken
 import com.ieo.app.ui.common.josa
 
 /**
@@ -81,10 +82,24 @@ object HomeAnnouncements {
         return Announcement(
             "다음 배차 추천이에요. $dropoffName 하차 후 ${formatMinutesKorean(minutes)} 거리, " +
                 "${order.pickup.name} $pickupTime 상차, ${order.dropoff.name}행 ${order.tonnageLabel}, " +
-                "실수익 ${formatWon(next.netProfit)} 건이 있어요.$wait",
-            AnnouncementPriority.INFO,
+                "실수익 ${formatWonSpoken(next.netProfit)} 건이 있어요.$wait",
+            AnnouncementPriority.RECOMMENDATION,
+            NEXT_ORDER_KEY,
         )
     }
+
+    /** 수락 창과 함께 묻는다. 자세한 내용은 창에 있고 15초 안에 답해야 하니 짧게 */
+    fun nextOrderOffer(next: NextOrder): Announcement {
+        val order = next.order
+        return Announcement(
+            "${order.pickup.name}에서 ${order.dropoff.name}행, 실수익 ${formatWonSpoken(next.netProfit)}. 수락할까요?",
+            AnnouncementPriority.RECOMMENDATION,
+            NEXT_ORDER_KEY,
+        )
+    }
+
+    /** 다음 배차 안내의 이름. 수락 창이 닫히거나 다음 후보로 넘어가면 말하던 것을 멈춘다 */
+    const val NEXT_ORDER_KEY = "next-order"
 
     private fun trip(text: String) = Announcement(text, AnnouncementPriority.TRIP)
 

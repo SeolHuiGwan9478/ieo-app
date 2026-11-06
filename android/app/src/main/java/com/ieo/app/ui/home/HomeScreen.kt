@@ -507,7 +507,7 @@ private fun DrivingHome(state: HomeState.Driving, onArrive: () -> Unit, onResume
                         time = rec.pickupTime,
                         day = "상차",
                         title = rec.route,
-                        subtitle = "\"응\"이라고 말하면 자세히 알려 드려요",
+                        subtitle = "기어 P로 세우면 수락할 수 있어요",
                         amount = "실수익",
                         amountNote = formatWon(rec.netProfit),
                         onClick = {},

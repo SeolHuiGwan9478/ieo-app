@@ -8,6 +8,12 @@ class FakeAnnouncer : Announcer {
     val said = mutableListOf<Announcement>()
     val texts: List<String> get() = said.map { it.text }
 
+    val cancelled = mutableListOf<String>()
+
+    override fun cancel(key: String) {
+        cancelled += key
+    }
+
     override fun say(announcement: Announcement) {
         said += announcement
     }

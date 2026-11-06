@@ -360,14 +360,21 @@ class HomeViewModel(
         }
     }
 
-    /** 수락 창이 처음 뜨면 음성으로도 안내하고 서버에 적는다. 운송 중 67%에 이미 말한 후보는 다시 말하지 않는다 */
+    /**
+     * 수락 창이 처음 뜨면 짧게 묻고 서버에 적는다. 운송 중 67%에 이미 말한 후보는 다시 말하지 않는다.
+     * 창이 닫히면(수락, 넘기기, 차가 움직임) 말하던 것을 멈춘다. 다음 후보로 넘어가면 새 안내가 대신한다
+     */
     private fun tellNewOffers() {
         viewModelScope.launch {
-            nextOffer.map { it?.orderId }.distinctUntilChanged().filterNotNull().collect { orderId ->
+            nextOffer.map { it?.orderId }.distinctUntilChanged().collect { orderId ->
+                if (orderId == null) {
+                    announcer.cancel(HomeAnnouncements.NEXT_ORDER_KEY)
+                    return@collect
+                }
                 val trip = offerTrip() ?: return@collect
                 val next = offers.current.value?.takeIf { it.order.id == orderId } ?: return@collect
                 if (announcedOffers.add(orderId)) {
-                    announcer.say(HomeAnnouncements.nextOrder(trip.dropoff.name, next, stateFactory.pickupTime(next)))
+                    announcer.say(HomeAnnouncements.nextOrderOffer(next))
                     recommendationRepository.answer(trip.id, orderId, answer = null)
                 }
             }

@@ -50,8 +50,22 @@ class TtsAnnouncer(
     private var hasFocus = false
     private var waitingForFocus = false
 
+    override fun cancel(key: String) {
+        main.post { drop(key); speakNext() }
+    }
+
+    /** 기다리는 것은 빼고, 말하는 중이면 멈춘다. 멈춘 문장의 늦은 콜백은 [finished]가 무시한다 */
+    private fun drop(key: String) {
+        queue.removeAll { it.announcement.key == key }
+        if (current?.announcement?.key == key) {
+            current = null
+            engine?.stop()
+        }
+    }
+
     override fun say(announcement: Announcement) {
         main.post {
+            announcement.key?.let(::drop)
             queue += Queued(announcement, order++)
             if (engine == null) startEngine(0) else speakNext()
         }

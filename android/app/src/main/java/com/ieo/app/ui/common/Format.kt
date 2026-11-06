@@ -54,3 +54,9 @@ private const val RIEUL = 8
 
 /** 영(ㅇ) 일(ㄹ) 이 삼(ㅁ) 사 오 육(ㄱ) 칠(ㄹ) 팔(ㄹ) 구 */
 private val DIGIT_FINALS = intArrayOf(21, 8, 0, 16, 0, 0, 1, 8, 8, 0)
+
+/** 들어서 알기 쉬운 금액 (UX-011): 372,229원 → "37만 원". 1만 원이 안 되면 그대로 */
+fun formatWonSpoken(amount: Long): String {
+    val manwon = Math.round(amount / 10_000.0)
+    return if (manwon == 0L) formatWon(amount) else "${manwon}만 원"
+}

@@ -249,7 +249,7 @@ class HomeViewModelTest {
         val driving = vm.state.value as HomeState.Driving
         assertEquals(Recommendation("칠곡 → 부산 강서", "06:00", 372_229), driving.recommendation)
         assertEquals(
-            "다음 배차 추천이에요. 대구 성서 하차 후 17분 거리, 칠곡 06:00 상차, 부산 강서행 5톤, 실수익 372,229원 건이 있어요. 대기가 길었던 곳이에요.",
+            "다음 배차 추천이에요. 대구 성서 하차 후 17분 거리, 칠곡 06:00 상차, 부산 강서행 5톤, 실수익 37만 원 건이 있어요. 대기가 길었던 곳이에요.",
             announcer.texts.last(),
         )
         assertEquals(listOf(Triple(1L, 11L, null as RecommendationAnswer?)), server.answers)
@@ -299,7 +299,8 @@ class HomeViewModelTest {
         vm.arrive()
         runCurrent()
         assertEquals(11L, vm.nextOffer.value?.orderId)
-        assertTrue(announcer.texts.last().startsWith("다음 배차 추천이에요"))
+        assertEquals("칠곡에서 부산 강서행, 실수익 37만 원. 수락할까요?", announcer.texts.last())
+        assertEquals(AnnouncementPriority.RECOMMENDATION, announcer.said.last().priority)
 
         vm.nextOrderTimedOut(11)
         runCurrent()
@@ -365,18 +366,18 @@ class HomeViewModelTest {
         runCurrent()
         vm.requestDeliveryProof()
         runCurrent()
-        val spoken = announcer.texts.count { it.startsWith("다음 배차 추천") }
+        val spoken = announcer.texts.count { it.endsWith("수락할까요?") }
 
         notifications.emit(confirmedOr(NotificationType.DISPATCH_DECLINED, 11))
         runCurrent()
         assertNull(vm.nextOffer.value)
-        assertEquals(spoken, announcer.texts.count { it.startsWith("다음 배차 추천") })
+        assertEquals(spoken, announcer.texts.count { it.endsWith("수락할까요?") })
         assertTrue(server.answers.none { it.second == 12L })
 
         vm.closeDeliveryProof()
         runCurrent()
         assertEquals(12L, vm.nextOffer.value?.orderId)
-        assertEquals(spoken + 1, announcer.texts.count { it.startsWith("다음 배차 추천") })
+        assertEquals(spoken + 1, announcer.texts.count { it.endsWith("수락할까요?") })
     }
 
     @Test
@@ -390,7 +391,7 @@ class HomeViewModelTest {
         runCurrent()
 
         assertEquals(11L, vm.nextOffer.value?.orderId)
-        assertEquals(1, announcer.texts.count { it.startsWith("다음 배차 추천") })
+        assertEquals(1, announcer.said.count { it.key == HomeAnnouncements.NEXT_ORDER_KEY })
         assertEquals(1, server.answers.count { it.second == 11L })
     }
 
@@ -419,6 +420,8 @@ class HomeViewModelTest {
         sensors.drive(here)
         runCurrent()
         assertNull(vm.nextOffer.value)
+        // 움직이면 말하던 것도 멈춘다
+        assertEquals(listOf(HomeAnnouncements.NEXT_ORDER_KEY), announcer.cancelled.takeLast(1))
 
         sensors.parkAt(here)
         runCurrent()
