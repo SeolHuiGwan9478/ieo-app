@@ -274,12 +274,116 @@ class HomeViewModelTest {
         assertEquals(372_229L, card.netProfit)
         assertEquals(listOf(1L), server.recommendRequests)
 
+        assertEquals(card.orderId, vm.nextOffer.value?.orderId)
+        assertEquals(listOf(Triple(1L, 11L, null as RecommendationAnswer?)), server.answers)
+
         vm.acceptNextOrder(card.orderId)
         runCurrent()
 
-        assertEquals(listOf(Triple(1L, 11L, RecommendationAnswer.ACCEPTED as RecommendationAnswer?)), server.answers)
+        assertEquals(Triple(1L, 11L, RecommendationAnswer.ACCEPTED as RecommendationAnswer?), server.answers.last())
         assertTrue((vm.state.value as HomeState.Waiting).nextOrders.isEmpty())
+        assertNull(vm.nextOffer.value)
         assertEquals(HomeViewModel.NEXT_ORDER_REQUESTED_MESSAGE, vm.status.value.message)
+    }
+
+    private fun candidates(vararg ids: Long) = ApiResult.Success(
+        NextOrders(NOW, ids.map { NextOrder(TripFixtures.order(id = it), 17_000, 7_771, 372_229, false) }),
+    )
+
+    private fun confirmedOr(type: NotificationType, orderId: Long) = AppNotification(orderId + 100, type, "알림", 1, orderId, NOW)
+
+    @Test
+    fun `하차지에서 후보를 하나씩 띄우고 시간이 끝나면 거절 없이 다음으로 넘어간다`() = homeTest(TripStatus.IN_TRANSIT, prepare = {
+        server.nextOrders = candidates(11, 12)
+    }) { vm ->
+        vm.arrive()
+        runCurrent()
+        assertEquals(11L, vm.nextOffer.value?.orderId)
+        assertTrue(announcer.texts.last().startsWith("다음 배차 추천이에요"))
+
+        vm.nextOrderTimedOut(11)
+        runCurrent()
+        assertEquals(12L, vm.nextOffer.value?.orderId)
+        assertTrue(server.answers.none { it.third == RecommendationAnswer.REJECTED })
+
+        vm.nextOrderTimedOut(12)
+        runCurrent()
+        assertNull(vm.nextOffer.value)
+        // 카드로는 남아 있어 눌러서 다시 열 수 있다
+        assertEquals(2, (vm.state.value as HomeState.Waiting).nextOrders.size)
+        vm.openNextOrder(11)
+        runCurrent()
+        assertEquals(11L, vm.nextOffer.value?.orderId)
+    }
+
+    @Test
+    fun `넘기면 거절로 적고 서버에서 후보를 다시 받는다`() = homeTest(TripStatus.IN_TRANSIT, prepare = {
+        server.nextOrders = candidates(11, 12)
+    }) { vm ->
+        vm.arrive()
+        runCurrent()
+        server.nextOrders = candidates(12)
+        val before = server.recommendRequests.size
+
+        vm.skipNextOrder(11)
+        runCurrent()
+
+        assertTrue(Triple(1L, 11L, RecommendationAnswer.REJECTED as RecommendationAnswer?) in server.answers)
+        assertEquals(before + 1, server.recommendRequests.size)
+        assertEquals(12L, vm.nextOffer.value?.orderId)
+    }
+
+    @Test
+    fun `수락한 요청이 마감되면 다음 후보를 띄우고 확정되면 그친다`() = homeTest(TripStatus.IN_TRANSIT, prepare = {
+        server.nextOrders = candidates(11, 12, 13)
+    }) { vm ->
+        vm.arrive()
+        runCurrent()
+        vm.acceptNextOrder(11)
+        runCurrent()
+        assertNull(vm.nextOffer.value)
+
+        notifications.emit(confirmedOr(NotificationType.DISPATCH_DECLINED, 11))
+        runCurrent()
+        server.nextOrders = candidates(12, 13)
+        assertEquals(12L, vm.nextOffer.value?.orderId)
+
+        vm.acceptNextOrder(12)
+        runCurrent()
+        notifications.emit(confirmedOr(NotificationType.DISPATCH_CONFIRMED, 12))
+        runCurrent()
+        assertNull(vm.nextOffer.value)
+    }
+
+    @Test
+    fun `운송 중에는 기어 P일 때만 띄우고 움직이면 닫았다가 멈추면 다시 띄운다`() = homeTest(TripStatus.IN_TRANSIT, prepare = {
+        server.nextOrders = candidates(11)
+    }) { vm ->
+        val here = GeoPoint(36.0, 128.0)
+        sensors.drive(here)
+        navigator.progress.value = NaviProgress("대구 성서", totalMeters = 300_000, remainMeters = 90_000, remainSeconds = 3_600)
+        runCurrent()
+        val spokenByAdvisor = announcer.texts.size
+        assertEquals(1, spokenByAdvisor)
+        assertNull(vm.nextOffer.value)
+
+        // 브레이크를 밟고 멈춘 신호 대기는 정차가 아니다
+        sensors.drive(here, speedKph = 0.0)
+        runCurrent()
+        assertNull(vm.nextOffer.value)
+
+        sensors.parkAt(here)
+        runCurrent()
+        assertEquals(11L, vm.nextOffer.value?.orderId)
+        assertEquals(spokenByAdvisor, announcer.texts.size)
+
+        sensors.drive(here)
+        runCurrent()
+        assertNull(vm.nextOffer.value)
+
+        sensors.parkAt(here)
+        runCurrent()
+        assertEquals(11L, vm.nextOffer.value?.orderId)
     }
 
     @Test

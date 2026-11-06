@@ -16,6 +16,7 @@ import com.ieo.app.domain.notification.AppNotification
 import com.ieo.app.domain.notification.NotificationType
 import com.ieo.app.domain.order.OrderRepository
 import com.ieo.app.domain.recommendation.NextOrderAdvisor
+import com.ieo.app.domain.recommendation.NextOrderOffers
 import com.ieo.app.domain.recommendation.RecommendationAnswer
 import com.ieo.app.domain.recommendation.RecommendationRepository
 import com.ieo.app.domain.site.SiteRepository
@@ -25,7 +26,9 @@ import com.ieo.app.domain.trip.Trip
 import com.ieo.app.domain.trip.TripRepository
 import com.ieo.app.domain.trip.TripStatus
 import com.ieo.app.domain.trip.TripStop
+import com.ieo.app.domain.vehicle.Gear
 import com.ieo.app.domain.vehicle.GeoPoint
+import com.ieo.app.domain.vehicle.VehicleMotion
 import com.ieo.app.domain.vehicle.VehicleSensors
 import com.ieo.app.domain.voice.Announcer
 import com.ieo.app.domain.wait.ArrivalCheck
@@ -101,6 +104,15 @@ interface HomeActions {
     /** 하차지 추천 카드에서 확인까지 마친 "수락": 그 오더에 배차 요청을 보낸다 (REC-022, 023) */
     fun acceptNextOrder(orderId: Long)
 
+    /** 수락 창에서 "넘기기": 거절로 적는다. 3번이면 이 운행에서는 더 안내하지 않는다 (REC-024) */
+    fun skipNextOrder(orderId: Long)
+
+    /** 수락 창의 시간이 끝났다: 거절로 치지 않고 다음 후보로 넘어간다 */
+    fun nextOrderTimedOut(orderId: Long)
+
+    /** 추천 카드를 눌러 그 후보의 수락 창을 연다 */
+    fun openNextOrder(orderId: Long)
+
     fun refresh()
 }
 
@@ -143,6 +155,7 @@ class HomeViewModel(
 
     /** 운송 중 다음 배차 추천: 50%에서 찾고 67%에서 음성으로 안내한다 (REC-001) */
     private val nextOrderAdvisor = NextOrderAdvisor(recommendationRepository) { trip, next ->
+        announcedOffers += next.order.id
         announcer.say(HomeAnnouncements.nextOrder(trip.dropoff.name, next, stateFactory.pickupTime(next)))
     }
 
@@ -152,6 +165,16 @@ class HomeViewModel(
 
     private val _status = MutableStateFlow(HomeStatus())
     val status: StateFlow<HomeStatus> = _status.asStateFlow()
+
+    /** 수락 창에 띄울 차례인 후보 */
+    private val offers = NextOrderOffers()
+    private val announcedOffers = mutableSetOf<Long>()
+
+    /** 지금 띄울 수락 창. 정차 중에만 있고, 차가 움직이면 바로 null이 된다. 그 후보는 다음에 멈추면 다시 나온다 */
+    val nextOffer: StateFlow<NextOrderCard?> =
+        combine(offers.current, snapshot.map { it.current?.status }.distinctUntilChanged(), sensors.motion) { next, status, motion ->
+            next?.takeIf { canOffer(status, motion) }?.let(stateFactory::nextOrderCard)
+        }.distinctUntilChanged().stateIn(viewModelScope, SharingStarted.Eagerly, null)
 
     init {
         refresh()
@@ -164,6 +187,8 @@ class HomeViewModel(
         reportLocationWhileOnTrip()
         recommendNextOrder()
         recommendAtDropoff()
+        keepOffersFresh()
+        tellNewOffers()
         tellNotifications()
     }
 
@@ -272,15 +297,74 @@ class HomeViewModel(
     }
 
     override fun acceptNextOrder(orderId: Long) = runAction {
-        val trip = snapshot.value.current?.takeIf { it.status == TripStatus.AT_DROPOFF } ?: return@runAction
+        val trip = offerTrip() ?: return@runAction
         // 성공이어도 돌려받는 배차 요청은 null일 수 있다. 실패만 막는다
         val result = recommendationRepository.answer(trip.id, orderId, RecommendationAnswer.ACCEPTED)
+        if (result is ApiResult.Failure) {
+            // 그 사이 마감된 오더일 수 있다. 다음 후보로 넘어간다
+            show(result.error.message)
+            offers.finish(orderId)
+            reloadOffers()
+            return@runAction
+        }
+        snapshot.update { it.copy(nextOrders = it.nextOrders.filterNot { next -> next.order.id == orderId }) }
+        offers.accepted(orderId)
+        show(NEXT_ORDER_REQUESTED_MESSAGE)
+    }
+
+    override fun skipNextOrder(orderId: Long) = runAction {
+        val trip = offerTrip() ?: return@runAction
+        // 성공이어도 돌려받는 값은 null이다. 실패만 막는다
+        val result = recommendationRepository.answer(trip.id, orderId, RecommendationAnswer.REJECTED)
         if (result is ApiResult.Failure) {
             show(result.error.message)
             return@runAction
         }
-        snapshot.update { it.copy(nextOrders = it.nextOrders.filterNot { next -> next.order.id == orderId }) }
-        show(NEXT_ORDER_REQUESTED_MESSAGE)
+        offers.finish(orderId)
+        reloadOffers()
+    }
+
+    override fun nextOrderTimedOut(orderId: Long) {
+        offers.finish(orderId)
+        if (offers.current.value == null) viewModelScope.launch { reloadOffers() }
+    }
+
+    override fun openNextOrder(orderId: Long) = offers.open(orderId)
+
+    private fun offerTrip() = snapshot.value.current?.takeIf { it.status in OFFER_STATUSES }
+
+    /** 후보를 다시 받는다. 거절이 빠지고, 운송 중이면 아직 안내하지 않은 다음 후보가 온다. 3번 거절이면 비어서 온다 (REC-024) */
+    private suspend fun reloadOffers() {
+        val trip = offerTrip() ?: return
+        val items = (recommendationRepository.recommend(trip.id) as? ApiResult.Success)?.data?.items ?: return
+        snapshot.update { it.copy(nextOrders = items) }
+    }
+
+    /** 하차지에서는 받아 둔 후보를, 운송 중에는 안내한 1등과 이어 받은 후보를 수락 창 차례에 올린다 */
+    private fun keepOffersFresh() {
+        viewModelScope.launch {
+            combine(snapshot.map { it.current to it.nextOrders }.distinctUntilChanged(), nextOrderAdvisor.current) { (trip, items), first ->
+                when (trip?.status) {
+                    TripStatus.AT_DROPOFF -> trip.id to items
+                    TripStatus.IN_TRANSIT -> trip.id to (listOfNotNull(first) + items).distinctBy { it.order.id }
+                    else -> null to emptyList()
+                }
+            }.collect { (tripId, items) -> offers.update(tripId, items) }
+        }
+    }
+
+    /** 수락 창이 처음 뜨면 음성으로도 안내하고 서버에 적는다. 운송 중 67%에 이미 말한 후보는 다시 말하지 않는다 */
+    private fun tellNewOffers() {
+        viewModelScope.launch {
+            nextOffer.map { it?.orderId }.distinctUntilChanged().filterNotNull().collect { orderId ->
+                val trip = offerTrip() ?: return@collect
+                val next = offers.current.value?.takeIf { it.order.id == orderId } ?: return@collect
+                if (announcedOffers.add(orderId)) {
+                    announcer.say(HomeAnnouncements.nextOrder(trip.dropoff.name, next, stateFactory.pickupTime(next)))
+                    recommendationRepository.answer(trip.id, orderId, answer = null)
+                }
+            }
+        }
     }
 
     fun messageShown() = _status.update { it.copy(message = null) }
@@ -301,7 +385,10 @@ class HomeViewModel(
             notifications.collect { notification ->
                 announcer.say(HomeAnnouncements.notification(notification))
                 _status.update { it.copy(banners = it.banners + bannerOf(notification)) }
-                if (notification.type == NotificationType.DISPATCH_CONFIRMED) load()
+                val confirmed = notification.type == NotificationType.DISPATCH_CONFIRMED
+                if (confirmed) load()
+                // 수락한 요청이 마감·만료됐으면 다음 후보로 이어 간다 (REC-023)
+                if (offers.answered(notification.orderId, confirmed)) reloadOffers()
             }
         }
     }
@@ -570,6 +657,20 @@ class HomeViewModel(
 
         /** 근처 오더를 찾은 곳에서 이만큼 움직이면 다시 찾는다 */
         private const val NEARBY_REFRESH_METERS = 5_000.0
+
+        /** 수락 창을 띄울 수 있는 운행 상태. 추천을 받는 상태와 같다 */
+        private val OFFER_STATUSES = setOf(TripStatus.IN_TRANSIT, TripStatus.AT_DROPOFF)
+
+        /**
+         * 수락 창을 띄워도 되는 정차인가. 운전 중에 터치를 요구하지 않는다 (REC-020, 10 음성·안전 UX).
+         * 하차지에서는 멈춰 있으면 된다. 운송 중에는 기어 P일 때만: 신호 대기는 언제 출발할지 몰라 정차로 보지 않는다.
+         * 차량 신호를 모르면 하차지에서만 띄운다
+         */
+        fun canOffer(status: TripStatus?, motion: VehicleMotion?): Boolean = when (status) {
+            TripStatus.AT_DROPOFF -> motion == null || motion.isStopped
+            TripStatus.IN_TRANSIT -> motion?.gear == Gear.PARK
+            else -> false
+        }
 
         /** 홈에는 오더를 이만큼만. 나머지는 오더 탭에서 */
         private const val HOME_ORDER_COUNT = 5
