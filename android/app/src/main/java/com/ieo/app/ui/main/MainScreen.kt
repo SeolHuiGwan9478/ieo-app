@@ -1,5 +1,8 @@
 package com.ieo.app.ui.main
 
+import com.ieo.app.ui.component.IeoBannerHost
+import com.ieo.app.ui.component.MessageBanners
+import com.ieo.app.ui.component.ShowMessage
 import com.ieo.app.ui.home.AcceptNextOrderSheet
 import com.ieo.app.ui.home.DeliveryProofSheet
 import com.ieo.app.ui.home.StartGuidanceSheet
@@ -10,10 +13,8 @@ import com.ieo.app.ui.theme.TextSub
 import com.ieo.app.ui.theme.Orange50
 import com.ieo.app.ui.theme.Orange700
 import com.ieo.app.ui.home.AssignedTrip
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.LaunchedEffect
-import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -84,19 +85,15 @@ fun MainScreen(
     carLinkViewModel: CarLinkViewModel = viewModel(factory = CarLinkViewModel.Factory),
     linksViewModel: DriverLinksViewModel = viewModel(factory = DriverLinksViewModel.Factory),
 ) {
-    val context = LocalContext.current
+    // 버튼을 누른 결과 같은 짧은 말. 서버 알림보다 먼저 보여 준다
+    val messages = remember { MessageBanners() }
     var destination by rememberSaveable { mutableStateOf(Destination.HOME) }
     // 디버그 빌드에서만: 서버 없이 대기·주행 화면을 확인하는 샘플
     var demo by rememberSaveable { mutableStateOf(DemoState.LIVE) }
 
     val liveState by homeViewModel.state.collectAsStateWithLifecycle()
     val status by homeViewModel.status.collectAsStateWithLifecycle()
-    LaunchedEffect(status.message) {
-        status.message?.let {
-            Toast.makeText(context, it, Toast.LENGTH_SHORT).show()
-            homeViewModel.messageShown()
-        }
-    }
+    ShowMessage(status.message, messages::show, homeViewModel::messageShown)
 
     val homeState: HomeState = when (demo) {
         DemoState.LIVE -> liveState
@@ -106,23 +103,13 @@ fun MainScreen(
 
     // 이 트럭과 내 차량 잇기 (VEH-004). 차대번호는 MainActivity가 권한을 받은 뒤 읽기 시작한다
     val carLinkState by carLinkViewModel.state.collectAsStateWithLifecycle()
-    LaunchedEffect(carLinkState.message) {
-        carLinkState.message?.let {
-            Toast.makeText(context, it, Toast.LENGTH_LONG).show()
-            carLinkViewModel.messageShown()
-        }
-    }
+    ShowMessage(carLinkState.message, messages::show, carLinkViewModel::messageShown)
 
     // 단골 주선사 요청 (BRK-002). 정차 중에만 묻는다: 주행이 끝날 때마다 새로 받고, 주행 중에는 창을 감춘다
     val isDriving = liveState is HomeState.Driving
     val linksState by linksViewModel.state.collectAsStateWithLifecycle()
     LaunchedEffect(isDriving) { if (!isDriving) linksViewModel.refresh() }
-    LaunchedEffect(linksState.message) {
-        linksState.message?.let {
-            Toast.makeText(context, it, Toast.LENGTH_SHORT).show()
-            linksViewModel.messageShown()
-        }
-    }
+    ShowMessage(linksState.message, messages::show, linksViewModel::messageShown)
 
     var confirmingTrip by remember { mutableStateOf<AssignedTrip?>(null) }
     var acceptingOrder by remember { mutableStateOf<NextOrderCard?>(null) }
@@ -130,12 +117,7 @@ fun MainScreen(
     // 다른 앱에서 받은 배차 등록 창
     var registering by remember { mutableStateOf(false) }
     val registerState by registerViewModel.state.collectAsStateWithLifecycle()
-    LaunchedEffect(registerState.message) {
-        registerState.message?.let {
-            Toast.makeText(context, it, Toast.LENGTH_SHORT).show()
-            registerViewModel.messageShown()
-        }
-    }
+    ShowMessage(registerState.message, messages::show, registerViewModel::messageShown)
     LaunchedEffect(registerState.done) {
         if (registerState.done) {
             registering = false
@@ -165,9 +147,9 @@ fun MainScreen(
                         onNextOrderClick = { acceptingOrder = it },
                     )
                     // 주행 중에는 오더 목록을 보여 주지 않는다 (DSP-012)
-                    Destination.ORDERS -> OrdersRoute(isDriving = liveState is HomeState.Driving)
-                    Destination.LEDGER -> LedgerRoute()
-                    Destination.SETTINGS -> SettingsRoute()
+                    Destination.ORDERS -> OrdersRoute(isDriving = liveState is HomeState.Driving, onMessage = messages::show)
+                    Destination.LEDGER -> LedgerRoute(onMessage = messages::show)
+                    Destination.SETTINGS -> SettingsRoute(onMessage = messages::show)
                 }
                 if (BuildConfig.DEBUG && destination == Destination.HOME) {
                     DemoStateSwitcher(
@@ -200,6 +182,11 @@ fun MainScreen(
         CarLinkSheet(state = carLinkState, actions = carLinkViewModel)
         LinkInvitationSheet(invitation = linksState.prompt?.takeUnless { isDriving }, busy = linksState.isBusy, actions = linksViewModel)
         UnlinkSheet(link = linksState.unlinking, busy = linksState.isBusy, actions = linksViewModel)
+        IeoBannerHost(
+            banner = messages.current ?: status.banners.firstOrNull(),
+            onDone = { id -> if (id < 0) messages.done(id) else homeViewModel.bannerDone(id) },
+            modifier = Modifier.align(Alignment.TopCenter),
+        )
     }
 }
 

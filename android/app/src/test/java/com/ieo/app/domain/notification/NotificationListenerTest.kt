@@ -77,6 +77,29 @@ class NotificationListenerTest {
     }
 
     @Test
+    fun `화면이 지켜보기 전에 온 알림은 잃지 않고 기다렸다가 내보낸다`() = runTest {
+        val server = ScriptedServer(
+            flow {
+                emit(NotificationStreamEvent.Connected)
+                received(4).forEach { emit(it) }
+                awaitCancellation()
+            },
+        )
+        val store = MemoryStore(lastId = 3)
+        val listener = NotificationListener(backgroundScope, server, store)
+
+        listener.start()
+        runCurrent()
+        assertEquals(3L, store.lastId)
+
+        val got = listening(listener)
+        runCurrent()
+
+        assertEquals(listOf(4L), got.map { it.id })
+        assertEquals(4L, store.lastId)
+    }
+
+    @Test
     fun `연결이 실패하면 점점 오래 기다렸다가 다시 붙는다`() = runTest {
         val failing = flow<NotificationStreamEvent> { throw IOException("끊김") }
         val server = ScriptedServer(failing, failing)

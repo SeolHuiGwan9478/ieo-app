@@ -39,6 +39,9 @@ import com.ieo.app.domain.wait.WaitRepository
 import java.time.Clock
 import java.time.Duration
 import java.time.Instant
+import com.ieo.app.ui.component.BannerKind
+import com.ieo.app.ui.component.IeoBanner
+import com.ieo.app.ui.component.NOTIFICATION_VISIBLE_MS
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
 import kotlinx.coroutines.delay
@@ -64,6 +67,8 @@ data class HomeStatus(
     val isBusy: Boolean = false,
     /** 한 번 보여 주고 지운다 ([HomeViewModel.messageShown]) */
     val message: String? = null,
+    /** 서버 알림 배너. 맨 앞 것부터 하나씩 보여 준다 ([HomeViewModel.bannerDone]) */
+    val banners: List<IeoBanner> = emptyList(),
     /** 대기 증빙 링크 창. 닫으면 null ([HomeViewModel.proofShown]) */
     val proof: WaitProofLink? = null,
     /** 인수증 QR 창. 닫으면 null ([HomeViewModel.closeDeliveryProof]) */
@@ -280,12 +285,22 @@ class HomeViewModel(
 
     fun messageShown() = _status.update { it.copy(message = null) }
 
-    /** 배차 확정·마감·만료 알림을 말하고 화면에 띄운다. 확정이면 내 배차가 늘었으니 홈을 새로 받는다 */
+    private fun bannerOf(notification: AppNotification) = IeoBanner(
+        id = notification.id,
+        text = notification.message,
+        kind = if (notification.type == NotificationType.DISPATCH_CONFIRMED) BannerKind.GOOD else BannerKind.INFO,
+        visibleMs = NOTIFICATION_VISIBLE_MS,
+    )
+
+    /** 배너를 다 보여 줬거나 닫았다. 다음 배너가 있으면 이어서 나온다 */
+    fun bannerDone(id: Long) = _status.update { status -> status.copy(banners = status.banners.filterNot { it.id == id }) }
+
+    /** 배차 확정·마감·만료 알림을 말하고 배너로 띄운다. 확정이면 내 배차가 늘었으니 홈을 새로 받는다 */
     private fun tellNotifications() {
         viewModelScope.launch {
             notifications.collect { notification ->
                 announcer.say(HomeAnnouncements.notification(notification))
-                show(notification.message)
+                _status.update { it.copy(banners = it.banners + bannerOf(notification)) }
                 if (notification.type == NotificationType.DISPATCH_CONFIRMED) load()
             }
         }

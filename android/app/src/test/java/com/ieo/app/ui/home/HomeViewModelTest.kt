@@ -14,6 +14,9 @@ import com.ieo.app.domain.trip.TripStatus
 import com.ieo.app.domain.vehicle.GeoPoint
 import com.ieo.app.domain.voice.AnnouncementPriority
 import com.ieo.app.testing.FakeAnnouncer
+import com.ieo.app.ui.component.BannerKind
+import com.ieo.app.ui.component.IeoBanner
+import com.ieo.app.ui.component.NOTIFICATION_VISIBLE_MS
 import com.ieo.app.testing.FakeLocationTracker
 import com.ieo.app.testing.FakeNavigator
 import com.ieo.app.testing.FakeSensors
@@ -290,12 +293,19 @@ class HomeViewModelTest {
 
         assertEquals(confirmed.message, announcer.texts.last())
         assertEquals(AnnouncementPriority.TRIP, announcer.said.last().priority)
-        assertEquals(confirmed.message, vm.status.value.message)
+        assertEquals(listOf(IeoBanner(7, confirmed.message, BannerKind.GOOD, NOTIFICATION_VISIBLE_MS)), vm.status.value.banners)
+        assertNull(vm.status.value.message)
         assertEquals(listOf<Long?>(null, 1), tracker.tracked)
 
         notifications.emit(confirmed.copy(id = 8, type = NotificationType.DISPATCH_EXPIRED, message = "확정되지 않았어요"))
         runCurrent()
         assertEquals(AnnouncementPriority.RECOMMENDATION, announcer.said.last().priority)
+
+        // 먼저 온 배너부터 하나씩 보여 준다
+        assertEquals(listOf(7L, 8L), vm.status.value.banners.map { it.id })
+        assertEquals(BannerKind.INFO, vm.status.value.banners.last().kind)
+        vm.bannerDone(7)
+        assertEquals(listOf(8L), vm.status.value.banners.map { it.id })
     }
 
     @Test
