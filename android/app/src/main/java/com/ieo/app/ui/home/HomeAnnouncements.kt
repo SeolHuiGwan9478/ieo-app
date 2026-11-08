@@ -82,7 +82,7 @@ object HomeAnnouncements {
         return Announcement(
             "다음 배차 추천이에요. $dropoffName 하차 후 ${formatMinutesKorean(minutes)} 거리, " +
                 "${order.pickup.name} $pickupTime 상차, ${order.dropoff.name}행 ${order.tonnageLabel}, " +
-                "실수익 ${formatWonSpoken(next.netProfit)} 건이 있어요.$wait",
+                "실수익 ${formatWonSpoken(next.netProfit)} 건이 있어요.$wait 수락이나 다음이라고 말씀해 주세요.",
             AnnouncementPriority.RECOMMENDATION,
             NEXT_ORDER_KEY,
         )
@@ -97,6 +97,21 @@ object HomeAnnouncements {
             NEXT_ORDER_KEY,
         )
     }
+
+    /** "자세히"라고 했을 때 */
+    fun nextOrderDetail(next: NextOrder, pickupDay: String, pickupTime: String): Announcement {
+        val order = next.order
+        return nextOrderLine(
+            "${order.brokerName}, ${order.vehicleLabel}, $pickupDay $pickupTime 상차, " +
+                "운임 ${formatWonSpoken(order.fare)}, 빈 차로 약 ${(next.emptyMeters + 500) / 1000}킬로미터예요.",
+        )
+    }
+
+    /** "수락"이라고 했을 때 한 번 더 묻는다 (REC-022) */
+    fun nextOrderConfirm(next: NextOrder): Announcement =
+        nextOrderLine("${next.order.pickup.name} ${next.order.dropoff.name}행 수락할까요?")
+
+    fun nextOrderLine(text: String) = Announcement(text, AnnouncementPriority.RECOMMENDATION, NEXT_ORDER_KEY)
 
     /** 다음 배차 안내의 이름. 수락 창이 닫히거나 다음 후보로 넘어가면 말하던 것을 멈춘다 */
     const val NEXT_ORDER_KEY = "next-order"

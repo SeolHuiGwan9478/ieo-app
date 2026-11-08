@@ -65,6 +65,8 @@ private val ModalShape = RoundedCornerShape(28.dp)
 fun BoxScope.NextOrderOfferModal(
     offer: NextOrderCard?,
     busy: Boolean,
+    /** 묻는 말을 마쳤다. 이때부터 시간을 잰다 */
+    asked: Boolean,
     onAccept: (Long) -> Unit,
     onSkip: (Long) -> Unit,
     onTimeout: (Long) -> Unit,
@@ -72,9 +74,9 @@ fun BoxScope.NextOrderOfferModal(
     if (offer == null) return
     val lifecycle = LocalLifecycleOwner.current.lifecycle
     var secondsLeft by remember(offer.orderId) { mutableIntStateOf(OFFER_SECONDS) }
-    LaunchedEffect(offer.orderId, busy) {
-        // 수락을 보내는 동안에는 시간을 재지 않는다
-        if (busy) return@LaunchedEffect
+    LaunchedEffect(offer.orderId, busy, asked) {
+        // 수락을 보내는 동안, 음성으로 묻는 동안에는 시간을 재지 않는다
+        if (busy || !asked) return@LaunchedEffect
         lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
             secondsLeft = OFFER_SECONDS
             while (secondsLeft > 0) {
@@ -152,6 +154,7 @@ private fun NextOrderOfferModalPreview() {
             NextOrderOfferModal(
                 offer = SampleHomeData.unloading().nextOrders.first(),
                 busy = false,
+                asked = true,
                 onAccept = {},
                 onSkip = {},
                 onTimeout = {},

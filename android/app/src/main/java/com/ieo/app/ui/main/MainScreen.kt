@@ -1,6 +1,7 @@
 package com.ieo.app.ui.main
 
 import com.ieo.app.ui.component.IeoBannerHost
+import com.ieo.app.ui.component.ListeningPill
 import com.ieo.app.ui.component.MessageBanners
 import com.ieo.app.ui.component.ShowMessage
 import com.ieo.app.ui.home.NextOrderOfferModal
@@ -178,9 +179,14 @@ fun MainScreen(
         NextOrderOfferModal(
             offer = nextOffer.takeUnless { sheetOpen || demo != DemoState.LIVE },
             busy = status.isBusy,
+            asked = status.offerAsked == nextOffer?.orderId,
             onAccept = homeViewModel::acceptNextOrder,
             onSkip = homeViewModel::skipNextOrder,
             onTimeout = homeViewModel::nextOrderTimedOut,
+        )
+        ListeningPill(
+            visible = status.listening,
+            modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = 24.dp),
         )
         IeoBannerHost(
             banner = messages.current ?: status.banners.firstOrNull(),

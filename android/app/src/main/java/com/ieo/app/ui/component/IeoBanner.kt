@@ -21,6 +21,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.CheckCircle
 import androidx.compose.material.icons.outlined.Close
 import androidx.compose.material.icons.outlined.Info
+import androidx.compose.material.icons.outlined.Mic
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -88,6 +89,24 @@ fun ShowMessage(message: String?, onShow: (String) -> Unit, onShown: () -> Unit)
             onShow(message)
             onShown()
         }
+    }
+}
+
+/** 마이크가 열려 있을 때 보여 준다. 듣는 줄 모르고 말하거나, 몰래 듣는다고 느끼지 않게 */
+@Composable
+fun ListeningPill(visible: Boolean, modifier: Modifier = Modifier) {
+    if (!visible) return
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(10.dp),
+        modifier = modifier
+            .heightIn(min = 56.dp)
+            .shadow(8.dp, BannerShape)
+            .background(White, BannerShape)
+            .padding(horizontal = 22.dp, vertical = 10.dp),
+    ) {
+        Icon(Icons.Outlined.Mic, contentDescription = null, tint = IeoStatus.colors.driving, modifier = Modifier.size(28.dp))
+        Text("듣고 있어요", color = TextStrong, fontSize = 24.sp, fontWeight = FontWeight.SemiBold)
     }
 }
 

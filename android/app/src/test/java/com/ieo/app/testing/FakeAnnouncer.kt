@@ -14,7 +14,8 @@ class FakeAnnouncer : Announcer {
         cancelled += key
     }
 
-    override fun say(announcement: Announcement) {
+    override fun say(announcement: Announcement, onSpoken: () -> Unit) {
         said += announcement
+        onSpoken()
     }
 }

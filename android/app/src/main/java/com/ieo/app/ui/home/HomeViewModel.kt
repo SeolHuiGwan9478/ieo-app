@@ -15,8 +15,11 @@ import com.ieo.app.domain.navi.Navigator
 import com.ieo.app.domain.notification.AppNotification
 import com.ieo.app.domain.notification.NotificationType
 import com.ieo.app.domain.order.OrderRepository
+import com.ieo.app.domain.recommendation.NextOrder
 import com.ieo.app.domain.recommendation.NextOrderAdvisor
 import com.ieo.app.domain.recommendation.NextOrderOffers
+import com.ieo.app.domain.recommendation.NextOrderVoiceDialog
+import com.ieo.app.domain.recommendation.VoiceAnswer
 import com.ieo.app.domain.recommendation.RecommendationAnswer
 import com.ieo.app.domain.recommendation.RecommendationRepository
 import com.ieo.app.domain.site.SiteRepository
@@ -31,6 +34,9 @@ import com.ieo.app.domain.vehicle.GeoPoint
 import com.ieo.app.domain.vehicle.VehicleMotion
 import com.ieo.app.domain.vehicle.VehicleSensors
 import com.ieo.app.domain.voice.Announcer
+import com.ieo.app.domain.voice.NoSpeechRecognizer
+import com.ieo.app.domain.voice.SpeechRecognizer
+import com.ieo.app.domain.voice.speak
 import com.ieo.app.domain.wait.ArrivalCheck
 import com.ieo.app.domain.wait.ArrivalDetector
 import com.ieo.app.domain.wait.DepartureCheck
@@ -72,6 +78,10 @@ data class HomeStatus(
     val message: String? = null,
     /** 서버 알림 배너. 맨 앞 것부터 하나씩 보여 준다 ([HomeViewModel.bannerDone]) */
     val banners: List<IeoBanner> = emptyList(),
+    /** 수락 창에서 묻는 말을 마친 후보. 앞선 안내(도착 등)에 밀려도 15초를 온전히 주려고 이때부터 시간을 잰다 */
+    val offerAsked: Long? = null,
+    /** 차주 대답을 듣는 중 (마이크가 열려 있다) */
+    val listening: Boolean = false,
     /** 대기 증빙 링크 창. 닫으면 null ([HomeViewModel.proofShown]) */
     val proof: WaitProofLink? = null,
     /** 인수증 QR 창. 닫으면 null ([HomeViewModel.closeDeliveryProof]) */
@@ -139,6 +149,7 @@ class HomeViewModel(
     private val recommendationRepository: RecommendationRepository,
     /** 서버 알림 (09 알림). 앱 전체의 [com.ieo.app.domain.notification.NotificationListener]가 받는다 */
     private val notifications: Flow<AppNotification> = emptyFlow(),
+    private val recognizer: SpeechRecognizer = NoSpeechRecognizer,
     private val clock: Clock = Clock.systemUTC(),
     private val stateFactory: HomeStateFactory = HomeStateFactory(),
 ) : ViewModel(), HomeActions {
@@ -156,7 +167,7 @@ class HomeViewModel(
     /** 운송 중 다음 배차 추천: 50%에서 찾고 67%에서 음성으로 안내한다 (REC-001) */
     private val nextOrderAdvisor = NextOrderAdvisor(recommendationRepository) { trip, next ->
         announcedOffers += next.order.id
-        announcer.say(HomeAnnouncements.nextOrder(trip.dropoff.name, next, stateFactory.pickupTime(next)))
+        talkWhileDriving(trip, next)
     }
 
     val state: StateFlow<HomeState> =
@@ -169,6 +180,22 @@ class HomeViewModel(
     /** 수락 창에 띄울 차례인 후보 */
     private val offers = NextOrderOffers()
     private val announcedOffers = mutableSetOf<Long>()
+
+    /** 다음 배차를 두고 차주와 말을 주고받는 일. 한 번에 하나 */
+    private var voiceJob: Job? = null
+    private val voiceDialog = NextOrderVoiceDialog(
+        recognizer = object : SpeechRecognizer {
+            override suspend fun listen(timeoutMillis: Long): String? {
+                _status.update { it.copy(listening = true) }
+                try {
+                    return recognizer.listen(timeoutMillis)
+                } finally {
+                    _status.update { it.copy(listening = false) }
+                }
+            }
+        },
+        speak = { announcer.speak(HomeAnnouncements.nextOrderLine(it)) },
+    )
 
     /** 지금 띄울 수락 창. 정차 중이고 QR 창이 닫혀 있을 때만 있고, 차가 움직이면 바로 null이 된다. 그 후보는 다음에 멈추면 다시 나온다 */
     val nextOffer: StateFlow<NextOrderCard?> =
@@ -345,41 +372,90 @@ class HomeViewModel(
         val trip = offerTrip() ?: return
         val items = (recommendationRepository.recommend(trip.id) as? ApiResult.Success)?.data?.items ?: return
         snapshot.update { it.copy(nextOrders = items) }
+        // 바로 이어서 다음 후보를 말할 수 있게 지켜보는 쪽을 기다리지 않고 올린다
+        publishOffers(trip, items, nextOrderAdvisor.current.value)
     }
 
     /** 하차지에서는 받아 둔 후보를, 운송 중에는 안내한 1등과 이어 받은 후보를 수락 창 차례에 올린다 */
     private fun keepOffersFresh() {
         viewModelScope.launch {
             combine(snapshot.map { it.current to it.nextOrders }.distinctUntilChanged(), nextOrderAdvisor.current) { (trip, items), first ->
-                when (trip?.status) {
-                    TripStatus.AT_DROPOFF -> trip.id to items
-                    TripStatus.IN_TRANSIT -> trip.id to (listOfNotNull(first) + items).distinctBy { it.order.id }
-                    else -> null to emptyList()
-                }
-            }.collect { (tripId, items) -> offers.update(tripId, items) }
+                Triple(trip, items, first)
+            }.collect { (trip, items, first) -> publishOffers(trip, items, first) }
         }
     }
 
+    private fun publishOffers(trip: Trip?, items: List<NextOrder>, first: NextOrder?) = when (trip?.status) {
+        TripStatus.AT_DROPOFF -> offers.update(trip.id, items)
+        TripStatus.IN_TRANSIT -> offers.update(trip.id, (listOfNotNull(first) + items).distinctBy { it.order.id })
+        else -> offers.update(null, emptyList())
+    }
+
     /**
-     * 수락 창이 처음 뜨면 짧게 묻고 서버에 적는다. 운송 중 67%에 이미 말한 후보는 다시 말하지 않는다.
-     * 창이 닫히면(수락, 넘기기, 차가 움직임) 말하던 것을 멈춘다. 다음 후보로 넘어가면 새 안내가 대신한다
+     * 수락 창이 처음 뜨면 짧게 묻고 서버에 적은 뒤 대답을 듣는다. 운송 중 67%에 이미 말한 후보는 다시 말하지 않고 듣기만 한다.
+     * 창이 닫히면(수락, 넘기기, 차가 움직임) 말하던 것을 멈추고 마이크를 닫는다
      */
     private fun tellNewOffers() {
         viewModelScope.launch {
             nextOffer.map { it?.orderId }.distinctUntilChanged().collect { orderId ->
+                voiceJob?.cancel()
                 if (orderId == null) {
                     announcer.cancel(HomeAnnouncements.NEXT_ORDER_KEY)
                     return@collect
                 }
                 val trip = offerTrip() ?: return@collect
                 val next = offers.current.value?.takeIf { it.order.id == orderId } ?: return@collect
-                if (announcedOffers.add(orderId)) {
-                    announcer.say(HomeAnnouncements.nextOrderOffer(next))
-                    recommendationRepository.answer(trip.id, orderId, answer = null)
+                val firstTime = announcedOffers.add(orderId)
+                if (firstTime) recommendationRepository.answer(trip.id, orderId, answer = null)
+                voiceJob = launch {
+                    val question = HomeAnnouncements.nextOrderOffer(next)
+                    if (firstTime) announcer.speak(question)
+                    _status.update { it.copy(offerAsked = orderId) }
+                    when (ask(next, question.text, confirmed = true)) {
+                        VoiceAnswer.ACCEPT -> acceptNextOrder(orderId)
+                        VoiceAnswer.NEXT -> skipNextOrder(orderId)
+                        VoiceAnswer.NONE -> Unit
+                    }
                 }
             }
         }
     }
+
+    /**
+     * 운송 중 안내를 말하고 대답을 듣는다 (REC-020). 손을 쓰지 않아도 되는 유일한 경로다.
+     * 차를 세우면 수락 창 쪽이 이어받는다([tellNewOffers]). "다음"이면 다음 후보를 이어서 말한다
+     */
+    private fun talkWhileDriving(trip: Trip, first: NextOrder) {
+        voiceJob?.cancel()
+        voiceJob = viewModelScope.launch {
+            var next: NextOrder? = first
+            while (next != null) {
+                val text = HomeAnnouncements.nextOrder(trip.dropoff.name, next, stateFactory.pickupTime(next))
+                announcer.speak(text)
+                when (ask(next, text.text, confirmed = false)) {
+                    VoiceAnswer.ACCEPT -> {
+                        acceptNextOrder(next.order.id)
+                        return@launch
+                    }
+                    VoiceAnswer.NONE -> return@launch
+                    VoiceAnswer.NEXT -> {
+                        recommendationRepository.answer(trip.id, next.order.id, RecommendationAnswer.NEXT)
+                        offers.finish(next.order.id)
+                        reloadOffers()
+                        next = offers.current.value
+                        next?.let { announcedOffers += it.order.id }
+                    }
+                }
+            }
+        }
+    }
+
+    private suspend fun ask(next: NextOrder, repeatText: String, confirmed: Boolean): VoiceAnswer = voiceDialog.ask(
+        repeatText = repeatText,
+        detailText = HomeAnnouncements.nextOrderDetail(next, stateFactory.nextOrderCard(next).pickupDay, stateFactory.pickupTime(next)).text,
+        confirmText = HomeAnnouncements.nextOrderConfirm(next).text,
+        confirmed = confirmed,
+    )
 
     fun messageShown() = _status.update { it.copy(message = null) }
 
@@ -710,6 +786,7 @@ class HomeViewModel(
                     locationTracker = container.locationTracker,
                     recommendationRepository = container.recommendationRepository,
                     notifications = container.notifications.received,
+                    recognizer = container.speechRecognizer,
                 )
             }
         }

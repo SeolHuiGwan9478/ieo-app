@@ -13,6 +13,7 @@ import com.ieo.app.domain.trip.StopType
 import com.ieo.app.domain.trip.TripStatus
 import com.ieo.app.domain.vehicle.GeoPoint
 import com.ieo.app.domain.voice.AnnouncementPriority
+import com.ieo.app.domain.voice.SpeechRecognizer
 import com.ieo.app.testing.FakeAnnouncer
 import com.ieo.app.ui.component.BannerKind
 import com.ieo.app.ui.component.IeoBanner
@@ -52,6 +53,11 @@ class HomeViewModelTest {
     private val announcer = FakeAnnouncer()
     private val tracker = FakeLocationTracker()
     private val notifications = MutableSharedFlow<AppNotification>()
+    /** 차주가 할 말. null은 침묵. 대본이 떨어지면 아무 말도 안 한다 */
+    private val heard = ArrayDeque<String?>()
+    private val recognizer = object : SpeechRecognizer {
+        override suspend fun listen(timeoutMillis: Long) = heard.removeFirstOrNull()
+    }
 
     /**
      * [status] 상태의 운행으로 ViewModel을 만들어 [body]를 돌린다.
@@ -77,6 +83,7 @@ class HomeViewModelTest {
             locationTracker = tracker,
             recommendationRepository = server,
             notifications = notifications,
+            recognizer = recognizer,
             clock = clock,
             stateFactory = HomeStateFactory(clock) { 1_000_000L },
         )
@@ -249,7 +256,7 @@ class HomeViewModelTest {
         val driving = vm.state.value as HomeState.Driving
         assertEquals(Recommendation("칠곡 → 부산 강서", "06:00", 372_229), driving.recommendation)
         assertEquals(
-            "다음 배차 추천이에요. 대구 성서 하차 후 17분 거리, 칠곡 06:00 상차, 부산 강서행 5톤, 실수익 37만 원 건이 있어요. 대기가 길었던 곳이에요.",
+            "다음 배차 추천이에요. 대구 성서 하차 후 17분 거리, 칠곡 06:00 상차, 부산 강서행 5톤, 실수익 37만 원 건이 있어요. 대기가 길었던 곳이에요. 수락이나 다음이라고 말씀해 주세요.",
             announcer.texts.last(),
         )
         assertEquals(listOf(Triple(1L, 11L, null as RecommendationAnswer?)), server.answers)
@@ -393,6 +400,61 @@ class HomeViewModelTest {
         assertEquals(11L, vm.nextOffer.value?.orderId)
         assertEquals(1, announcer.said.count { it.key == HomeAnnouncements.NEXT_ORDER_KEY })
         assertEquals(1, server.answers.count { it.second == 11L })
+    }
+
+    private fun driveTo67() {
+        sensors.drive(GeoPoint(36.0, 128.0))
+        navigator.progress.value = NaviProgress("대구 성서", totalMeters = 300_000, remainMeters = 90_000, remainSeconds = 3_600)
+    }
+
+    @Test
+    fun `주행 중 수락이라고 말하고 응이라고 하면 배차 요청을 보낸다`() = homeTest(TripStatus.IN_TRANSIT, prepare = {
+        server.nextOrders = candidates(11, 12)
+        heard += listOf("수락", "응")
+    }) { vm ->
+        driveTo67()
+        runCurrent()
+
+        assertEquals("칠곡 부산 강서행 수락할까요?", announcer.texts.last())
+        assertEquals(Triple(1L, 11L, RecommendationAnswer.ACCEPTED as RecommendationAnswer?), server.answers.last())
+        assertEquals(HomeViewModel.NEXT_ORDER_REQUESTED_MESSAGE, vm.status.value.message)
+        assertEquals(false, vm.status.value.listening)
+    }
+
+    @Test
+    fun `주행 중 수락 뒤 확인이 없으면 배차 요청을 보내지 않는다`() = homeTest(TripStatus.IN_TRANSIT, prepare = {
+        server.nextOrders = candidates(11)
+        heard += listOf("수락", null)
+    }) { _ ->
+        driveTo67()
+        runCurrent()
+
+        assertTrue(server.answers.none { it.third == RecommendationAnswer.ACCEPTED })
+    }
+
+    @Test
+    fun `주행 중 다음이라고 하면 다음 후보를 이어서 말한다`() = homeTest(TripStatus.IN_TRANSIT, prepare = {
+        server.nextOrders = candidates(11, 12)
+        heard += listOf("다음", null)
+    }) { _ ->
+        driveTo67()
+        runCurrent()
+
+        assertTrue(Triple(1L, 11L, RecommendationAnswer.NEXT as RecommendationAnswer?) in server.answers)
+        assertEquals(2, announcer.texts.count { it.startsWith("다음 배차 추천") })
+    }
+
+    @Test
+    fun `수락 창에서 다음이라고 하면 넘기고 응이라고 하면 바로 수락한다`() = homeTest(TripStatus.IN_TRANSIT, prepare = {
+        server.nextOrders = candidates(11, 12)
+        heard += listOf("다음", "응")
+    }) { vm ->
+        vm.arrive()
+        runCurrent()
+
+        assertTrue(Triple(1L, 11L, RecommendationAnswer.REJECTED as RecommendationAnswer?) in server.answers)
+        assertEquals(Triple(1L, 12L, RecommendationAnswer.ACCEPTED as RecommendationAnswer?), server.answers.last())
+        assertNull(vm.nextOffer.value)
     }
 
     @Test

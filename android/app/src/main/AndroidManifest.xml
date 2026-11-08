@@ -25,6 +25,8 @@
 
     <!-- 음성 안내: Pleos 차량의 TTS 엔진(SpeechService)에 연결하는 권한 -->
     <uses-permission android:name="pleos.car.permission.TTS_SERVICE" />
+    <!-- 음성 대답 (Pleos SpeechToText SDK). 마이크는 SDK가 차량 서비스로 연다 -->
+    <uses-permission android:name="pleos.car.permission.STT_SERVICE" />
 
     <!-- 음성 안내: 차량의 TTS 엔진을 찾는다 (Android 11부터 필요) -->
     <queries>

@@ -36,6 +36,7 @@ import com.ieo.app.data.vehicle.CarSensors
 import com.ieo.app.data.vehicle.DefaultVehicleRepository
 import com.ieo.app.data.vehicle.PleosCarIdentity
 import com.ieo.app.data.vehicle.VehicleApi
+import com.ieo.app.data.voice.PleosSpeechRecognizer
 import com.ieo.app.data.voice.TtsAnnouncer
 import com.ieo.app.data.wait.DefaultWaitRepository
 import com.ieo.app.data.wait.WaitApi
@@ -58,6 +59,7 @@ import com.ieo.app.domain.vehicle.CarIdentity
 import com.ieo.app.domain.vehicle.VehicleRepository
 import com.ieo.app.domain.vehicle.VehicleSensors
 import com.ieo.app.domain.voice.Announcer
+import com.ieo.app.domain.voice.SpeechRecognizer
 import com.ieo.app.domain.wait.WaitRepository
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -87,6 +89,7 @@ interface AppContainer {
     val vehicleSensors: VehicleSensors
     val carIdentity: CarIdentity
     val announcer: Announcer
+    val speechRecognizer: SpeechRecognizer
     val locationTracker: LocationTracker
     val notifications: NotificationListener
 }
@@ -174,6 +177,8 @@ class DefaultAppContainer(context: Context) : AppContainer {
     override val carIdentity: CarIdentity by lazy { PleosCarIdentity(appContext) }
 
     override val announcer: Announcer by lazy { TtsAnnouncer(appContext) }
+
+    override val speechRecognizer: SpeechRecognizer by lazy { PleosSpeechRecognizer(appContext) }
 
     /** 앱이 살아 있는 동안 도는 일. 화면이 바뀌거나 내비가 앞에 떠도 이어진다 */
     private val appScope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)

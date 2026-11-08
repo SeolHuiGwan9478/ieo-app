@@ -40,7 +40,7 @@ class TtsAnnouncer(
         .setOnAudioFocusChangeListener(::onFocusChange, main)
         .build()
 
-    private class Queued(val announcement: Announcement, val order: Long)
+    private class Queued(val announcement: Announcement, val order: Long, val onSpoken: () -> Unit)
 
     private val queue = PriorityQueue(compareBy<Queued>({ it.announcement.priority.ordinal }, { it.order }))
     private var order = 0L
@@ -56,17 +56,21 @@ class TtsAnnouncer(
 
     /** 기다리는 것은 빼고, 말하는 중이면 멈춘다. 멈춘 문장의 늦은 콜백은 [finished]가 무시한다 */
     private fun drop(key: String) {
-        queue.removeAll { it.announcement.key == key }
-        if (current?.announcement?.key == key) {
+        queue.filter { it.announcement.key == key }.forEach {
+            queue.remove(it)
+            it.onSpoken()
+        }
+        current?.takeIf { it.announcement.key == key }?.let {
             current = null
             engine?.stop()
+            it.onSpoken()
         }
     }
 
-    override fun say(announcement: Announcement) {
+    override fun say(announcement: Announcement, onSpoken: () -> Unit) {
         main.post {
             announcement.key?.let(::drop)
-            queue += Queued(announcement, order++)
+            queue += Queued(announcement, order++, onSpoken)
             if (engine == null) startEngine(0) else speakNext()
         }
     }
@@ -77,6 +81,7 @@ class TtsAnnouncer(
         if (index >= engines.size) {
             Log.w(TAG, "쓸 수 있는 TTS 엔진이 없음")
             starting = false
+            queue.forEach { it.onSpoken() }
             queue.clear()
             return
         }
@@ -127,6 +132,7 @@ class TtsAnnouncer(
     private fun finished(spoken: Queued) {
         if (current !== spoken) return
         current = null
+        spoken.onSpoken()
         speakNext()
     }
 
