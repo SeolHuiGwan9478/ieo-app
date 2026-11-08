@@ -26,6 +26,6 @@ class OrderCardMapperTest {
         val card = mapper.map(TripFixtures.order())
 
         assertNull(card.netProfit)
-        assertNull(card.brokerPaymentDays)
+        assertNull(card.brokerMetrics)
     }
 }

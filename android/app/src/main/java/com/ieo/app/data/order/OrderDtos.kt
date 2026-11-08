@@ -1,5 +1,6 @@
 package com.ieo.app.data.order
 
+import com.ieo.app.domain.order.BrokerMetrics
 import com.ieo.app.domain.order.CargoCategory
 import com.ieo.app.domain.order.DispatchRequest
 import com.ieo.app.domain.order.DispatchRequestStatus
@@ -30,6 +31,7 @@ data class OrderResponse(
     val expectedPaymentDays: Int = 0,
     val distanceM: Long? = null,
     val myRequest: DispatchRequestResponse? = null,
+    val brokerMetrics: BrokerMetricsResponse? = null,
 ) {
     fun toDomain() = Order(
         id = id,
@@ -50,7 +52,19 @@ data class OrderResponse(
         distanceMeters = distanceM,
         myRequest = myRequest?.toDomain(),
         cargoCategory = cargoCategory?.let(CargoCategory::fromName),
+        brokerMetrics = brokerMetrics?.toDomain(),
     )
+}
+
+@Serializable
+data class BrokerMetricsResponse(
+    val published: Boolean = false,
+    val avgPaymentDays: Int? = null,
+    val latePaymentPercent: Int? = null,
+    val waitFeePaidPercent: Int? = null,
+    val avgWaitMinutes: Int? = null,
+) {
+    fun toDomain() = BrokerMetrics(published, avgPaymentDays, latePaymentPercent, waitFeePaidPercent, avgWaitMinutes)
 }
 
 @Serializable

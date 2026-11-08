@@ -123,6 +123,7 @@ fun BoxScope.NextOrderOfferModal(
                     offer.cargo?.let(Keyword::cargo),
                     Keyword.emptyRun(offer.emptyMeters),
                     Keyword.longWait().takeIf { offer.longWait },
+                    offer.brokerMetrics?.let(Keyword::brokerPayment),
                 ),
             )
             Spacer(Modifier.height(20.dp))

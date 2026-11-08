@@ -11,6 +11,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.ieo.app.domain.order.BrokerMetrics
 import com.ieo.app.domain.order.CargoCategory
 import com.ieo.app.ui.theme.IeoTag
 import com.ieo.app.ui.theme.TagColor
@@ -53,12 +54,16 @@ data class Keyword(val text: String, val color: TagColor) {
         /** 상차지 평균 대기가 길었던 곳 (REC-012) */
         fun longWait() = Keyword("대기 길었던 곳", IeoTag.Plum)
 
-        /** 주선사 평균 지급 소요일. 15일 이하는 빠름, 20일 초과는 늦음, 그 사이와 이력 없음은 보통 */
-        fun paymentDays(days: Int?) = when {
-            days == null -> Keyword("지급 이력 없음", IeoTag.Gray)
-            days <= 15 -> Keyword("지급 평균 ${days}일", IeoTag.Sage)
-            days > 20 -> Keyword("지급 평균 ${days}일", IeoTag.Plum)
-            else -> Keyword("지급 평균 ${days}일", IeoTag.Gray)
+        /** 주선사 평균 지급 소요일. 15일 이하는 빠름, 20일 초과는 늦음, 그 사이는 보통. 운행 20건 미만이면 기록 쌓는 중 */
+        fun brokerPayment(metrics: BrokerMetrics): Keyword {
+            val days = metrics.avgPaymentDays
+            return when {
+                !metrics.published -> Keyword("기록 쌓는 중", IeoTag.Gray)
+                days == null -> Keyword("지급 이력 없음", IeoTag.Gray)
+                days <= 15 -> Keyword("지급 평균 ${days}일", IeoTag.Sage)
+                days > 20 -> Keyword("지급 평균 ${days}일", IeoTag.Plum)
+                else -> Keyword("지급 평균 ${days}일", IeoTag.Gray)
+            }
         }
     }
 }

@@ -1,5 +1,6 @@
 package com.ieo.app.ui.home
 
+import com.ieo.app.domain.order.BrokerMetrics
 import com.ieo.app.domain.order.CargoCategory
 import com.ieo.app.domain.site.HeightWarning
 import com.ieo.app.domain.wait.WaitPolicy
@@ -99,8 +100,8 @@ data class OrderCard(
     val fare: Long,
     /** 공차 연료비를 뺀 실수익. 아직 계산하지 못하면 null */
     val netProfit: Long?,
-    /** 주선사 평균 지급 소요일. 데이터가 부족하면 null */
-    val brokerPaymentDays: Int?,
+    /** 주선사 신뢰 지표. 서버가 주지 않으면 null */
+    val brokerMetrics: BrokerMetrics?,
     /** 지금 위치에서 상차지까지 거리(m). 위치 없이 찾았으면 null */
     val distanceMeters: Long? = null,
     /** 일반이 아닌 화물 종류. 일반이거나 모르면 null */
@@ -133,6 +134,8 @@ data class NextOrderCard(
     val longWait: Boolean,
     /** 일반이 아닌 화물 종류. 일반이거나 모르면 null */
     val cargo: CargoCategory? = null,
+    /** 주선사 신뢰 지표 (BRK-031). 서버가 주지 않으면 null */
+    val brokerMetrics: BrokerMetrics? = null,
 ) {
     val route: String get() = "$pickup → $dropoff"
 }

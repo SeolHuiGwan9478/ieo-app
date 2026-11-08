@@ -142,6 +142,7 @@ class HomeStateFactory(
         emptyMeters = next.emptyMeters,
         longWait = next.longWait,
         cargo = next.order.specialCargo,
+        brokerMetrics = next.order.brokerMetrics,
     )
 
     private fun siteInfo(card: SiteCard) = SiteInfo(

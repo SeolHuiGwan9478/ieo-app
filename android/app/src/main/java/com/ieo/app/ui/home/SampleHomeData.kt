@@ -1,6 +1,7 @@
 package com.ieo.app.ui.home
 
 import android.os.SystemClock
+import com.ieo.app.domain.order.BrokerMetrics
 import com.ieo.app.domain.wait.WaitPolicy
 
 /**
@@ -25,9 +26,9 @@ object SampleHomeData {
         nearby = true,
         myTrips = myTrips,
         orders = listOf(
-            OrderCard("o1", "평택 청북", "대구 북구", "오늘", "17:00", "5톤 카고", 470_000, 380_000, 12),
+            OrderCard("o1", "평택 청북", "대구 북구", "오늘", "17:00", "5톤 카고", 470_000, 380_000, BrokerMetrics(published = true, avgPaymentDays = 12)),
             OrderCard("o2", "오산 가장", "광주 광산", "오늘", "17:30", "5톤 윙", 410_000, 300_000, null),
-            OrderCard("o3", "화성 향남", "창원 성산", "내일", "06:00", "5톤 카고", 580_000, 450_000, 25),
+            OrderCard("o3", "화성 향남", "창원 성산", "내일", "06:00", "5톤 카고", 580_000, 450_000, BrokerMetrics(published = true, avgPaymentDays = 25)),
         ),
     )
 

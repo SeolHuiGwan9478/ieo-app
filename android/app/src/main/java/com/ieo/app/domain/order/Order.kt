@@ -31,6 +31,8 @@ data class Order(
     val myRequest: DispatchRequest?,
     /** 화물 종류(일반, 냉동·냉장, 이사, 위험물). 모르는 값이면 null */
     val cargoCategory: CargoCategory? = null,
+    /** 주선사 신뢰 지표. 서버가 주지 않으면 null */
+    val brokerMetrics: BrokerMetrics? = null,
 ) {
     val vehicleLabel: String get() = "$tonnageLabel $bodyTypeLabel"
 

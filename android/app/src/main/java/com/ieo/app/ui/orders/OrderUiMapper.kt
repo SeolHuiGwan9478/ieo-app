@@ -1,5 +1,6 @@
 package com.ieo.app.ui.orders
 
+import com.ieo.app.domain.order.BrokerMetrics
 import com.ieo.app.domain.order.CargoCategory
 import com.ieo.app.domain.order.Order
 import com.ieo.app.ui.common.DayTimeFormatter
@@ -22,6 +23,8 @@ data class OrderRow(
     val distanceMeters: Long? = null,
     /** 일반이 아닌 화물 종류. 일반이거나 모르면 null */
     val cargo: CargoCategory? = null,
+    /** 주선사 신뢰 지표. 서버가 주지 않으면 null */
+    val brokerMetrics: BrokerMetrics? = null,
 )
 
 /** 아래에서 올라오는 상세 */
@@ -65,6 +68,7 @@ class OrderUiMapper(private val labels: DayTimeFormatter) {
         requested = order.isRequestedByMe,
         distanceMeters = order.distanceMeters,
         cargo = order.specialCargo,
+        brokerMetrics = order.brokerMetrics,
     )
 
     fun detail(order: Order) = OrderDetail(
@@ -77,6 +81,7 @@ class OrderUiMapper(private val labels: DayTimeFormatter) {
             "화물" to cargo(order),
             "운임" to "${formatWon(order.fare)} · ${order.paymentTypeLabel} · ${order.expectedPaymentDays}일 안에 지급",
             "주선사" to order.brokerName,
+            order.brokerMetrics?.let { "주선사 기록" to metricsSummary(it) },
         ),
         requested = order.isRequestedByMe,
     )
@@ -87,6 +92,17 @@ class OrderUiMapper(private val labels: DayTimeFormatter) {
     )
 
     private fun route(order: Order) = "${order.pickup.name} → ${order.dropoff.name}"
+
+    /** "평균 지급 12일 · 지급 지연 8% · 대기비 지급 90% · 이 회사 운행 평균 대기 35분". 대기는 상하차지 탓일 때가 많아 중립적으로 적는다 */
+    private fun metricsSummary(metrics: BrokerMetrics): String {
+        if (!metrics.published) return "기록 쌓는 중"
+        return listOfNotNull(
+            metrics.avgPaymentDays?.let { "평균 지급 ${it}일" },
+            metrics.latePaymentPercent?.let { "지급 지연 $it%" },
+            metrics.waitFeePaidPercent?.let { "대기비 지급 $it%" },
+            metrics.avgWaitMinutes?.let { "이 회사 운행 평균 대기 ${it}분" },
+        ).joinToString(" · ").ifEmpty { "아직 기록이 없어요" }
+    }
 
     /** "냉동·냉장 · 냉동 닭 · 4.2톤 · 지게차". 비어 있는 값과 "일반"은 뺀다 */
     private fun cargo(order: Order): String = listOfNotNull(

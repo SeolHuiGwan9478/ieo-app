@@ -159,6 +159,7 @@ private fun OrderList(state: OrdersUiState, onOrderClick: (Long) -> Unit) {
                     row.cargo?.let(Keyword::cargo),
                     row.distanceMeters?.let(Keyword::distance),
                     Keyword.payment(row.paymentType),
+                    row.brokerMetrics?.let(Keyword::brokerPayment),
                 ),
                 subtitle = if (row.requested) "요청함" else row.brokerName,
                 subtitleColor = if (row.requested) Orange700 else TextSub,
