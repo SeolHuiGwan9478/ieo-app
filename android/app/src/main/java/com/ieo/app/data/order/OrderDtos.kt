@@ -1,5 +1,6 @@
 package com.ieo.app.data.order
 
+import com.ieo.app.domain.order.CargoCategory
 import com.ieo.app.domain.order.DispatchRequest
 import com.ieo.app.domain.order.DispatchRequestStatus
 import com.ieo.app.domain.order.Order
@@ -20,6 +21,7 @@ data class OrderResponse(
     val dropoffBy: String,
     val tonnageLabel: String,
     val bodyTypeLabel: String,
+    val cargoCategory: String? = null,
     val cargoType: String? = null,
     val weightKg: Int = 0,
     val loadingMethodLabel: String? = null,
@@ -47,6 +49,7 @@ data class OrderResponse(
         expectedPaymentDays = expectedPaymentDays,
         distanceMeters = distanceM,
         myRequest = myRequest?.toDomain(),
+        cargoCategory = cargoCategory?.let(CargoCategory::fromName),
     )
 }
 

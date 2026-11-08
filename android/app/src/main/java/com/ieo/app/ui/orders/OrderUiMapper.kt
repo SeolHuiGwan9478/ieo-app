@@ -1,5 +1,6 @@
 package com.ieo.app.ui.orders
 
+import com.ieo.app.domain.order.CargoCategory
 import com.ieo.app.domain.order.Order
 import com.ieo.app.ui.common.DayTimeFormatter
 import com.ieo.app.ui.common.formatWon
@@ -19,6 +20,8 @@ data class OrderRow(
     val requested: Boolean,
     /** 지금 위치에서 상차지까지 거리(m). 위치 없이 찾았으면 null */
     val distanceMeters: Long? = null,
+    /** 일반이 아닌 화물 종류. 일반이거나 모르면 null */
+    val cargo: CargoCategory? = null,
 )
 
 /** 아래에서 올라오는 상세 */
@@ -61,6 +64,7 @@ class OrderUiMapper(private val labels: DayTimeFormatter) {
         fare = formatWon(order.fare),
         requested = order.isRequestedByMe,
         distanceMeters = order.distanceMeters,
+        cargo = order.specialCargo,
     )
 
     fun detail(order: Order) = OrderDetail(
@@ -84,8 +88,9 @@ class OrderUiMapper(private val labels: DayTimeFormatter) {
 
     private fun route(order: Order) = "${order.pickup.name} → ${order.dropoff.name}"
 
-    /** "파렛트 · 4.2톤 · 지게차". 비어 있는 값은 뺀다 */
+    /** "냉동·냉장 · 냉동 닭 · 4.2톤 · 지게차". 비어 있는 값과 "일반"은 뺀다 */
     private fun cargo(order: Order): String = listOfNotNull(
+        order.specialCargo?.label,
         order.cargoType,
         order.weightKg.takeIf { it > 0 }?.let { "%.1f톤".format(it / 1000.0) },
         order.loadingMethodLabel,

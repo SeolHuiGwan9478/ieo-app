@@ -118,7 +118,13 @@ fun BoxScope.NextOrderOfferModal(
                 color = TextSub,
             )
             Spacer(Modifier.height(12.dp))
-            TagLine(listOfNotNull(Keyword.emptyRun(offer.emptyMeters), Keyword.longWait().takeIf { offer.longWait }))
+            TagLine(
+                listOfNotNull(
+                    offer.cargo?.let(Keyword::cargo),
+                    Keyword.emptyRun(offer.emptyMeters),
+                    Keyword.longWait().takeIf { offer.longWait },
+                ),
+            )
             Spacer(Modifier.height(20.dp))
             Text("실수익", fontSize = 24.sp, color = TextSub)
             Text(formatWon(offer.netProfit), fontSize = 44.sp, fontWeight = FontWeight.Bold, color = IeoStatus.colors.done)

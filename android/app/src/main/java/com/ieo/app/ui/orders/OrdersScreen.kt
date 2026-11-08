@@ -156,6 +156,7 @@ private fun OrderList(state: OrdersUiState, onOrderClick: (Long) -> Unit) {
                 title = row.route,
                 tags = listOfNotNull(
                     Keyword.vehicle(row.vehicle),
+                    row.cargo?.let(Keyword::cargo),
                     row.distanceMeters?.let(Keyword::distance),
                     Keyword.payment(row.paymentType),
                 ),

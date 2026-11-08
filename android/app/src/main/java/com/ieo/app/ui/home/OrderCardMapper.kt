@@ -22,5 +22,6 @@ class OrderCardMapper(clock: Clock = Clock.system(DayTimeFormatter.KOREA)) {
         // TODO: 주선사 신뢰 지표(BrokerMetrics)가 생기면 채운다
         brokerPaymentDays = null,
         distanceMeters = order.distanceMeters,
+        cargo = order.specialCargo,
     )
 }

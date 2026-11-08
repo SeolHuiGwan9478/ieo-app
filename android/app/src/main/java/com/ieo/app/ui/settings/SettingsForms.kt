@@ -23,6 +23,7 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.ieo.app.domain.order.CargoCategory
 import com.ieo.app.domain.recommendation.RecommendationPreference
 import com.ieo.app.domain.vehicle.BodyType
 import com.ieo.app.domain.vehicle.Tonnage
@@ -94,7 +95,8 @@ fun ColumnScope.VehicleForm(
 
 /**
  * 다음 배차 추천 설정 창. 키보드 없이 고치도록 반경은 ± 5km, 최소 실수익은 고르기로 한다.
- * 추천을 끄면 반경·실수익 칸을 숨긴다 (값은 그대로 저장)
+ * 빼는 화물은 여러 개를 눌러 켜고 끈다 (REC-004).
+ * 추천을 끄면 반경·실수익·빼는 화물 칸을 숨긴다 (값은 그대로 저장)
  */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
@@ -107,6 +109,7 @@ fun ColumnScope.RecommendationForm(
     var enabled by remember(current) { mutableStateOf(current.enabled) }
     var radiusKm by remember(current) { mutableStateOf(current.radiusKm) }
     var minNetProfit by remember(current) { mutableStateOf(current.minNetProfit) }
+    var excludedCargo by remember(current) { mutableStateOf(current.excludedCargo) }
 
     SheetTitle("다음 배차 추천")
     Spacer(Modifier.height(24.dp))
@@ -138,11 +141,19 @@ fun ColumnScope.RecommendationForm(
                 FilterChip(minNetProfitChip(won), selected = minNetProfit == won, onClick = { minNetProfit = won })
             }
         }
+        Spacer(Modifier.height(20.dp))
+        FieldLabel("빼고 싶은 화물")
+        FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            EXCLUDABLE_CARGO.forEach { cargo ->
+                FilterChip(cargo.label, selected = cargo in excludedCargo, onClick = { excludedCargo = toggle(excludedCargo, cargo) })
+            }
+        }
+        Text("고른 화물의 오더는 추천하지 않아요. 오더 탭에서는 그대로 보여요", fontSize = 18.sp, color = TextSub)
     } else {
         Spacer(Modifier.height(12.dp))
         Text("다음 배차를 음성과 카드로 알려 드리지 않아요", fontSize = 18.sp, color = TextSub)
     }
-    FormButtons(busy, onCancel = onCancel, onSave = { onSubmit(RecommendationPreference(enabled, radiusKm, minNetProfit)) })
+    FormButtons(busy, onCancel = onCancel, onSave = { onSubmit(RecommendationPreference(enabled, radiusKm, minNetProfit, excludedCargo)) })
 }
 
 /** 반경을 바꾸는 단위 */
@@ -152,6 +163,13 @@ private const val RADIUS_STEP_KM = 5
 internal val MIN_NET_PROFIT_CHOICES: List<Long?> = listOf(null, 100_000, 200_000, 300_000, 400_000, 500_000)
 
 private fun minNetProfitChip(won: Long?): String = won?.let { "${it / 10_000}만 원" } ?: "조건 없음"
+
+/** 빼는 화물로 고를 수 있는 종류. 일반은 빼면 추천이 거의 사라져서 두지 않는다 */
+internal val EXCLUDABLE_CARGO: List<CargoCategory> = CargoCategory.entries.filter { it.excludable }
+
+/** 누르면 넣고, 다시 누르면 뺀다 */
+internal fun toggle(selected: Set<CargoCategory>, cargo: CargoCategory): Set<CargoCategory> =
+    if (cargo in selected) selected - cargo else selected + cargo
 
 /** 5km 단위로 맞추고 5~100km 안으로 자른다 */
 internal fun stepRadius(radiusKm: Int, delta: Int): Int {

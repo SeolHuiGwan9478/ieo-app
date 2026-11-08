@@ -11,6 +11,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.ieo.app.domain.order.CargoCategory
 import com.ieo.app.ui.theme.IeoTag
 import com.ieo.app.ui.theme.TagColor
 
@@ -41,6 +42,12 @@ data class Keyword(val text: String, val color: TagColor) {
         fun emptyRun(meters: Long) = Keyword(
             if (meters < 1_000) "공차 1km 안" else "공차 ${(meters + 500) / 1_000}km",
             IeoTag.Gray,
+        )
+
+        /** 일반이 아닌 화물 종류 (DSP-001). 위험물은 눈에 띄게 */
+        fun cargo(category: CargoCategory) = Keyword(
+            category.label,
+            if (category == CargoCategory.HAZARDOUS) IeoTag.Plum else IeoTag.Gray,
         )
 
         /** 상차지 평균 대기가 길었던 곳 (REC-012) */

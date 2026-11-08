@@ -254,6 +254,7 @@ private fun NearbyOrders(state: HomeState.Idle, onOrderClick: (OrderCard) -> Uni
                 title = "${order.pickup} → ${order.dropoff}",
                 tags = listOfNotNull(
                     Keyword.vehicle(order.vehicle),
+                    order.cargo?.let(Keyword::cargo),
                     order.distanceMeters?.let(Keyword::distance),
                     Keyword.paymentDays(order.brokerPaymentDays),
                 ),
@@ -394,6 +395,7 @@ private fun NextOrders(orders: List<NextOrderCard>, onClick: (NextOrderCard) -> 
                 title = order.route,
                 tags = listOfNotNull(
                     Keyword.vehicle(order.vehicle),
+                    order.cargo?.let(Keyword::cargo),
                     Keyword.emptyRun(order.emptyMeters),
                     Keyword.longWait().takeIf { order.longWait },
                 ),

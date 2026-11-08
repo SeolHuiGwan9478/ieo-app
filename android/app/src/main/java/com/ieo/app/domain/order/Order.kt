@@ -29,8 +29,13 @@ data class Order(
     val distanceMeters: Long?,
     /** 내가 이 오더에 보낸 배차 요청. 없으면 null */
     val myRequest: DispatchRequest?,
+    /** 화물 종류(일반, 냉동·냉장, 이사, 위험물). 모르는 값이면 null */
+    val cargoCategory: CargoCategory? = null,
 ) {
     val vehicleLabel: String get() = "$tonnageLabel $bodyTypeLabel"
+
+    /** 일반이 아닌 화물 종류. 목록에 태그로 붙인다 (일반은 대부분이라 붙이지 않는다) */
+    val specialCargo: CargoCategory? get() = cargoCategory?.takeIf { it != CargoCategory.GENERAL }
 
     /** 확정을 기다리는 내 요청이 있음 */
     val isRequestedByMe: Boolean get() = myRequest?.status == DispatchRequestStatus.PENDING

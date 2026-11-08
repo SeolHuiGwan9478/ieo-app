@@ -1,5 +1,6 @@
 package com.ieo.app.ui.home
 
+import com.ieo.app.domain.order.CargoCategory
 import com.ieo.app.domain.site.HeightWarning
 import com.ieo.app.domain.wait.WaitPolicy
 
@@ -102,6 +103,8 @@ data class OrderCard(
     val brokerPaymentDays: Int?,
     /** 지금 위치에서 상차지까지 거리(m). 위치 없이 찾았으면 null */
     val distanceMeters: Long? = null,
+    /** 일반이 아닌 화물 종류. 일반이거나 모르면 null */
+    val cargo: CargoCategory? = null,
 )
 
 data class TripSummary(
@@ -128,6 +131,8 @@ data class NextOrderCard(
     /** 하차지 → 상차지 공차 거리(m) */
     val emptyMeters: Long,
     val longWait: Boolean,
+    /** 일반이 아닌 화물 종류. 일반이거나 모르면 null */
+    val cargo: CargoCategory? = null,
 ) {
     val route: String get() = "$pickup → $dropoff"
 }

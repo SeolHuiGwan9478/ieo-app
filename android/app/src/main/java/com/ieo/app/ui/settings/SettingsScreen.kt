@@ -21,6 +21,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.ieo.app.domain.account.Profile
+import com.ieo.app.domain.order.CargoCategory
 import com.ieo.app.domain.recommendation.RecommendationPreference
 import com.ieo.app.ui.common.formatWon
 import com.ieo.app.domain.vehicle.BodyType
@@ -135,11 +136,16 @@ private fun RecommendationSection(preference: RecommendationPreference?, onEdit:
         if (preference.enabled) {
             DetailLine("찾는 범위", "하차지에서 ${preference.radiusKm}km 안")
             DetailLine("최소 실수익", minNetProfitLabel(preference.minNetProfit))
+            DetailLine("빼는 화물", excludedCargoLabel(preference.excludedCargo))
         }
         Spacer(Modifier.height(12.dp))
         IeoTonalButton(text = "고치기", onClick = { onEdit(preference) })
     }
 }
+
+/** "냉동·냉장, 이사". 없으면 "없음" */
+internal fun excludedCargoLabel(cargo: Set<CargoCategory>): String =
+    cargo.sortedBy { it.ordinal }.joinToString(", ") { it.label }.ifEmpty { "없음" }
 
 internal fun minNetProfitLabel(won: Long?): String = won?.let { "${formatWon(it)} 이상" } ?: "조건 없음"
 
@@ -180,7 +186,12 @@ private fun SettingsScreenPreview() {
                     Vehicle(1, "경기80바1234", Tonnage.TON_5, BodyType.CARGO, 3.6, 4.2, pleosLinked = true, isDefault = true),
                     Vehicle(2, "경기81사5678", Tonnage.TON_1, BodyType.BOX, null, null, pleosLinked = false, isDefault = false),
                 ),
-                recommendation = RecommendationPreference(enabled = true, radiusKm = 30, minNetProfit = 200_000),
+                recommendation = RecommendationPreference(
+                    enabled = true,
+                    radiusKm = 30,
+                    minNetProfit = 200_000,
+                    excludedCargo = setOf(CargoCategory.MOVING),
+                ),
                 appVersion = "0.1.0",
             ),
             actions = PreviewSettingsActions,
