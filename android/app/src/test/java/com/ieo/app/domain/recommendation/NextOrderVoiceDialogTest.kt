@@ -21,6 +21,23 @@ class NextOrderVoiceDialogTest {
     private suspend fun NextOrderVoiceDialog.askDriving() = ask("안내", "자세한 내용", "칠곡 부산행 수락할까요?", confirmed = false)
 
     @Test
+    fun `수락 창은 정해 준 시간만큼 듣고 주행 중은 8초 듣는다`() = runTest {
+        val asked = mutableListOf<Long>()
+        val recognizer = object : SpeechRecognizer {
+            override suspend fun listen(timeoutMillis: Long): String? {
+                asked += timeoutMillis
+                return null
+            }
+        }
+        val dialog = NextOrderVoiceDialog(recognizer) { }
+
+        dialog.ask("안내", "자세한 내용", "확인", confirmed = true, listenMillis = 15_000L)
+        dialog.ask("안내", "자세한 내용", "확인", confirmed = false)
+
+        assertEquals(listOf(15_000L, NextOrderVoiceDialog.LISTEN_MILLIS), asked)
+    }
+
+    @Test
     fun `대답이 없으면 아무것도 하지 않는다`() = runTest {
         assertEquals(VoiceAnswer.NONE, dialog(null).askDriving())
     }

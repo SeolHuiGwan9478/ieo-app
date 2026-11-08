@@ -15,6 +15,17 @@ class VoiceCommandTest {
     }
 
     @Test
+    fun `할게는 그 말만 했을 때 수락이다`() {
+        assertAll(VoiceCommand.ACCEPT, "할게요", "할게", "이거 할게요", "그거 할게")
+        assertAll(VoiceCommand.UNKNOWN, "이따 갈게 할게", "저녁 먹고 할게요", "내일 할게요")
+    }
+
+    @Test
+    fun `전화와 통화 이야기는 수락으로 듣지 않는다`() {
+        assertAll(VoiceCommand.UNKNOWN, "이따 전화할게", "전화 받을게요", "잠깐 통화 좀 할게")
+    }
+
+    @Test
     fun `아니라는 말이 섞이면 수락으로 듣지 않는다`() {
         assertAll(VoiceCommand.NO, "다음", "다음 거", "아니", "아니요", "수락 안 해", "안 받을래", "거절", "넘겨")
     }

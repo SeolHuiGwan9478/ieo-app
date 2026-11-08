@@ -1,5 +1,6 @@
 package com.ieo.app.data.voice
 
+import com.ieo.app.BuildConfig
 import android.content.Context
 import android.os.Handler
 import android.os.Looper
@@ -48,8 +49,10 @@ class PleosSpeechRecognizer(context: Context) : SpeechRecognizer {
     private suspend fun listenOnce(engine: PleosSpeechToText): String? = suspendCancellableCoroutine { result ->
         val done = AtomicBoolean(false)
         lateinit var listener: ResultListener
+        var loudest = Double.NEGATIVE_INFINITY
         fun finish(text: String?) {
             if (!done.compareAndSet(false, true)) return
+            debug("들은 말: \"$text\", 가장 큰 소리(rms): $loudest")
             main.removeCallbacksAndMessages(listener)
             engine.removeListener(listener)
             if (result.isActive) result.resume(text)
@@ -58,7 +61,9 @@ class PleosSpeechRecognizer(context: Context) : SpeechRecognizer {
             override fun onReady() = Unit
             override fun onStartedRecognition() = Unit
             override fun onUpdatedEpdData(on: Long, off: Long) = Unit
-            override fun onUpdatedRms(rms: Double) = Unit
+            override fun onUpdatedRms(rms: Double) {
+                if (rms > loudest) loudest = rms
+            }
             override fun onUpdated(stt: String, completed: Boolean) {
                 if (completed) finish(stt)
             }
@@ -84,11 +89,17 @@ class PleosSpeechRecognizer(context: Context) : SpeechRecognizer {
         }
         try {
             engine.addListener(listener)
+            debug("듣기 시작")
             engine.request()
         } catch (e: Exception) {
             Log.w(TAG, "음성 인식을 시작하지 못함", e)
             finish(null)
         }
+    }
+
+    /** 들은 말은 개인정보라 개발용 빌드에서만 남긴다 */
+    private fun debug(message: String) {
+        if (BuildConfig.DEBUG) Log.d(TAG, message)
     }
 
     private suspend fun start(): PleosSpeechToText? = suspendCancellableCoroutine { result ->

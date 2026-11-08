@@ -22,7 +22,12 @@ enum class VoiceCommand {
 
     companion object {
         private val NEGATIVE = listOf("아니", "안해", "안할", "안받", "싫어", "됐어", "다음", "넘겨", "거절")
-        private val ACCEPTS = listOf("수락", "받을게", "받겠", "할게요", "할게", "접수")
+        /** 전화 받겠다는 말이나 옆 사람과 하는 통화를 수락으로 듣지 않는다 */
+        private val NOT_FOR_US = listOf("전화", "통화")
+        private val ACCEPTS = listOf("수락", "받을게", "받겠", "접수")
+
+        /** "할게"는 "내일 할게"처럼 어디에나 붙으므로 이 말 그대로일 때만 수락이다 */
+        private val EXACT_ACCEPTS = setOf("할게", "할게요", "이거할게", "이거할게요", "그거할게", "그거할게요")
         private val DETAILS = listOf("자세히", "자세하게", "상세", "설명")
         private val REPEATS = listOf("다시", "뭐라고", "한번더")
         private val YES_WORDS = listOf("응", "어", "네", "넵", "예", "맞아", "그래", "좋아", "오케이")
@@ -31,11 +36,11 @@ enum class VoiceCommand {
         fun parse(heard: String): VoiceCommand {
             val text = heard.replace(Regex("[\\s.,!?~]"), "")
             return when {
-                text.isEmpty() -> UNKNOWN
+                text.isEmpty() || NOT_FOR_US.any(text::contains) -> UNKNOWN
                 NEGATIVE.any(text::contains) -> NO
                 DETAILS.any(text::contains) -> DETAIL
                 REPEATS.any(text::contains) -> REPEAT
-                ACCEPTS.any(text::contains) -> ACCEPT
+                ACCEPTS.any(text::contains) || text in EXACT_ACCEPTS -> ACCEPT
                 text.length <= MAX_YES_LENGTH && YES_WORDS.any(text::startsWith) -> YES
                 else -> UNKNOWN
             }

@@ -33,10 +33,12 @@ class NextOrderVoiceDialog(
         detailText: String,
         confirmText: String,
         confirmed: Boolean,
+        /** 한 번에 듣는 시간. 수락 창은 창이 떠 있는 동안 듣는다 */
+        listenMillis: Long = LISTEN_MILLIS,
     ): VoiceAnswer {
         var misses = 0
         while (true) {
-            val heard = recognizer.listen(LISTEN_MILLIS) ?: return VoiceAnswer.NONE
+            val heard = recognizer.listen(listenMillis) ?: return VoiceAnswer.NONE
             when (VoiceCommand.parse(heard)) {
                 VoiceCommand.NO -> return VoiceAnswer.NEXT
                 VoiceCommand.DETAIL -> speak(detailText)

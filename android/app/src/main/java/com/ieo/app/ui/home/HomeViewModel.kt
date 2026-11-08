@@ -455,6 +455,8 @@ class HomeViewModel(
         detailText = HomeAnnouncements.nextOrderDetail(next, stateFactory.nextOrderCard(next).pickupDay, stateFactory.pickupTime(next)).text,
         confirmText = HomeAnnouncements.nextOrderConfirm(next).text,
         confirmed = confirmed,
+        // 수락 창은 시간이 다 될 때까지 듣는다. 창이 닫히면 voiceJob이 취소되어 듣기도 멈춘다
+        listenMillis = if (confirmed) OFFER_SECONDS * 1_000L else NextOrderVoiceDialog.LISTEN_MILLIS,
     )
 
     fun messageShown() = _status.update { it.copy(message = null) }
