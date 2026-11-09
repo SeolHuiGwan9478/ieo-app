@@ -102,7 +102,7 @@ private fun VehicleSection(vehicles: List<Vehicle>, isLoading: Boolean, onEdit: 
     WhiteSection {
         SectionTitle(title = "내 차량", count = vehicles.size, note = "추가·삭제는 휴대폰 앱에서")
         if (vehicles.isEmpty()) {
-            Text(if (isLoading) "불러오는 중…" else "등록된 차량이 없어요", fontSize = 20.sp, color = TextSub, modifier = Modifier.padding(8.dp))
+            Text(if (isLoading) "불러오는 중…" else "등록된 차량이 없어요", fontSize = 24.sp, color = TextSub, modifier = Modifier.padding(8.dp))
         }
         vehicles.forEach { vehicle -> VehicleRow(vehicle, onClick = { onEdit(vehicle) }) }
     }
@@ -117,7 +117,7 @@ private fun VehicleRow(vehicle: Vehicle, onClick: () -> Unit) {
             if (vehicle.pleosLinked) StatusTag(text = "이 차와 연결됨", color = TextSub, background = CanvasGray)
         }
         Spacer(Modifier.height(4.dp))
-        Text(vehicleSummary(vehicle), fontSize = 20.sp, color = TextSub)
+        Text(vehicleSummary(vehicle), fontSize = 24.sp, color = TextSub)
         Spacer(Modifier.height(10.dp))
         IeoTonalButton(text = "고치기", onClick = onClick)
     }
@@ -129,7 +129,7 @@ private fun RecommendationSection(preference: RecommendationPreference?, onEdit:
     WhiteSection {
         SectionTitle(title = "다음 배차 추천", note = "운송 중 음성으로, 하차지에서 카드로 알려 드려요")
         if (preference == null) {
-            Text("설정을 불러오지 못했어요", fontSize = 20.sp, color = TextSub, modifier = Modifier.padding(8.dp))
+            Text("설정을 불러오지 못했어요", fontSize = 24.sp, color = TextSub, modifier = Modifier.padding(8.dp))
             return@WhiteSection
         }
         DetailLine("추천", if (preference.enabled) "켬" else "끔")

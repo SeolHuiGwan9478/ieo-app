@@ -72,13 +72,13 @@ data class Keyword(val text: String, val color: TagColor) {
 fun KeywordTag(keyword: Keyword, modifier: Modifier = Modifier) {
     Text(
         text = keyword.text,
-        fontSize = 17.sp,
+        fontSize = 24.sp,
         fontWeight = FontWeight.Bold,
         color = keyword.color.content,
         maxLines = 1,
         modifier = modifier
             .background(keyword.color.background, RoundedCornerShape(8.dp))
-            .heightIn(min = 30.dp)
+            .heightIn(min = 40.dp)
             .wrapContentHeight()
             .padding(horizontal = 10.dp, vertical = 3.dp),
     )

@@ -102,9 +102,9 @@ private fun AmountField(value: String, label: String = "금액", onChange: (Stri
     OutlinedTextField(
         value = value,
         onValueChange = { input -> onChange(input.filter(Char::isDigit).take(9)) },
-        label = { Text(label, fontSize = 18.sp) },
-        suffix = { Text("원", fontSize = 22.sp, color = TextSub) },
-        supportingText = value.toLongOrNull()?.takeIf { it > 0 }?.let { { Text(formatWon(it), fontSize = 18.sp, color = TextSub) } },
+        label = { Text(label, fontSize = 24.sp) },
+        suffix = { Text("원", fontSize = 24.sp, color = TextSub) },
+        supportingText = value.toLongOrNull()?.takeIf { it > 0 }?.let { { Text(formatWon(it), fontSize = 24.sp, color = TextSub) } },
         textStyle = TextStyle(fontSize = 26.sp, fontWeight = FontWeight.Bold, color = TextStrong),
         singleLine = true,
         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
@@ -118,8 +118,8 @@ private fun TextField(value: String, label: String, onChange: (String) -> Unit) 
     OutlinedTextField(
         value = value,
         onValueChange = onChange,
-        label = { Text(label, fontSize = 18.sp) },
-        textStyle = TextStyle(fontSize = 22.sp),
+        label = { Text(label, fontSize = 24.sp) },
+        textStyle = TextStyle(fontSize = 24.sp),
         singleLine = true,
         shape = RoundedCornerShape(16.dp),
         modifier = Modifier.fillMaxWidth(),

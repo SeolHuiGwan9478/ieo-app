@@ -91,7 +91,7 @@ private fun DrivingNotice() {
     ) {
         Text("주행 중에는 오더를 보여 드리지 않아요", fontSize = 28.sp, fontWeight = FontWeight.ExtraBold, color = TextStrong)
         Spacer(Modifier.height(12.dp))
-        Text("정차하면 다시 보여 드릴게요", fontSize = 22.sp, color = TextSub, textAlign = TextAlign.Center)
+        Text("정차하면 다시 보여 드릴게요", fontSize = 24.sp, color = TextSub, textAlign = TextAlign.Center)
     }
 }
 
@@ -115,17 +115,17 @@ private fun PendingStrip(pending: PendingRequest, onWithdraw: () -> Unit, onExpi
         modifier = Modifier.fillMaxWidth().background(WaitingPale, RoundedCornerShape(20.dp)).padding(horizontal = 24.dp, vertical = 20.dp),
     ) {
         Column(modifier = Modifier.weight(1f)) {
-            Text("요청 중 · ${pending.route}", fontSize = 22.sp, fontWeight = FontWeight.Bold, color = TextStrong)
+            Text("요청 중 · ${pending.route}", fontSize = 24.sp, fontWeight = FontWeight.Bold, color = TextStrong)
             Text(
                 "주선사 확정 기다리는 중 · %d:%02d 남음".format(secondsLeft / 60, secondsLeft % 60),
-                fontSize = 19.sp,
+                fontSize = 24.sp,
                 color = waiting,
             )
         }
         Spacer(Modifier.width(16.dp))
         Text(
             "철회",
-            fontSize = 20.sp,
+            fontSize = 24.sp,
             fontWeight = FontWeight.Bold,
             color = waiting,
             modifier = Modifier.clickable(onClick = onWithdraw).padding(12.dp),
@@ -144,7 +144,7 @@ private fun OrderList(state: OrdersUiState, onOrderClick: (Long) -> Unit) {
         if (state.rows.isEmpty()) {
             Text(
                 if (state.isLoading) "오더를 불러오는 중이에요" else "조건에 맞는 오더가 없어요",
-                fontSize = 20.sp,
+                fontSize = 24.sp,
                 color = TextSub,
                 modifier = Modifier.padding(horizontal = 12.dp, vertical = 16.dp),
             )
@@ -177,7 +177,7 @@ private fun DetailSheet(detail: OrderDetail, reporting: Boolean, busy: Boolean, 
     detail.lines.forEach { (label, value) -> SheetLine(label, value) }
     Spacer(Modifier.height(32.dp))
     if (reporting) {
-        Text("어떤 문제가 있나요?", fontSize = 22.sp, fontWeight = FontWeight.Bold, color = TextStrong)
+        Text("어떤 문제가 있나요?", fontSize = 24.sp, fontWeight = FontWeight.Bold, color = TextStrong)
         Spacer(Modifier.height(16.dp))
         ReportType.entries.chunked(2).forEach { pair ->
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.padding(bottom = 12.dp)) {

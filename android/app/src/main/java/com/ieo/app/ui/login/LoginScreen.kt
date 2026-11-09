@@ -166,7 +166,7 @@ private fun LoginForm(
                 Text(text = stringResource(R.string.login_title), fontSize = 36.sp, fontWeight = FontWeight.Bold)
                 Text(
                     text = stringResource(if (tab == LoginTab.QR) R.string.login_subtitle_qr else R.string.login_subtitle),
-                    fontSize = 22.sp,
+                    fontSize = 24.sp,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
@@ -182,8 +182,8 @@ private fun LoginForm(
                 Tab(
                     selected = tab == item,
                     onClick = { tab = item },
-                    text = { Text(stringResource(item.label), fontSize = 22.sp, fontWeight = FontWeight.Medium) },
-                    modifier = Modifier.heightIn(min = 64.dp),
+                    text = { Text(stringResource(item.label), fontSize = 24.sp, fontWeight = FontWeight.Medium) },
+                    modifier = Modifier.heightIn(min = 76.dp),
                 )
             }
         }
@@ -203,7 +203,7 @@ private fun LoginForm(
         OutlinedTextField(
             value = phone.phone,
             onValueChange = phoneActions::onPhoneChange,
-            label = { Text(stringResource(R.string.login_phone_label), fontSize = 18.sp) },
+            label = { Text(stringResource(R.string.login_phone_label), fontSize = 24.sp) },
             placeholder = { Text(stringResource(R.string.login_phone_placeholder), fontSize = 24.sp) },
             visualTransformation = PhoneNumberVisualTransformation(),
             textStyle = TextStyle(fontSize = 24.sp),
@@ -225,14 +225,14 @@ private fun LoginForm(
         } else {
             Text(
                 text = stringResource(R.string.login_code_sent),
-                fontSize = 20.sp,
+                fontSize = 24.sp,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
             Spacer(Modifier.height(12.dp))
             OutlinedTextField(
                 value = phone.code,
                 onValueChange = phoneActions::onCodeChange,
-                label = { Text(stringResource(R.string.login_code_label), fontSize = 18.sp) },
+                label = { Text(stringResource(R.string.login_code_label), fontSize = 24.sp) },
                 trailingIcon = { CodeTimer(secondsLeft) },
                 textStyle = TextStyle(fontSize = 24.sp, letterSpacing = 8.sp),
                 singleLine = true,
@@ -260,7 +260,7 @@ private fun LoginForm(
                 enabled = !phone.isRequestingCode,
                 modifier = Modifier.align(Alignment.CenterHorizontally),
             ) {
-                Text(stringResource(R.string.login_resend_code), fontSize = 20.sp)
+                Text(stringResource(R.string.login_resend_code), fontSize = 24.sp)
             }
         }
     }
@@ -268,7 +268,7 @@ private fun LoginForm(
 
 @Composable
 private fun ErrorText(message: String, bottomSpace: Dp = 0.dp) {
-    Text(text = message, fontSize = 20.sp, color = MaterialTheme.colorScheme.error)
+    Text(text = message, fontSize = 24.sp, color = MaterialTheme.colorScheme.error)
     if (bottomSpace > 0.dp) Spacer(Modifier.height(bottomSpace))
 }
 
@@ -277,7 +277,7 @@ private fun ErrorText(message: String, bottomSpace: Dp = 0.dp) {
 private fun CodeTimer(secondsLeft: Int) {
     Text(
         text = "%d:%02d".format(secondsLeft / 60, secondsLeft % 60),
-        fontSize = 22.sp,
+        fontSize = 24.sp,
         fontWeight = FontWeight.Medium,
         color = if (secondsLeft <= CODE_WARNING_SECONDS) {
             MaterialTheme.colorScheme.error

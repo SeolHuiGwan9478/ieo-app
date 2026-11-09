@@ -77,6 +77,6 @@ fun IeoTonalButton(
         elevation = null,
         modifier = modifier.fillMaxWidth().heightIn(min = 76.dp),
     ) {
-        Text(text = text, fontSize = 22.sp, fontWeight = FontWeight.Bold)
+        Text(text = text, fontSize = 24.sp, fontWeight = FontWeight.Bold)
     }
 }

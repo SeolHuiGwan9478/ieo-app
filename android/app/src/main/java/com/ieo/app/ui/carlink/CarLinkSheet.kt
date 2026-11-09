@@ -23,7 +23,7 @@ fun BoxScope.CarLinkSheet(state: CarLinkUiState, actions: CarLinkActions) {
     IeoBottomSheet(item = state.choices, onDismiss = actions::dismiss) { choices ->
         SheetTitle("이 트럭은 어느 차량인가요?")
         Spacer(Modifier.height(8.dp))
-        Text("한 번 고르면 이 트럭에서 로그인할 때마다 그 차량으로 시작해요", fontSize = 20.sp, color = TextSub)
+        Text("한 번 고르면 이 트럭에서 로그인할 때마다 그 차량으로 시작해요", fontSize = 24.sp, color = TextSub)
         Spacer(Modifier.height(28.dp))
         Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
             choices.forEach { choice ->

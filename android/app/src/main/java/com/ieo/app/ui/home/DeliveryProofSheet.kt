@@ -39,10 +39,10 @@ fun BoxScope.DeliveryProofSheet(
             Column(modifier = Modifier.weight(1f)) {
                 SheetTitle(if (shown.isConfirmed) "인수 확인을\n받았어요" else "수하인에게\nQR을 보여 주세요")
                 Spacer(Modifier.height(16.dp))
-                Text(statusText(shown, labels), fontSize = 22.sp, lineHeight = 32.sp, fontWeight = FontWeight.Medium, color = statusColor(shown))
+                Text(statusText(shown, labels), fontSize = 24.sp, lineHeight = 32.sp, fontWeight = FontWeight.Medium, color = statusColor(shown))
                 if (!shown.isConfirmed) {
                     Spacer(Modifier.height(8.dp))
-                    Text("휴대폰 카메라로 찍으면 설치 없이 서명할 수 있어요", fontSize = 19.sp, color = TextSub)
+                    Text("휴대폰 카메라로 찍으면 설치 없이 서명할 수 있어요", fontSize = 24.sp, color = TextSub)
                 }
             }
         }

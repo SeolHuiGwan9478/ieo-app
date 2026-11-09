@@ -76,7 +76,7 @@ fun BoxScope.RegisterTripSheet(
             }
         }
         if (s.day == PlannedDay.UNKNOWN) {
-            Text("미정이면 도착한 때부터 대기 시간을 세요", fontSize = 18.sp, color = TextSub)
+            Text("미정이면 도착한 때부터 대기 시간을 세요", fontSize = 24.sp, color = TextSub)
         }
         Spacer(Modifier.height(24.dp))
 
@@ -84,8 +84,8 @@ fun BoxScope.RegisterTripSheet(
         OutlinedTextField(
             value = fare,
             onValueChange = { input -> fare = input.filter(Char::isDigit).take(9) },
-            suffix = { Text("원", fontSize = 22.sp, color = TextSub) },
-            supportingText = fare.toLongOrNull()?.takeIf { it > 0 }?.let { { Text(formatWon(it), fontSize = 18.sp, color = TextSub) } },
+            suffix = { Text("원", fontSize = 24.sp, color = TextSub) },
+            supportingText = fare.toLongOrNull()?.takeIf { it > 0 }?.let { { Text(formatWon(it), fontSize = 24.sp, color = TextSub) } },
             textStyle = TextStyle(fontSize = 26.sp, fontWeight = FontWeight.Bold, color = TextStrong),
             singleLine = true,
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
@@ -108,8 +108,8 @@ fun BoxScope.RegisterTripSheet(
         OutlinedTextField(
             value = broker,
             onValueChange = { broker = it.take(50) },
-            placeholder = { Text("주선사 이름", fontSize = 20.sp) },
-            textStyle = TextStyle(fontSize = 22.sp),
+            placeholder = { Text("주선사 이름", fontSize = 24.sp) },
+            textStyle = TextStyle(fontSize = 24.sp),
             singleLine = true,
             shape = RoundedCornerShape(16.dp),
             modifier = Modifier.fillMaxWidth(),
@@ -135,7 +135,7 @@ private fun PlacePicker(label: String, options: List<PlaceOption>, selected: Pla
     if (options.isEmpty()) {
         Text(
             if (loading) "불러오는 중…" else "고를 곳이 없어요. 내비에서 목적지를 한 번 검색하면 여기 나와요",
-            fontSize = 19.sp,
+            fontSize = 24.sp,
             color = TextSub,
         )
         return
@@ -145,12 +145,12 @@ private fun PlacePicker(label: String, options: List<PlaceOption>, selected: Pla
     }
     selected?.let {
         Spacer(Modifier.height(8.dp))
-        Text("${it.address} · ${it.source}", fontSize = 18.sp, color = TextSub)
+        Text("${it.address} · ${it.source}", fontSize = 24.sp, color = TextSub)
     }
 }
 
 @Composable
 private fun FieldLabel(text: String) {
-    Text(text, fontSize = 20.sp, fontWeight = FontWeight.Bold, color = TextStrong)
+    Text(text, fontSize = 24.sp, fontWeight = FontWeight.Bold, color = TextStrong)
     Spacer(Modifier.height(10.dp))
 }

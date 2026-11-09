@@ -74,17 +74,17 @@ fun QrLoginContent(
             }
             if (ended) {
                 TextButton(onClick = onRefresh) {
-                    Text(stringResource(R.string.qr_refresh), fontSize = 22.sp, fontWeight = FontWeight.Bold)
+                    Text(stringResource(R.string.qr_refresh), fontSize = 24.sp, fontWeight = FontWeight.Bold)
                 }
             }
         }
         Spacer(Modifier.height(24.dp))
 
-        Text(text = stringResource(R.string.qr_instruction), fontSize = 22.sp, fontWeight = FontWeight.Medium)
+        Text(text = stringResource(R.string.qr_instruction), fontSize = 24.sp, fontWeight = FontWeight.Medium)
         Spacer(Modifier.height(8.dp))
         Text(
             text = stringResource(R.string.qr_code_label) + "  " + (waiting?.code ?: "----"),
-            fontSize = 20.sp,
+            fontSize = 24.sp,
             letterSpacing = 2.sp,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
@@ -97,14 +97,14 @@ fun QrLoginContent(
             else -> null
         }
         if (problem != null) {
-            Text(text = problem, fontSize = 20.sp, color = MaterialTheme.colorScheme.error)
+            Text(text = problem, fontSize = 24.sp, color = MaterialTheme.colorScheme.error)
         } else if (waiting != null) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.Center) {
                 IeoLoadingIndicator(width = 40.dp)
                 Spacer(Modifier.width(12.dp))
                 Text(
                     text = stringResource(R.string.qr_waiting) + " · " + "%d:%02d".format(secondsLeft / 60, secondsLeft % 60),
-                    fontSize = 20.sp,
+                    fontSize = 24.sp,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }

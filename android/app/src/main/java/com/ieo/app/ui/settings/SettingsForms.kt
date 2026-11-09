@@ -49,8 +49,8 @@ fun ColumnScope.NameForm(form: SettingsForm.EditName, busy: Boolean, onSubmit: (
     OutlinedTextField(
         value = name,
         onValueChange = { name = it.take(30) },
-        label = { Text("이름", fontSize = 18.sp) },
-        textStyle = TextStyle(fontSize = 22.sp),
+        label = { Text("이름", fontSize = 24.sp) },
+        textStyle = TextStyle(fontSize = 24.sp),
         singleLine = true,
         shape = RoundedCornerShape(16.dp),
         modifier = Modifier.fillMaxWidth(),
@@ -85,7 +85,7 @@ fun ColumnScope.VehicleForm(
     Spacer(Modifier.height(20.dp))
     FieldLabel("높이 (짐칸 위까지)")
     HeightStepper(height = height, onChange = { height = it })
-    Text("상하차지 높이 제한과 비교해 알려 드려요", fontSize = 18.sp, color = TextSub)
+    Text("상하차지 높이 제한과 비교해 알려 드려요", fontSize = 24.sp, color = TextSub)
     if (!vehicle.isDefault) {
         Spacer(Modifier.height(20.dp))
         IeoTonalButton(text = "기본 차량으로 정하기", onClick = { if (!busy) onSetDefault() })
@@ -133,7 +133,7 @@ fun ColumnScope.RecommendationForm(
             )
             IeoTonalButton(text = "+", onClick = { radiusKm = stepRadius(radiusKm, RADIUS_STEP_KM) }, modifier = Modifier.width(88.dp))
         }
-        Text("넓히면 후보가 늘지만 빈 차로 가는 거리도 길어져요", fontSize = 18.sp, color = TextSub)
+        Text("넓히면 후보가 늘지만 빈 차로 가는 거리도 길어져요", fontSize = 24.sp, color = TextSub)
         Spacer(Modifier.height(20.dp))
         FieldLabel("최소 실수익 (운임에서 공차 기름값을 뺀 것)")
         FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -148,10 +148,10 @@ fun ColumnScope.RecommendationForm(
                 FilterChip(cargo.label, selected = cargo in excludedCargo, onClick = { excludedCargo = toggle(excludedCargo, cargo) })
             }
         }
-        Text("고른 화물의 오더는 추천하지 않아요. 오더 탭에서는 그대로 보여요", fontSize = 18.sp, color = TextSub)
+        Text("고른 화물의 오더는 추천하지 않아요. 오더 탭에서는 그대로 보여요", fontSize = 24.sp, color = TextSub)
     } else {
         Spacer(Modifier.height(12.dp))
-        Text("다음 배차를 음성과 카드로 알려 드리지 않아요", fontSize = 18.sp, color = TextSub)
+        Text("다음 배차를 음성과 카드로 알려 드리지 않아요", fontSize = 24.sp, color = TextSub)
     }
     FormButtons(busy, onCancel = onCancel, onSave = { onSubmit(RecommendationPreference(enabled, radiusKm, minNetProfit, excludedCargo)) })
 }
@@ -181,7 +181,7 @@ internal fun stepRadius(radiusKm: Int, delta: Int): Int {
 fun ColumnScope.SignOutConfirm(onSignOut: () -> Unit, onCancel: () -> Unit) {
     SheetTitle("로그아웃할까요?")
     Spacer(Modifier.height(12.dp))
-    Text("다시 쓰려면 휴대폰으로 QR을 찍거나 인증번호로 로그인해요", fontSize = 21.sp, color = TextSub)
+    Text("다시 쓰려면 휴대폰으로 QR을 찍거나 인증번호로 로그인해요", fontSize = 24.sp, color = TextSub)
     Spacer(Modifier.height(32.dp))
     Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
         IeoTonalButton(text = "취소", onClick = onCancel, modifier = Modifier.weight(1f))
@@ -217,7 +217,7 @@ internal fun step(height: Double?, delta: Double): Double {
 
 @Composable
 private fun FieldLabel(text: String) {
-    Text(text, fontSize = 20.sp, fontWeight = FontWeight.Bold, color = TextStrong)
+    Text(text, fontSize = 24.sp, fontWeight = FontWeight.Bold, color = TextStrong)
     Spacer(Modifier.height(10.dp))
 }
 

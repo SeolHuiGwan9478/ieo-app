@@ -228,7 +228,7 @@ private fun NavRailItem(item: Destination, selected: Boolean, onClick: () -> Uni
         Text(
             text = item.label,
             color = color,
-            fontSize = 18.sp,
+            fontSize = 24.sp,
             fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium,
         )
     }

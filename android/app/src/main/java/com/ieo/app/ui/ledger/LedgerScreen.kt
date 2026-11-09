@@ -110,7 +110,7 @@ private fun MonthPicker(label: String, canGoNext: Boolean, onPrevious: () -> Uni
             tint = TextStrong,
             modifier = Modifier.clickable(onClick = onPrevious).padding(12.dp),
         )
-        Text(label, fontSize = 20.sp, fontWeight = FontWeight.Bold, color = TextStrong)
+        Text(label, fontSize = 24.sp, fontWeight = FontWeight.Bold, color = TextStrong)
         Icon(
             Icons.AutoMirrored.Outlined.KeyboardArrowRight,
             contentDescription = "다음 달",
@@ -135,7 +135,7 @@ private fun EntriesTab(state: LedgerUiState, actions: LedgerActions) {
                 Spacer(Modifier.height(16.dp))
                 Text(
                     "받을 돈 ${owed.total}" + (owed.overdue?.let { " · 그중 ${it}은 지급일이 지났어요" } ?: ""),
-                    fontSize = 19.sp,
+                    fontSize = 24.sp,
                     fontWeight = FontWeight.Medium,
                     color = if (owed.overdue != null) IeoStatus.colors.warning else TextSub,
                     modifier = Modifier.clickable { actions.selectTab(LedgerTab.RECEIVABLES) },
@@ -148,7 +148,7 @@ private fun EntriesTab(state: LedgerUiState, actions: LedgerActions) {
     }
     state.days.forEach { day ->
         WhiteSection {
-            Text(day.title, fontSize = 19.sp, fontWeight = FontWeight.Medium, color = TextSub, modifier = Modifier.padding(horizontal = 12.dp))
+            Text(day.title, fontSize = 24.sp, fontWeight = FontWeight.Medium, color = TextSub, modifier = Modifier.padding(horizontal = 12.dp))
             day.entries.forEach { EntryListRow(it, onClick = { actions.openEntry(it.id) }) }
             day.expenses.forEach { ExpenseListRow(it, showDate = false) }
         }
@@ -158,7 +158,7 @@ private fun EntriesTab(state: LedgerUiState, actions: LedgerActions) {
 @Composable
 private fun androidx.compose.foundation.layout.RowScope.Metric(label: String, value: String, color: Color) {
     Column(modifier = Modifier.weight(1f)) {
-        Text(label, fontSize = 18.sp, color = TextSub)
+        Text(label, fontSize = 24.sp, color = TextSub)
         Text(value, fontSize = 28.sp, fontWeight = FontWeight.ExtraBold, color = color, style = Tnum, maxLines = 1)
     }
 }
@@ -214,7 +214,7 @@ private fun ReceivablesTab(state: LedgerUiState, actions: LedgerActions) {
     WhiteSection {
         SectionTitle(title = "아직 받지 못한 운임", count = state.receivableRows.size)
         if (state.receivableRows.isEmpty()) {
-            Text("받을 돈이 모두 들어왔어요", fontSize = 20.sp, color = TextSub, modifier = Modifier.padding(horizontal = 12.dp, vertical = 16.dp))
+            Text("받을 돈이 모두 들어왔어요", fontSize = 24.sp, color = TextSub, modifier = Modifier.padding(horizontal = 12.dp, vertical = 16.dp))
         }
         state.receivableRows.forEach { EntryListRow(it, onClick = { actions.openEntry(it.id) }) }
     }
@@ -227,7 +227,7 @@ private fun ExpensesTab(state: LedgerUiState) {
     WhiteSection {
         SectionTitle(title = "${state.monthLabel} 경비", count = state.expenseRows.size, note = state.summary?.expense)
         if (state.expenseRows.isEmpty()) {
-            Text("기록한 경비가 없어요", fontSize = 20.sp, color = TextSub, modifier = Modifier.padding(horizontal = 12.dp, vertical = 16.dp))
+            Text("기록한 경비가 없어요", fontSize = 24.sp, color = TextSub, modifier = Modifier.padding(horizontal = 12.dp, vertical = 16.dp))
         }
         state.expenseRows.forEach { ExpenseListRow(it, showDate = true) }
     }
@@ -236,7 +236,7 @@ private fun ExpensesTab(state: LedgerUiState) {
 @Composable
 private fun EmptySection(text: String) {
     WhiteSection {
-        Text(text, fontSize = 20.sp, color = TextSub, modifier = Modifier.padding(horizontal = 12.dp, vertical = 16.dp))
+        Text(text, fontSize = 24.sp, color = TextSub, modifier = Modifier.padding(horizontal = 12.dp, vertical = 16.dp))
     }
 }
 
@@ -249,8 +249,8 @@ private fun ColumnScope.EntrySheet(detail: EntryDetail, actions: LedgerActions) 
     detail.lines.forEach { (label, value) -> SheetLine(label, value) }
     detail.waitFees.forEach { fee ->
         Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp)) {
-            Text(fee.label, fontSize = 21.sp, color = TextSub, modifier = Modifier.weight(1f))
-            Text(fee.amount, fontSize = 21.sp, fontWeight = FontWeight.Bold, color = TextStrong)
+            Text(fee.label, fontSize = 24.sp, color = TextSub, modifier = Modifier.weight(1f))
+            Text(fee.amount, fontSize = 24.sp, fontWeight = FontWeight.Bold, color = TextStrong)
             Spacer(Modifier.width(16.dp))
             IeoSecondaryButton(
                 text = if (fee.paid) "받음 취소" else "받음",

@@ -5,6 +5,8 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -66,7 +68,7 @@ fun SectionTitle(title: String, count: Int? = null, note: String? = null) {
         }
         note?.let {
             Spacer(Modifier.weight(1f))
-            Text(it, fontSize = 18.sp, color = TextSub, modifier = Modifier.padding(bottom = 3.dp))
+            Text(it, fontSize = 24.sp, color = TextSub, modifier = Modifier.padding(bottom = 3.dp))
         }
     }
 }
@@ -102,8 +104,8 @@ fun ListRow(
                 verticalArrangement = Arrangement.Center,
                 modifier = Modifier.size(76.dp).background(CanvasGray, RoundedCornerShape(18.dp)),
             ) {
-                Text(time, fontSize = 22.sp, fontWeight = FontWeight.ExtraBold, color = TextStrong, style = Tnum)
-                day?.let { Text(it, fontSize = 16.sp, fontWeight = FontWeight.Medium, color = TextSub) }
+                Text(time, fontSize = 24.sp, fontWeight = FontWeight.ExtraBold, color = TextStrong, style = Tnum)
+                day?.let { Text(it, fontSize = 24.sp, fontWeight = FontWeight.Medium, color = TextSub) }
             }
             Spacer(Modifier.width(20.dp))
         }
@@ -118,7 +120,7 @@ fun ListRow(
         Column(horizontalAlignment = Alignment.End) {
             Text(amount, fontSize = 25.sp, fontWeight = FontWeight.ExtraBold, color = amountColor, style = Tnum)
             amountNote?.let {
-                Text(it, fontSize = 18.sp, fontWeight = FontWeight.Bold, color = amountNoteColor, style = Tnum)
+                Text(it, fontSize = 24.sp, fontWeight = FontWeight.Bold, color = amountNoteColor, style = Tnum)
             }
         }
     }
@@ -129,7 +131,7 @@ fun ListRow(
 fun TagLine(tags: List<Keyword>, text: String? = null, textColor: Color = TextSub) {
     Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
         tags.forEach { KeywordTag(it) }
-        text?.let { Text(it, fontSize = 19.sp, color = textColor, maxLines = 1, overflow = TextOverflow.Ellipsis) }
+        text?.let { Text(it, fontSize = 24.sp, color = textColor, maxLines = 1, overflow = TextOverflow.Ellipsis) }
     }
 }
 
@@ -137,8 +139,8 @@ fun TagLine(tags: List<Keyword>, text: String? = null, textColor: Color = TextSu
 @Composable
 fun DetailLine(label: String, value: String) {
     Row(modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 10.dp)) {
-        Text(label, fontSize = 21.sp, color = TextSub, modifier = Modifier.width(130.dp))
-        Text(value, fontSize = 22.sp, fontWeight = FontWeight.Medium, color = TextStrong)
+        Text(label, fontSize = 24.sp, color = TextSub, modifier = Modifier.width(170.dp))
+        Text(value, fontSize = 24.sp, fontWeight = FontWeight.Medium, color = TextStrong)
     }
 }
 
@@ -147,7 +149,7 @@ fun DetailLine(label: String, value: String) {
 fun StatusTag(text: String, color: Color, background: Color) {
     Text(
         text,
-        fontSize = 18.sp,
+        fontSize = 24.sp,
         fontWeight = FontWeight.Bold,
         color = color,
         modifier = Modifier.background(background, RoundedCornerShape(8.dp)).padding(horizontal = 10.dp, vertical = 4.dp),
@@ -169,12 +171,14 @@ fun Chevron() {
 fun FilterChip(text: String, selected: Boolean, onClick: () -> Unit) {
     Text(
         text,
-        fontSize = 20.sp,
+        fontSize = 24.sp,
         fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium,
         color = if (selected) Orange700 else TextMid,
         modifier = Modifier
+            .heightIn(min = 76.dp)
             .background(if (selected) Orange50 else White, RoundedCornerShape(24.dp))
             .clickable(onClick = onClick)
-            .padding(horizontal = 20.dp, vertical = 12.dp),
+            .wrapContentHeight()
+            .padding(horizontal = 24.dp, vertical = 12.dp),
     )
 }

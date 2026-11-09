@@ -89,8 +89,8 @@ fun <T : Any> BoxScope.IeoBottomSheet(
 @Composable
 fun SheetLine(label: String, value: String) {
     Row(modifier = Modifier.padding(vertical = 8.dp)) {
-        Text(label, fontSize = 21.sp, color = TextSub, modifier = Modifier.width(140.dp))
-        Text(value, fontSize = 21.sp, fontWeight = FontWeight.Medium, color = TextStrong)
+        Text(label, fontSize = 24.sp, color = TextSub, modifier = Modifier.width(180.dp))
+        Text(value, fontSize = 24.sp, fontWeight = FontWeight.Medium, color = TextStrong)
     }
 }
 

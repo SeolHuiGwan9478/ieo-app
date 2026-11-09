@@ -164,7 +164,7 @@ private fun IdleHome(
 @Composable
 private fun TodayHeadline(state: HomeState.Idle) {
     Column(modifier = Modifier.padding(start = 12.dp, top = 12.dp, end = 12.dp, bottom = 12.dp)) {
-        Text("${todayText()} · 운행 ${state.today.tripCount}건", fontSize = 20.sp, fontWeight = FontWeight.Medium, color = TextSub)
+        Text("${todayText()} · 운행 ${state.today.tripCount}건", fontSize = 24.sp, fontWeight = FontWeight.Medium, color = TextSub)
         Spacer(Modifier.height(6.dp))
         Text(
             buildAnnotatedString {
@@ -196,8 +196,8 @@ private fun UnpaidRow(unpaid: UnpaidAlert, onClick: () -> Unit) {
         }
         Spacer(Modifier.width(18.dp))
         Column(modifier = Modifier.weight(1f)) {
-            Text("${unpaid.brokerName} 미수금 ${formatWon(unpaid.amount)}", fontSize = 23.sp, fontWeight = FontWeight.Bold, color = TextStrong)
-            Text("지급일이 ${unpaid.overdueDays}일 지났어요", fontSize = 19.sp, color = warning)
+            Text("${unpaid.brokerName} 미수금 ${formatWon(unpaid.amount)}", fontSize = 24.sp, fontWeight = FontWeight.Bold, color = TextStrong)
+            Text("지급일이 ${unpaid.overdueDays}일 지났어요", fontSize = 24.sp, color = warning)
         }
         Chevron()
     }
@@ -210,7 +210,7 @@ private fun MyTrips(trips: List<AssignedTrip>, onTripClick: (AssignedTrip) -> Un
         if (trips.isEmpty()) {
             Text(
                 "잡아 둔 배차가 없어요",
-                fontSize = 21.sp,
+                fontSize = 24.sp,
                 color = TextSub,
                 modifier = Modifier.padding(horizontal = 12.dp, vertical = 24.dp),
             )
@@ -246,7 +246,7 @@ private fun NearbyOrders(state: HomeState.Idle, onOrderClick: (OrderCard) -> Uni
         if (state.orders.isEmpty()) {
             Text(
                 if (state.nearby) "근처에 모집 중인 오더가 없어요" else "지금 모집 중인 오더가 없어요",
-                fontSize = 20.sp,
+                fontSize = 24.sp,
                 color = TextSub,
                 modifier = Modifier.padding(horizontal = 12.dp, vertical = 16.dp),
             )
@@ -337,7 +337,7 @@ private fun WaitTimer(state: HomeState.Waiting, timerSeconds: Long, chargeableMi
             Spacer(Modifier.height(12.dp))
             Text(
                 "${if (state.isPickup) "상차지" else "하차지"}를 떠나고 있어요 · ${formatDuration(seconds).takeLast(5)} 뒤 ${if (state.isPickup) "출발" else "운행 완료"}로 기록해요",
-                fontSize = 22.sp,
+                fontSize = 24.sp,
                 fontWeight = FontWeight.Bold,
                 color = waiting,
             )
@@ -370,7 +370,7 @@ private fun WaitFeeLine(policy: WaitPolicy?, chargeableMinutes: Long, waitEnded:
         amount == 0L -> "${formatMinutesKorean(policy.minutesUntilCharged(chargeableMinutes))} 뒤부터 대기비가 붙어요"
         else -> "대기비 ${formatWon(amount)}을 청구할 수 있어요"
     }
-    Text(text, fontSize = 22.sp, fontWeight = FontWeight.Medium, color = TextSub)
+    Text(text, fontSize = 24.sp, fontWeight = FontWeight.Medium, color = TextSub)
 }
 
 @Composable
@@ -424,10 +424,10 @@ private fun SiteSection(site: SiteInfo, isPickup: Boolean) {
         site.averageWaitMinutes?.let { DetailLine("평균 대기", formatMinutesKorean(it.toLong())) }
         site.averageWorkMinutes?.let { DetailLine("평균 작업", formatMinutesKorean(it.toLong())) }
         site.notes.forEach { note ->
-            Text("“$note”", fontSize = 20.sp, color = TextSub, maxLines = 2, overflow = TextOverflow.Ellipsis, modifier = Modifier.padding(top = 8.dp))
+            Text("“$note”", fontSize = 24.sp, color = TextSub, maxLines = 2, overflow = TextOverflow.Ellipsis, modifier = Modifier.padding(top = 8.dp))
         }
         if (site.isEmpty) {
-            Text("아직 남겨진 정보가 없어요", fontSize = 20.sp, color = TextSub)
+            Text("아직 남겨진 정보가 없어요", fontSize = 24.sp, color = TextSub)
         }
     }
 }
@@ -485,7 +485,7 @@ private fun DrivingHome(state: HomeState.Driving, onArrive: () -> Unit, onResume
                     Spacer(Modifier.height(20.dp))
                     Text(
                         "${if (state.isPickup) "상차지" else "하차지"}에 멈췄어요 · ${formatDuration(seconds).takeLast(5)} 뒤 대기를 시작해요",
-                        fontSize = 22.sp,
+                        fontSize = 24.sp,
                         fontWeight = FontWeight.Bold,
                         color = IeoStatus.colors.waiting,
                     )
@@ -495,21 +495,21 @@ private fun DrivingHome(state: HomeState.Driving, onArrive: () -> Unit, onResume
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Icon(Icons.Outlined.Check, contentDescription = null, tint = status.done, modifier = Modifier.size(24.dp))
                         Spacer(Modifier.width(8.dp))
-                        Text("주선사·수하인에게 도착 시각을 알렸어요", fontSize = 20.sp, color = TextSub)
+                        Text("주선사·수하인에게 도착 시각을 알렸어요", fontSize = 24.sp, color = TextSub)
                     }
                 }
             }
             WhiteSection {
                 Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp)) {
                     Column(modifier = Modifier.weight(1f)) {
-                        Text(state.trip.route, fontSize = 22.sp, fontWeight = FontWeight.Bold, color = TextStrong, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                        Text(state.trip.route, fontSize = 24.sp, fontWeight = FontWeight.Bold, color = TextStrong, maxLines = 1, overflow = TextOverflow.Ellipsis)
                         Spacer(Modifier.height(6.dp))
                         TagLine(
                             tags = listOf(Keyword.vehicle(state.trip.vehicle), Keyword.payment(state.trip.paymentType)),
                             text = state.trip.brokerName,
                         )
                     }
-                    Text(formatFare(state.trip.fare), fontSize = 22.sp, fontWeight = FontWeight.ExtraBold, color = TextStrong, style = Tnum)
+                    Text(formatFare(state.trip.fare), fontSize = 24.sp, fontWeight = FontWeight.ExtraBold, color = TextStrong, style = Tnum)
                 }
             }
             state.recommendation?.let { rec ->
@@ -540,7 +540,7 @@ private fun DrivingHome(state: HomeState.Driving, onArrive: () -> Unit, onResume
             } else if (state.recommendation == null) {
                 Text(
                     "안내를 끝내려면 내비에서 안내 종료를 눌러 주세요",
-                    fontSize = 18.sp,
+                    fontSize = 24.sp,
                     color = TextSub,
                     modifier = Modifier.fillMaxWidth().padding(top = 4.dp),
                     textAlign = TextAlign.Center,
@@ -553,7 +553,7 @@ private fun DrivingHome(state: HomeState.Driving, onArrive: () -> Unit, onResume
 @Composable
 private fun RowScope.Stat(label: String, value: String) {
     Column(modifier = Modifier.weight(1f).background(CanvasGray, RoundedCornerShape(16.dp)).padding(horizontal = 20.dp, vertical = 18.dp)) {
-        Text(label, fontSize = 18.sp, color = TextSub)
+        Text(label, fontSize = 24.sp, color = TextSub)
         Text(value, fontSize = 26.sp, fontWeight = FontWeight.ExtraBold, color = TextStrong, style = Tnum, maxLines = 1)
     }
 }
