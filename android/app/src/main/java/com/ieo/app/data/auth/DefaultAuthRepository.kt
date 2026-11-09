@@ -27,7 +27,7 @@ class DefaultAuthRepository(
         caller.call { api.verifyCode(VerifyCodeRequest(phone, code, device.deviceId)) }.mapResponse { it.toDomain() }
 
     override suspend fun loginWithPhone(phoneToken: String): ApiResult<Unit> =
-        caller.call { api.loginWithPhone(PhoneLoginRequest(phoneToken, device.deviceId)) }
+        caller.call { api.loginWithPhone(PhoneLoginRequest(phoneToken, device.deviceId, device.deviceName, device.appVersion)) }
             .onSuccess { session.signIn(it.toDomain()) }
             .map { }
 

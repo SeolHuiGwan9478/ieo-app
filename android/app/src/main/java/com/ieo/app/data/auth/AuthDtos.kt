@@ -36,7 +36,7 @@ data class ExistingAccountResponse(val name: String, val role: String) {
 }
 
 @Serializable
-data class PhoneLoginRequest(val phoneToken: String, val deviceId: String)
+data class PhoneLoginRequest(val phoneToken: String, val deviceId: String, val carDeviceName: String, val appVersion: String)
 
 @Serializable
 data class RefreshTokenRequest(val refreshToken: String)

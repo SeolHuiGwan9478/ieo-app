@@ -18,6 +18,7 @@ import com.ieo.app.testing.MemoryTokenStore
 import com.ieo.app.testing.TripFixtures
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.runCurrent
+import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -123,8 +124,9 @@ class SettingsViewModelTest {
     }
 
     @Test
-    fun `로그아웃하면 이 기기의 로그인을 지운다`() {
+    fun `로그아웃하면 이 기기의 로그인을 지운다`() = runTest(main.dispatcher) {
         vm.signOut()
+        advanceUntilIdle()
 
         assertFalse(session.isLoggedIn.value)
         assertNull(session.tokens())

@@ -24,6 +24,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withTimeoutOrNull
 
 /** 아래에서 올라오는 창 */
 sealed interface SettingsForm {
@@ -117,10 +118,14 @@ class SettingsViewModel(
         }
     }
 
-    /** 이 기기의 토큰만 지운다. 로그인 화면으로는 SessionManager를 따라 넘어간다 */
+    /** 서버 목록에서 이 차를 빼고 토큰을 지운다. 로그인 화면으로는 SessionManager를 따라 넘어간다 */
     override fun signOut() {
         _state.update { it.copy(form = null) }
-        session.signOut()
+        viewModelScope.launch {
+            // 서버에 못 알려도 이 차에서는 로그아웃한다
+            withTimeoutOrNull(SIGN_OUT_WAIT_MS) { accountRepository.endCarSession() }
+            session.signOut()
+        }
     }
 
     fun messageShown() = _state.update { it.copy(message = null) }
@@ -162,6 +167,7 @@ class SettingsViewModel(
     private fun show(message: String) = _state.update { it.copy(message = message) }
 
     companion object {
+        private const val SIGN_OUT_WAIT_MS = 2_000L
         const val NAME_REQUIRED_MESSAGE = "이름을 입력해 주세요"
         const val HEIGHT_RANGE_MESSAGE = "높이는 1.5m에서 4.2m 사이로 정해 주세요"
         const val RADIUS_RANGE_MESSAGE = "반경은 5km에서 100km 사이로 정해 주세요"
