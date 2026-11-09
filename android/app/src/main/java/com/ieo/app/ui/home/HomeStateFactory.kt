@@ -90,8 +90,7 @@ class HomeStateFactory(
             progress = navi?.fraction,
             remainingKm = navi?.remainMeters?.let { (it + 500) / 1000 },
             remainingMinutes = remainSeconds?.let { (it + 59) / 60 },
-            // TODO: ETA 알림(09 알림)을 만들면 서버 값으로 바꾼다
-            etaShared = false,
+            etaShared = trip.etaShared,
             recommendation = next?.let(::recommendation),
             naviActive = navi != null && !navi.failed,
             arrivingInSeconds = (arrival as? ArrivalCheck.Stopping)?.remaining?.seconds,

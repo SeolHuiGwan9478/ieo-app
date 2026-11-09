@@ -174,6 +174,9 @@ class FakeTripServer(var trip: Trip) :
         return ApiResult.Success(TripFixtures.site(siteId))
     }
 
+    override suspend fun sendProof(tripId: Long, stop: StopType): ApiResult<WaitProofLink> =
+        createProof(tripId, stop)
+
     override suspend fun createProof(tripId: Long, stop: StopType): ApiResult<WaitProofLink> {
         calls += "proof $stop"
         return ApiResult.Success(WaitProofLink("http://localhost/api/public/wait-proofs/token-$stop", TripFixtures.NOW.plusSeconds(86_400)))

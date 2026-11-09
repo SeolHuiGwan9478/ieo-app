@@ -108,6 +108,7 @@ interface HomeActions {
 
     /** 지금 상하차지의 대기 증빙 링크를 만들어 보여 준다 */
     fun sendWaitProof()
+    fun sendProofToBroker()
 
     /** 하차지에서 "인수증 받기": QR을 보여 주고 수하인 서명을 기다린다 (POD-003) */
     fun requestDeliveryProof()
@@ -222,6 +223,7 @@ class HomeViewModel(
         keepNaviProgressFresh()
         keepNearbyOrdersFresh()
         reportLocationWhileOnTrip()
+        watchEtaShared()
         recommendNextOrder()
         recommendAtDropoff()
         keepOffersFresh()
@@ -291,6 +293,12 @@ class HomeViewModel(
     override fun sendWaitProof() = runAction {
         val (trip, stop) = currentAtStop() ?: return@runAction
         val link = waitRepository.createProof(trip.id, stop).orShow() ?: return@runAction
+        _status.update { it.copy(proof = link) }
+    }
+
+    override fun sendProofToBroker() = runAction {
+        val (trip, stop) = currentAtStop() ?: return@runAction
+        val link = waitRepository.sendProof(trip.id, stop).orShow() ?: return@runAction
         _status.update { it.copy(proof = link) }
     }
 
@@ -718,6 +726,21 @@ class HomeViewModel(
         }
     }
 
+    /** 서버가 주선사에게 도착 시각을 알렸는지 운송 중에 다시 확인한다. 알린 뒤에는 묻지 않는다 */
+    private fun watchEtaShared() {
+        viewModelScope.launch {
+            snapshot.map { trip -> trip.current?.takeIf { it.status == TripStatus.IN_TRANSIT && !it.etaShared }?.id }
+                .distinctUntilChanged()
+                .collectLatest { tripId ->
+                    while (tripId != null) {
+                        delay(ETA_SHARED_CHECK_MILLIS)
+                        val latest = (tripRepository.currentTrip() as? ApiResult.Success)?.data
+                        if (latest?.id == tripId) snapshot.update { it.copy(current = latest) }
+                    }
+                }
+        }
+    }
+
     private fun keepNaviProgressFresh() {
         viewModelScope.launch {
             navigator.progress.map { it != null }.distinctUntilChanged().collectLatest { guiding ->
@@ -760,6 +783,7 @@ class HomeViewModel(
         const val DELIVERY_SIGNED_MESSAGE = "인수증 서명을 받았어요. 운행을 마쳤어요"
         private const val SIGNATURE_POLL_MILLIS = 3_000L
         private const val NAVI_REFRESH_MILLIS = 10_000L
+        private const val ETA_SHARED_CHECK_MILLIS = 60_000L
         private const val SENSOR_CHECK_MILLIS = 1_000L
 
         /** 상하차지 정보 카드를 읽어 주는 거리 (SITE-006) */

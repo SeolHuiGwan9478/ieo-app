@@ -29,4 +29,7 @@ interface WaitRepository {
 
     /** 대기 증빙 링크. 주선사에게 바로 보내기는 알림(09)을 만든 뒤 붙인다 (WAIT-022) */
     suspend fun createProof(tripId: Long, stop: StopType): ApiResult<WaitProofLink>
+
+    /** 증빙 링크를 주선사에게 문자로 보낸다 (WAIT-022) */
+    suspend fun sendProof(tripId: Long, stop: StopType): ApiResult<WaitProofLink>
 }

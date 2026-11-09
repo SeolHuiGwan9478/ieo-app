@@ -168,7 +168,7 @@ fun MainScreen(
             },
             onDismiss = { confirmingTrip = null },
         )
-        WaitProofSheet(link = status.proof, onDismiss = homeViewModel::proofShown)
+        WaitProofSheet(link = status.proof, onDismiss = homeViewModel::proofShown, onSend = homeViewModel::sendProofToBroker, busy = status.isBusy)
         RegisterTripSheet(visible = registering, state = registerState, actions = registerViewModel, onDismiss = { registering = false })
         DeliveryProofSheet(proof = status.deliveryProof, onDismiss = homeViewModel::closeDeliveryProof)
         CarLinkSheet(state = carLinkState, actions = carLinkViewModel)

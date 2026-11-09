@@ -509,7 +509,7 @@ private fun DrivingHome(state: HomeState.Driving, onArrive: () -> Unit, onResume
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Icon(Icons.Outlined.Check, contentDescription = null, tint = status.done, modifier = Modifier.size(24.dp))
                         Spacer(Modifier.width(8.dp))
-                        Text("주선사·수하인에게 도착 시각을 알렸어요", fontSize = 24.sp, color = TextSub)
+                        Text("주선사에게 도착 시각을 알렸어요", fontSize = 24.sp, color = TextSub)
                     }
                 }
             }

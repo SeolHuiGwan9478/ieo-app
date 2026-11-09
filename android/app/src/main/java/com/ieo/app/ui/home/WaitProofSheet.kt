@@ -16,18 +16,20 @@ import com.ieo.app.domain.wait.WaitProofLink
 import com.ieo.app.ui.common.DayTimeFormatter
 import com.ieo.app.ui.component.IeoBottomSheet
 import com.ieo.app.ui.component.IeoPrimaryButton
+import com.ieo.app.ui.component.IeoTonalButton
 import com.ieo.app.ui.component.QrCode
 import com.ieo.app.ui.component.SheetTitle
 import com.ieo.app.ui.theme.TextSub
 
 /**
- * 대기 증빙 링크 창 (WAIT-020). 휴대폰으로 QR을 찍어 링크를 열고 주선사에게 보낸다.
- * TODO: 알림(09)을 만들면 주선사에게 바로 보내는 버튼을 단다 (WAIT-022)
+ * 대기 증빙 링크 창 (WAIT-020). 휴대폰으로 QR을 찍어 보내거나, Ieo 주선사면 바로 보낸다 (WAIT-022).
  */
 @Composable
 fun BoxScope.WaitProofSheet(
     link: WaitProofLink?,
     onDismiss: () -> Unit,
+    onSend: () -> Unit = {},
+    busy: Boolean = false,
     labels: DayTimeFormatter = DayTimeFormatter(),
 ) {
     IeoBottomSheet(item = link, onDismiss = onDismiss) { shown ->
@@ -44,6 +46,13 @@ fun BoxScope.WaitProofSheet(
             }
         }
         Spacer(Modifier.height(32.dp))
-        IeoPrimaryButton(text = "닫기", onClick = onDismiss)
+        if (shown.canSend && !shown.sent) {
+            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                IeoTonalButton(text = "닫기", onClick = onDismiss, modifier = Modifier.weight(1f))
+                IeoPrimaryButton(text = "주선사에게 보내기", onClick = onSend, enabled = !busy, modifier = Modifier.weight(2f))
+            }
+        } else {
+            IeoPrimaryButton(text = if (shown.sent) "보냈어요 · 닫기" else "닫기", onClick = onDismiss)
+        }
     }
 }

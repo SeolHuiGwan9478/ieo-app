@@ -28,6 +28,9 @@ class DefaultWaitRepository(
     override suspend fun depart(tripId: Long, stop: StopType, at: Instant?): ApiResult<WaitRecord> =
         caller.call { api.depart(tripId, stop.name, WaitTimeRequest(at?.toString())) }.mapResponse { it.toDomain() }
 
+    override suspend fun sendProof(tripId: Long, stop: StopType): ApiResult<WaitProofLink> =
+        caller.call { api.sendProof(tripId, stop.name) }.mapResponse { it.toDomain(publicBaseUrl) }
+
     override suspend fun createProof(tripId: Long, stop: StopType): ApiResult<WaitProofLink> =
         caller.call { api.createProof(tripId, stop.name) }.mapResponse { it.toDomain(publicBaseUrl) }
 }

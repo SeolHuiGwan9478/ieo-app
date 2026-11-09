@@ -37,6 +37,21 @@ android {
     // 속도·기어는 Android 표준 차량 API(CarPropertyManager)로 읽음
     useLibrary("android.car")
 
+    // 제출용 서명. 키와 비밀번호는 git에 올라가지 않는 local.properties에서 읽는다
+    val signing = Properties().apply {
+        rootProject.file("local.properties").takeIf { it.exists() }?.inputStream()?.use(::load)
+    }
+    signingConfigs {
+        if (signing.getProperty("release.storeFile") != null) {
+            create("release") {
+                storeFile = file(signing.getProperty("release.storeFile"))
+                storePassword = signing.getProperty("release.storePassword")
+                keyAlias = signing.getProperty("release.keyAlias")
+                keyPassword = signing.getProperty("release.keyPassword")
+            }
+        }
+    }
+
     buildTypes {
         debug {
             // 샘플 화면 전환 버튼. 평소에는 숨기고 필요할 때만 -PieoShowDemoSwitcher=true 로 빌드한다
@@ -47,6 +62,7 @@ android {
         release {
             buildConfigField("boolean", "SHOW_DEMO_SWITCHER", "false")
             isMinifyEnabled = false
+            signingConfig = signingConfigs.findByName("release")
             // 배포 서버 주소는 빌드할 때 넘긴다: ./gradlew assembleRelease -PieoApiBaseUrl=https://.../
             val apiBaseUrl = providers.gradleProperty("ieoApiBaseUrl").getOrElse("https://api.ieo.invalid/")
             buildConfigField("String", "API_BASE_URL", "\"$apiBaseUrl\"")

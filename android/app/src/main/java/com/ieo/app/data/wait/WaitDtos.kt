@@ -16,10 +16,17 @@ data class WaitTimeRequest(val at: String? = null)
 
 /** path는 서버 주소 뒤에 붙이는 공개 링크 (/api/public/wait-proofs/{token}) */
 @Serializable
-data class WaitProofLinkResponse(val path: String, val expiresAt: String) {
+data class WaitProofLinkResponse(
+    val path: String,
+    val expiresAt: String,
+    val sentAt: String? = null,
+    val canSend: Boolean = false,
+) {
     fun toDomain(baseUrl: String) = WaitProofLink(
         url = baseUrl.trimEnd('/') + path,
         expiresAt = Instant.parse(expiresAt),
+        canSend = canSend,
+        sent = sentAt != null,
     )
 }
 
