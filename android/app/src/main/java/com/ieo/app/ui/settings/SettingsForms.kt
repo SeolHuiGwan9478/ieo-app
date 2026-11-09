@@ -92,13 +92,14 @@ fun ColumnScope.VehicleForm(
     Text("상하차지 높이 제한과 비교해 알려 드려요", fontSize = 24.sp, color = TextSub)
     Spacer(Modifier.height(12.dp))
     if (showDimensions) {
-        Text("안 적으면 톤수 기준으로 경로를 찾아요", fontSize = 24.sp, color = TextSub)
+        Text("안 적으면 톤수 기준으로 경로와 통행료를 계산해요", fontSize = 24.sp, color = TextSub)
         Spacer(Modifier.height(12.dp))
         DimensionRow("폭", dimensions.widthCm, VehicleDimensions.WIDTH, ::formatCmAsMeters) { dimensions = dimensions.copy(widthCm = it) }
         DimensionRow("길이", dimensions.lengthCm, VehicleDimensions.LENGTH, ::formatCmAsMeters) { dimensions = dimensions.copy(lengthCm = it) }
         DimensionRow("총중량", dimensions.totalWeightKg, VehicleDimensions.TOTAL_WEIGHT, ::formatKgAsTons) { dimensions = dimensions.copy(totalWeightKg = it) }
+        DimensionRow("축 수", dimensions.axleCount, VehicleDimensions.AXLES, { "${it}축" }) { dimensions = dimensions.copy(axleCount = it) }
     } else {
-        IeoTonalButton(text = "폭·길이·중량 입력 (선택)", onClick = { showDimensions = true })
+        IeoTonalButton(text = "폭·길이·중량·축 수 입력 (선택)", onClick = { showDimensions = true })
     }
     if (!vehicle.isDefault) {
         Spacer(Modifier.height(20.dp))

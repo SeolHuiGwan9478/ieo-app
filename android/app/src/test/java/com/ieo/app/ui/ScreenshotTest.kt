@@ -197,7 +197,7 @@ private object Scenes {
         "settings" to { SettingsScreen(settings, noop<SettingsActions>()) },
         "settings_name" to { SettingsScreen(settings.copy(form = SettingsForm.EditName("김기사")), noop<SettingsActions>()) },
         "settings_vehicle" to { SettingsScreen(settings.copy(form = SettingsForm.EditVehicle(vehicle)), noop<SettingsActions>()) },
-        "settings_vehicle_dims" to { SettingsScreen(settings.copy(form = SettingsForm.EditVehicle(vehicle.copy(dimensions = com.ieo.app.domain.vehicle.VehicleDimensions(249, 850, 11_000)))), noop<SettingsActions>()) },
+        "settings_vehicle_dims" to { SettingsScreen(settings.copy(form = SettingsForm.EditVehicle(vehicle.copy(dimensions = com.ieo.app.domain.vehicle.VehicleDimensions(249, 850, 11_000, 3)))), noop<SettingsActions>()) },
         "settings_recommend" to { SettingsScreen(settings.copy(form = SettingsForm.EditRecommendation(preference)), noop<SettingsActions>()) },
         "settings_sign_out" to { SettingsScreen(settings.copy(form = SettingsForm.ConfirmSignOut), noop<SettingsActions>()) },
         "login_qr" to { LoginScreen(PhoneLoginUiState(), noop<PhoneLoginActions>(), QrLoginUiState.Waiting("ABC123", "ieo://login/ABC123", Long.MAX_VALUE / 2), noop<QrLoginActions>()) },

@@ -28,7 +28,7 @@ class DefaultVehicleRepository(
         caller.call {
             api.update(
                 vehicleId,
-                UpdateVehicleRequest(tonnage.name, bodyType.name, heightMeters, dimensions.widthCm, dimensions.lengthCm, dimensions.totalWeightKg),
+                UpdateVehicleRequest(tonnage.name, bodyType.name, heightMeters, dimensions.widthCm, dimensions.lengthCm, dimensions.totalWeightKg, dimensions.axleCount),
             )
         }
             .mapResponse { it.toDomain() }

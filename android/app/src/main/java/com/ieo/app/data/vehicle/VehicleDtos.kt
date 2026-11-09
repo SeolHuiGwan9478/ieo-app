@@ -22,6 +22,7 @@ data class VehicleResponse(
     val widthCm: Int? = null,
     val lengthCm: Int? = null,
     val totalWeightKg: Int? = null,
+    val axleCount: Int? = null,
 ) {
     fun toDomain() = Vehicle(
         id = id,
@@ -32,7 +33,7 @@ data class VehicleResponse(
         measuredKmPerLiter = measuredKmPerLiter,
         pleosLinked = pleosLinked,
         isDefault = defaultVehicle,
-        dimensions = VehicleDimensions(widthCm, lengthCm, totalWeightKg),
+        dimensions = VehicleDimensions(widthCm, lengthCm, totalWeightKg, axleCount),
     )
 }
 
@@ -45,6 +46,7 @@ data class UpdateVehicleRequest(
     val widthCm: Int? = null,
     val lengthCm: Int? = null,
     val totalWeightKg: Int? = null,
+    val axleCount: Int? = null,
 )
 
 @Serializable
