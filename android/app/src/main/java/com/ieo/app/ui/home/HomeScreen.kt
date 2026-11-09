@@ -263,7 +263,7 @@ private fun NearbyOrders(state: HomeState.Idle, onOrderClick: (OrderCard) -> Uni
                     order.brokerMetrics?.let(Keyword::brokerPayment),
                 ),
                 amount = formatWon(order.fare),
-                amountNote = order.netProfit?.let { "실수익 ${formatWon(it)}" },
+                amountNote = order.netProfit?.let { "실수익 약 ${formatWon(it)}" },
                 onClick = { onOrderClick(order) },
             )
         }

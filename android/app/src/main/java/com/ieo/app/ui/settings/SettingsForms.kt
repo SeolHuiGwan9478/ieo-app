@@ -135,7 +135,7 @@ fun ColumnScope.RecommendationForm(
         }
         Text("넓히면 후보가 늘지만 빈 차로 가는 거리도 길어져요", fontSize = 24.sp, color = TextSub)
         Spacer(Modifier.height(20.dp))
-        FieldLabel("최소 실수익 (운임에서 공차 기름값을 뺀 것)")
+        FieldLabel("최소 실수익 (운임에서 기름값·통행료를 뺀 것)")
         FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             MIN_NET_PROFIT_CHOICES.forEach { won ->
                 FilterChip(minNetProfitChip(won), selected = minNetProfit == won, onClick = { minNetProfit = won })

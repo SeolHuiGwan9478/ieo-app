@@ -22,6 +22,9 @@ import java.time.LocalDate
 /** 오더 마켓을 흉내 낸다. 요청하면 그 오더에 내 요청이 붙는다 */
 class FakeOrderMarket(var orders: MutableList<Order>) : OrderRepository {
 
+    override suspend fun profit(orderId: Long, from: com.ieo.app.domain.vehicle.GeoPoint): com.ieo.app.core.network.ApiResult<com.ieo.app.domain.order.OrderProfit> =
+        com.ieo.app.core.network.ApiResult.Failure(com.ieo.app.core.network.ApiError.Network)
+
     val calls = mutableListOf<String>()
     var requestError: ApiError? = null
 

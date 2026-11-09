@@ -10,6 +10,7 @@ import com.ieo.app.core.network.ApiResult
 import com.ieo.app.di.appContainer
 import com.ieo.app.domain.notification.AppNotification
 import com.ieo.app.domain.order.Order
+import com.ieo.app.domain.order.OrderProfit
 import com.ieo.app.domain.order.OrderRepository
 import com.ieo.app.domain.order.ReportType
 import com.ieo.app.domain.vehicle.VehicleSensors
@@ -77,6 +78,7 @@ class OrdersViewModel(
 
     private var orders: List<Order> = emptyList()
     private var selectedId: Long? = null
+    private var profit: OrderProfit? = null
 
     private val _state = MutableStateFlow(OrdersUiState())
     val state: StateFlow<OrdersUiState> = _state.asStateFlow()
@@ -103,8 +105,18 @@ class OrdersViewModel(
 
     override fun open(orderId: Long) {
         selectedId = orderId
+        profit = null
         _state.update { it.copy(reporting = false) }
         publish()
+        val from = sensors.location.value ?: return
+        viewModelScope.launch {
+            // 못 받으면 목록의 어림값을 그대로 둔다
+            val loaded = (orderRepository.profit(orderId, from) as? ApiResult.Success)?.data ?: return@launch
+            if (selectedId == orderId) {
+                profit = loaded
+                publish()
+            }
+        }
     }
 
     override fun close() {
@@ -159,7 +171,7 @@ class OrdersViewModel(
             current.copy(
                 rows = visible.map(mapper::row),
                 pending = pendingOrder()?.let { mapper.pending(it, ::toElapsed) },
-                detail = selected()?.let(mapper::detail),
+                detail = selected()?.let { mapper.detail(it, profit) },
             )
         }
     }

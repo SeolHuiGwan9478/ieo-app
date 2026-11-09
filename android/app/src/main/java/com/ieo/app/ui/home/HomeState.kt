@@ -136,6 +136,10 @@ data class NextOrderCard(
     val cargo: CargoCategory? = null,
     /** 주선사 신뢰 지표 (BRK-031). 서버가 주지 않으면 null */
     val brokerMetrics: BrokerMetrics? = null,
+    /** 공차 + 운송 구간 기름값(원) */
+    val fuelCost: Long = 0,
+    /** 예상 통행료(원). 경로를 받지 못했으면 null */
+    val tollFare: Long? = null,
 ) {
     val route: String get() = "$pickup → $dropoff"
 }

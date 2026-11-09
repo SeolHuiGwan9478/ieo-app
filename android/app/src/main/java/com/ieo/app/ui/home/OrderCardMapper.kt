@@ -17,7 +17,8 @@ class OrderCardMapper(clock: Clock = Clock.system(DayTimeFormatter.KOREA)) {
         pickupTime = labels.time(order.pickupFrom),
         vehicle = order.vehicleLabel,
         fare = order.fare,
-        netProfit = order.netProfit,
+        // 어림값이라 만 원 단위로만 보여 준다
+        netProfit = order.netProfit?.let { (it + 5_000) / 10_000 * 10_000 },
         brokerMetrics = order.brokerMetrics,
         distanceMeters = order.distanceMeters,
         cargo = order.specialCargo,

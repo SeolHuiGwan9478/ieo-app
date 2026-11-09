@@ -45,6 +45,9 @@ data class Order(
     val isRequestedByMe: Boolean get() = myRequest?.status == DispatchRequestStatus.PENDING
 }
 
+/** 오더 한 건의 실수익 내역 (DSP-011). [tollFare]는 경로를 받지 못했으면 null */
+data class OrderProfit(val netProfit: Long, val fuelCost: Long, val tollFare: Long?, val emptyMeters: Long)
+
 data class OrderSite(
     val name: String,
     val address: String,

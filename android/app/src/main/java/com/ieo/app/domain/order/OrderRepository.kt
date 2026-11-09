@@ -11,6 +11,9 @@ interface OrderRepository {
      */
     suspend fun openOrders(limit: Int, near: GeoPoint? = null): ApiResult<List<Order>>
 
+    /** 실제 경로로 계산한 실수익 내역 (오더 상세) */
+    suspend fun profit(orderId: Long, from: GeoPoint): ApiResult<OrderProfit>
+
     /** 배차 요청 (기본 차량으로). 동시에 3건까지 */
     suspend fun request(orderId: Long): ApiResult<DispatchRequest>
 

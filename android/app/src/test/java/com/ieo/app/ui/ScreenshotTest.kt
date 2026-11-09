@@ -152,7 +152,7 @@ private object Scenes {
     )
     private val orderRow = OrderRow(
         1, "17:03", "11월 12일", "대전 산업단지 → 부산 신항 CY", "5톤 카고", "인수증", "한빛물류", "58만 원",
-        requested = false, distanceMeters = 4_000, netProfit = "실수익 577,934원",
+        requested = false, distanceMeters = 4_000, netProfit = "실수익 약 58만 원",
     )
     private val orderDetail = OrderDetail(
         1, "대전 산업단지 → 부산 신항 CY",
@@ -161,7 +161,7 @@ private object Scenes {
             "하차" to "11월 13일 14:00까지 · 부산 강서구 신항로 300",
             "차량" to "5톤 카고", "화물" to "가전 박스 · 4.5톤 · 지게차",
             "운임" to "58만 원 · 인수증 · 30일 안에 지급",
-            "실수익" to "577,934원 (공차 연료비를 뺀 금액)", "주선사" to "한빛물류", "주선사 기록" to "기록 쌓는 중",
+            "실수익" to "497,000원 (기름값·통행료 뺀 금액)", "예상 통행료" to "17,000원", "기름값" to "66,000원", "상차지까지" to "4km", "주선사" to "한빛물류", "주선사 기록" to "기록 쌓는 중",
         ),
         requested = false,
     )

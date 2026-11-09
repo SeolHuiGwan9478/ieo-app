@@ -5,6 +5,7 @@ import com.ieo.app.domain.order.CargoCategory
 import com.ieo.app.domain.order.DispatchRequest
 import com.ieo.app.domain.order.DispatchRequestStatus
 import com.ieo.app.domain.order.Order
+import com.ieo.app.domain.order.OrderProfit
 import com.ieo.app.domain.order.OrderSite
 import java.time.Instant
 import kotlinx.serialization.Serializable
@@ -56,6 +57,11 @@ data class OrderResponse(
         brokerMetrics = brokerMetrics?.toDomain(),
         netProfit = netProfit,
     )
+}
+
+@Serializable
+data class ProfitEstimateResponse(val netProfit: Long, val fuelCost: Long, val tollFare: Long? = null, val emptyMeters: Long) {
+    fun toDomain() = OrderProfit(netProfit, fuelCost, tollFare, emptyMeters)
 }
 
 @Serializable

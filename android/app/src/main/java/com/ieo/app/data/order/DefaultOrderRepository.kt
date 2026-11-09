@@ -5,6 +5,7 @@ import com.ieo.app.core.network.ApiResult
 import com.ieo.app.core.network.mapResponse
 import com.ieo.app.domain.order.DispatchRequest
 import com.ieo.app.domain.order.Order
+import com.ieo.app.domain.order.OrderProfit
 import com.ieo.app.domain.order.OrderRepository
 import com.ieo.app.domain.order.ReportType
 import com.ieo.app.domain.vehicle.GeoPoint
@@ -16,6 +17,9 @@ class DefaultOrderRepository(
 
     override suspend fun openOrders(limit: Int, near: GeoPoint?): ApiResult<List<Order>> =
         caller.call { api.openOrders(lat = near?.latitude, lng = near?.longitude, size = limit) }.mapResponse { orders -> orders.map(OrderResponse::toDomain) }
+
+    override suspend fun profit(orderId: Long, from: GeoPoint): ApiResult<OrderProfit> =
+        caller.call { api.profit(orderId, from.latitude, from.longitude) }.mapResponse { it.toDomain() }
 
     override suspend fun request(orderId: Long): ApiResult<DispatchRequest> =
         caller.call { api.request(orderId) }.mapResponse { it.toDomain() }

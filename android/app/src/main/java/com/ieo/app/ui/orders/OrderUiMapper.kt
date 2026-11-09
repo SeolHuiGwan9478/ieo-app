@@ -3,6 +3,7 @@ package com.ieo.app.ui.orders
 import com.ieo.app.domain.order.BrokerMetrics
 import com.ieo.app.domain.order.CargoCategory
 import com.ieo.app.domain.order.Order
+import com.ieo.app.domain.order.OrderProfit
 import com.ieo.app.ui.common.DayTimeFormatter
 import com.ieo.app.ui.common.formatWon
 import java.time.Instant
@@ -25,7 +26,7 @@ data class OrderRow(
     val cargo: CargoCategory? = null,
     /** 주선사 신뢰 지표. 서버가 주지 않으면 null */
     val brokerMetrics: BrokerMetrics? = null,
-    /** "실수익 28만 원". 위치를 몰라 계산하지 못하면 null */
+    /** "실수익 약 28만 원" 어림값. 위치를 몰라 계산하지 못하면 null */
     val netProfit: String? = null,
 )
 
@@ -71,10 +72,10 @@ class OrderUiMapper(private val labels: DayTimeFormatter) {
         distanceMeters = order.distanceMeters,
         cargo = order.specialCargo,
         brokerMetrics = order.brokerMetrics,
-        netProfit = order.netProfit?.let { "실수익 ${formatWon(it)}" },
+        netProfit = order.netProfit?.let { "실수익 약 ${formatWon(roundedToManwon(it))}" },
     )
 
-    fun detail(order: Order) = OrderDetail(
+    fun detail(order: Order, profit: OrderProfit? = null) = OrderDetail(
         id = order.id,
         route = route(order),
         lines = listOfNotNull(
@@ -83,12 +84,23 @@ class OrderUiMapper(private val labels: DayTimeFormatter) {
             "차량" to order.vehicleLabel,
             "화물" to cargo(order),
             "운임" to "${formatWon(order.fare)} · ${order.paymentTypeLabel} · ${order.expectedPaymentDays}일 안에 지급",
-            order.netProfit?.let { "실수익" to "${formatWon(it)} (공차 연료비를 뺀 금액)" },
+            profitLine(order, profit),
+            profit?.tollFare?.let { "예상 통행료" to formatWon(it) },
+            profit?.let { "기름값" to formatWon(it.fuelCost) },
+            profit?.let { "상차지까지" to "${(it.emptyMeters + 500) / 1000}km" },
             "주선사" to order.brokerName,
             order.brokerMetrics?.let { "주선사 기록" to metricsSummary(it) },
         ),
         requested = order.isRequestedByMe,
     )
+
+    private fun profitLine(order: Order, profit: OrderProfit?): Pair<String, String>? = when {
+        profit != null && profit.tollFare != null -> "실수익" to "${formatWon(profit.netProfit)} (기름값·통행료 뺀 금액)"
+        profit != null -> "실수익" to "${formatWon(profit.netProfit)} (기름값만 뺀 금액)"
+        else -> order.netProfit?.let { "실수익" to "약 ${formatWon(roundedToManwon(it))} (기름값만 뺀 어림값)" }
+    }
+
+    private fun roundedToManwon(won: Long): Long = (won + 5_000) / 10_000 * 10_000
 
     fun pending(order: Order, toElapsed: (Instant) -> Long) = PendingRequest(
         route = route(order),

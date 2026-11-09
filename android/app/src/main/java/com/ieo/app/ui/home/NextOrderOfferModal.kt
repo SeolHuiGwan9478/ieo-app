@@ -130,7 +130,12 @@ fun BoxScope.NextOrderOfferModal(
             Text("실수익", fontSize = 24.sp, color = TextSub)
             Text(formatWon(offer.netProfit), fontSize = 44.sp, fontWeight = FontWeight.Bold, color = IeoStatus.colors.done)
             Spacer(Modifier.height(4.dp))
-            Text("운임 ${formatWon(offer.fare)}에서 공차 기름값을 뺀 것", fontSize = 24.sp, color = TextSub)
+            Text(
+                "운임 ${formatWon(offer.fare)} − 기름값 ${formatWon(offer.fuelCost)}" +
+                    (offer.tollFare?.let { " − 통행료 ${formatWon(it)}" } ?: " (통행료 제외)"),
+                fontSize = 24.sp,
+                color = TextSub,
+            )
             Spacer(Modifier.height(28.dp))
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 IeoTonalButton(text = "넘기기", onClick = { if (!busy) onSkip(offer.orderId) }, modifier = Modifier.weight(1f))

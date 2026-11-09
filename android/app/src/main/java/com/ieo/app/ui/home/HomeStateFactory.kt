@@ -142,6 +142,8 @@ class HomeStateFactory(
         longWait = next.longWait,
         cargo = next.order.specialCargo,
         brokerMetrics = next.order.brokerMetrics,
+        fuelCost = next.fuelCost,
+        tollFare = next.tollFare,
     )
 
     private fun siteInfo(card: SiteCard) = SiteInfo(

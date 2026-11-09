@@ -47,6 +47,7 @@ data class RecommendationResponse(
     val fuelCost: Long,
     val netProfit: Long,
     val longWait: Boolean = false,
+    val tollFare: Long? = null,
 ) {
     fun toDomain() = NextOrder(
         order = order.toDomain(),
@@ -54,6 +55,7 @@ data class RecommendationResponse(
         fuelCost = fuelCost,
         netProfit = netProfit,
         longWait = longWait,
+        tollFare = tollFare,
     )
 }
 
