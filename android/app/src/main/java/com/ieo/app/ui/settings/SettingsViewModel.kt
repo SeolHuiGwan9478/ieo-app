@@ -16,6 +16,7 @@ import com.ieo.app.domain.recommendation.RecommendationRepository
 import com.ieo.app.domain.vehicle.BodyType
 import com.ieo.app.domain.vehicle.Tonnage
 import com.ieo.app.domain.vehicle.Vehicle
+import com.ieo.app.domain.vehicle.VehicleDimensions
 import com.ieo.app.domain.vehicle.VehicleRepository
 import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -50,7 +51,7 @@ interface SettingsActions {
     fun openForm(form: SettingsForm)
     fun close()
     fun saveName(name: String)
-    fun saveVehicle(tonnage: Tonnage, bodyType: BodyType, heightMeters: Double?)
+    fun saveVehicle(tonnage: Tonnage, bodyType: BodyType, heightMeters: Double?, dimensions: VehicleDimensions)
     fun setDefault(vehicleId: Long)
     fun saveRecommendation(preference: RecommendationPreference)
     fun signOut()
@@ -88,13 +89,13 @@ class SettingsViewModel(
         }
     }
 
-    override fun saveVehicle(tonnage: Tonnage, bodyType: BodyType, heightMeters: Double?) {
+    override fun saveVehicle(tonnage: Tonnage, bodyType: BodyType, heightMeters: Double?, dimensions: VehicleDimensions) {
         val vehicle = (_state.value.form as? SettingsForm.EditVehicle)?.vehicle ?: return
         if (heightMeters != null && heightMeters !in Vehicle.MIN_HEIGHT_METERS..Vehicle.MAX_HEIGHT_METERS) {
             return show(HEIGHT_RANGE_MESSAGE)
         }
         runAction {
-            vehicleRepository.update(vehicle.id, tonnage, bodyType, heightMeters).orShow() ?: return@runAction
+            vehicleRepository.update(vehicle.id, tonnage, bodyType, heightMeters, dimensions).orShow() ?: return@runAction
             _state.update { it.copy(form = null, message = "${vehicle.plateNumber} 차량 정보를 고쳤어요") }
             load()
         }

@@ -16,6 +16,7 @@ data class Vehicle(
     /** 이 차량이 Pleos 차량과 연결됐는지 (VEH-004) */
     val pleosLinked: Boolean,
     val isDefault: Boolean,
+    val dimensions: VehicleDimensions = VehicleDimensions(),
 ) {
     companion object {
         const val MIN_HEIGHT_METERS = 1.5

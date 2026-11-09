@@ -8,7 +8,13 @@ interface VehicleRepository {
     suspend fun vehicles(): ApiResult<List<Vehicle>>
 
     /** 톤수·차종·높이를 한 번에 바꾼다. 높이를 null로 보내면 비운다 */
-    suspend fun update(vehicleId: Long, tonnage: Tonnage, bodyType: BodyType, heightMeters: Double?): ApiResult<Vehicle>
+    suspend fun update(
+        vehicleId: Long,
+        tonnage: Tonnage,
+        bodyType: BodyType,
+        heightMeters: Double?,
+        dimensions: VehicleDimensions = VehicleDimensions(),
+    ): ApiResult<Vehicle>
 
     /** 배차 요청·운행 등록에 쓰는 기본 차량 */
     suspend fun setDefault(vehicleId: Long): ApiResult<Vehicle>

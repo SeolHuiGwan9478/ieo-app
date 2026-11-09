@@ -116,7 +116,7 @@ class CarLinkViewModelTest {
 
         override suspend fun vehicles(): ApiResult<List<Vehicle>> = ApiResult.Success(listOf(cargo, box))
 
-        override suspend fun update(vehicleId: Long, tonnage: Tonnage, bodyType: BodyType, heightMeters: Double?): ApiResult<Vehicle> =
+        override suspend fun update(vehicleId: Long, tonnage: Tonnage, bodyType: BodyType, heightMeters: Double?, dimensions: com.ieo.app.domain.vehicle.VehicleDimensions): ApiResult<Vehicle> =
             error("쓰지 않음")
 
         override suspend fun setDefault(vehicleId: Long): ApiResult<Vehicle> = error("쓰지 않음")

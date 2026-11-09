@@ -27,6 +27,7 @@ import com.ieo.app.ui.common.formatWon
 import com.ieo.app.domain.vehicle.BodyType
 import com.ieo.app.domain.vehicle.Tonnage
 import com.ieo.app.domain.vehicle.Vehicle
+import com.ieo.app.domain.vehicle.VehicleDimensions
 import com.ieo.app.ui.component.DetailLine
 import com.ieo.app.ui.component.IeoBottomSheet
 import com.ieo.app.ui.component.IeoTonalButton
@@ -204,7 +205,7 @@ private object PreviewSettingsActions : SettingsActions {
     override fun openForm(form: SettingsForm) = Unit
     override fun close() = Unit
     override fun saveName(name: String) = Unit
-    override fun saveVehicle(tonnage: Tonnage, bodyType: BodyType, heightMeters: Double?) = Unit
+    override fun saveVehicle(tonnage: Tonnage, bodyType: BodyType, heightMeters: Double?, dimensions: VehicleDimensions) = Unit
     override fun setDefault(vehicleId: Long) = Unit
     override fun saveRecommendation(preference: RecommendationPreference) = Unit
     override fun signOut() = Unit

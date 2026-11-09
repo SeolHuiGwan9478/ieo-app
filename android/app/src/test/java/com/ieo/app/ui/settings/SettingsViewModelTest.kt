@@ -80,7 +80,7 @@ class SettingsViewModelTest {
         runCurrent()
         vm.openForm(SettingsForm.EditVehicle(garage.vehicles.first()))
 
-        vm.saveVehicle(Tonnage.TON_5, BodyType.CARGO, heightMeters = 5.0)
+        vm.saveVehicle(Tonnage.TON_5, BodyType.CARGO, heightMeters = 5.0, com.ieo.app.domain.vehicle.VehicleDimensions())
         runCurrent()
 
         assertEquals(SettingsViewModel.HEIGHT_RANGE_MESSAGE, vm.state.value.message)
@@ -94,7 +94,7 @@ class SettingsViewModelTest {
         val truck = vm.state.value.vehicles.first { it.id == 2L }
         vm.openForm(SettingsForm.EditVehicle(truck))
 
-        vm.saveVehicle(Tonnage.TON_2_5, BodyType.WING, heightMeters = 3.2)
+        vm.saveVehicle(Tonnage.TON_2_5, BodyType.WING, heightMeters = 3.2, com.ieo.app.domain.vehicle.VehicleDimensions())
         runCurrent()
 
         assertEquals(listOf(2L to 3.2), garage.updates)
@@ -164,7 +164,7 @@ class SettingsViewModelTest {
 
         override suspend fun vehicles() = ApiResult.Success(vehicles)
 
-        override suspend fun update(vehicleId: Long, tonnage: Tonnage, bodyType: BodyType, heightMeters: Double?): ApiResult<Vehicle> {
+        override suspend fun update(vehicleId: Long, tonnage: Tonnage, bodyType: BodyType, heightMeters: Double?, dimensions: com.ieo.app.domain.vehicle.VehicleDimensions): ApiResult<Vehicle> {
             updates += vehicleId to heightMeters
             vehicles = vehicles.map { if (it.id == vehicleId) it.copy(tonnage = tonnage, bodyType = bodyType, heightMeters = heightMeters) else it }
             return ApiResult.Success(vehicles.first { it.id == vehicleId })

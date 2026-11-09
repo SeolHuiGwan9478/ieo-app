@@ -4,6 +4,7 @@ import com.ieo.app.domain.vehicle.BodyType
 import com.ieo.app.domain.vehicle.PleosMatch
 import com.ieo.app.domain.vehicle.Tonnage
 import com.ieo.app.domain.vehicle.Vehicle
+import com.ieo.app.domain.vehicle.VehicleDimensions
 import kotlinx.serialization.Serializable
 
 // 서버 domain/vehicle/dto와 같은 모양. 쓰지 않는 필드는 뺐다
@@ -18,6 +19,9 @@ data class VehicleResponse(
     val measuredKmPerLiter: Double? = null,
     val pleosLinked: Boolean = false,
     val defaultVehicle: Boolean = false,
+    val widthCm: Int? = null,
+    val lengthCm: Int? = null,
+    val totalWeightKg: Int? = null,
 ) {
     fun toDomain() = Vehicle(
         id = id,
@@ -28,12 +32,20 @@ data class VehicleResponse(
         measuredKmPerLiter = measuredKmPerLiter,
         pleosLinked = pleosLinked,
         isDefault = defaultVehicle,
+        dimensions = VehicleDimensions(widthCm, lengthCm, totalWeightKg),
     )
 }
 
 /** heightM이 null이면 JSON에서 빠지고, 서버는 빠진 높이를 "비움"으로 받는다 */
 @Serializable
-data class UpdateVehicleRequest(val tonnage: String, val bodyType: String, val heightM: Double?)
+data class UpdateVehicleRequest(
+    val tonnage: String,
+    val bodyType: String,
+    val heightM: Double?,
+    val widthCm: Int? = null,
+    val lengthCm: Int? = null,
+    val totalWeightKg: Int? = null,
+)
 
 @Serializable
 data class PleosVinRequest(val vin: String)

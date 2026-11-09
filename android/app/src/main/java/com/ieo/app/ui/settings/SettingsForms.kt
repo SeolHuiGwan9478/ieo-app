@@ -27,7 +27,9 @@ import com.ieo.app.domain.order.CargoCategory
 import com.ieo.app.domain.recommendation.RecommendationPreference
 import com.ieo.app.domain.vehicle.BodyType
 import com.ieo.app.domain.vehicle.Tonnage
+import com.ieo.app.domain.vehicle.DimensionRange
 import com.ieo.app.domain.vehicle.Vehicle
+import com.ieo.app.domain.vehicle.VehicleDimensions
 import com.ieo.app.ui.component.FilterChip
 import com.ieo.app.ui.component.IeoPrimaryButton
 import com.ieo.app.ui.component.IeoTonalButton
@@ -63,13 +65,15 @@ fun ColumnScope.NameForm(form: SettingsForm.EditName, busy: Boolean, onSubmit: (
 fun ColumnScope.VehicleForm(
     vehicle: Vehicle,
     busy: Boolean,
-    onSubmit: (Tonnage, BodyType, Double?) -> Unit,
+    onSubmit: (Tonnage, BodyType, Double?, VehicleDimensions) -> Unit,
     onSetDefault: () -> Unit,
     onCancel: () -> Unit,
 ) {
     var tonnage by remember(vehicle) { mutableStateOf(vehicle.tonnage) }
     var bodyType by remember(vehicle) { mutableStateOf(vehicle.bodyType) }
     var height by remember(vehicle) { mutableStateOf(vehicle.heightMeters) }
+    var dimensions by remember(vehicle) { mutableStateOf(vehicle.dimensions) }
+    var showDimensions by remember(vehicle) { mutableStateOf(vehicle.dimensions != VehicleDimensions()) }
 
     SheetTitle("${vehicle.plateNumber} 고치기")
     Spacer(Modifier.height(24.dp))
@@ -86,11 +90,21 @@ fun ColumnScope.VehicleForm(
     FieldLabel("높이 (짐칸 위까지)")
     HeightStepper(height = height, onChange = { height = it })
     Text("상하차지 높이 제한과 비교해 알려 드려요", fontSize = 24.sp, color = TextSub)
+    Spacer(Modifier.height(12.dp))
+    if (showDimensions) {
+        Text("안 적으면 톤수 기준으로 경로를 찾아요", fontSize = 24.sp, color = TextSub)
+        Spacer(Modifier.height(12.dp))
+        DimensionRow("폭", dimensions.widthCm, VehicleDimensions.WIDTH, ::formatCmAsMeters) { dimensions = dimensions.copy(widthCm = it) }
+        DimensionRow("길이", dimensions.lengthCm, VehicleDimensions.LENGTH, ::formatCmAsMeters) { dimensions = dimensions.copy(lengthCm = it) }
+        DimensionRow("총중량", dimensions.totalWeightKg, VehicleDimensions.TOTAL_WEIGHT, ::formatKgAsTons) { dimensions = dimensions.copy(totalWeightKg = it) }
+    } else {
+        IeoTonalButton(text = "폭·길이·중량 입력 (선택)", onClick = { showDimensions = true })
+    }
     if (!vehicle.isDefault) {
         Spacer(Modifier.height(20.dp))
         IeoTonalButton(text = "기본 차량으로 정하기", onClick = { if (!busy) onSetDefault() })
     }
-    FormButtons(busy, onCancel = onCancel, onSave = { onSubmit(tonnage, bodyType, height) })
+    FormButtons(busy, onCancel = onCancel, onSave = { onSubmit(tonnage, bodyType, height, dimensions) })
 }
 
 /**
@@ -189,6 +203,26 @@ fun ColumnScope.SignOutConfirm(onSignOut: () -> Unit, onCancel: () -> Unit) {
     }
 }
 
+/** 선택 입력 한 줄. 키보드 없이 ± 로 맞춘다 */
+@Composable
+private fun DimensionRow(label: String, value: Int?, range: DimensionRange, format: (Int) -> String, onChange: (Int?) -> Unit) {
+    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+        Text(label, fontSize = 24.sp, fontWeight = FontWeight.Bold, color = TextStrong, modifier = Modifier.width(92.dp))
+        IeoTonalButton(text = "−", onClick = { onChange(range.next(value, -range.step)) }, modifier = Modifier.width(88.dp))
+        Text(
+            text = value?.let(format) ?: "모름",
+            fontSize = 28.sp,
+            fontWeight = FontWeight.ExtraBold,
+            color = if (value == null) TextSub else TextStrong,
+            style = Tnum,
+            modifier = Modifier.width(110.dp),
+        )
+        IeoTonalButton(text = "+", onClick = { onChange(range.next(value, range.step)) }, modifier = Modifier.width(88.dp))
+        if (value != null) IeoTonalButton(text = "모름", onClick = { onChange(null) }, modifier = Modifier.weight(1f))
+    }
+    Spacer(Modifier.height(8.dp))
+}
+
 /** null이면 "모름". 처음 누르면 3.5m에서 시작한다 */
 @Composable
 private fun HeightStepper(height: Double?, onChange: (Double?) -> Unit) {
@@ -229,3 +263,6 @@ private fun FormButtons(busy: Boolean, onCancel: () -> Unit, onSave: () -> Unit)
         IeoPrimaryButton(text = if (busy) "저장 중…" else "저장", onClick = { if (!busy) onSave() }, modifier = Modifier.weight(2f))
     }
 }
+
+internal fun formatCmAsMeters(cm: Int): String = "%.1fm".format(cm / 100.0).replace(".0m", "m")
+internal fun formatKgAsTons(kg: Int): String = "${kg / 1_000}톤"
