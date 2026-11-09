@@ -176,6 +176,8 @@ private object Scenes {
         "home_driving" to { HomeScreen(SampleHomeData.driving()) },
         "sheet_guidance" to { Box(Modifier.fillMaxSize()) { StartGuidanceSheet(trip, {}, {}) } },
         "sheet_wait_proof" to { Box(Modifier.fillMaxSize()) { WaitProofSheet(WaitProofLink("https://ieo.example/w/abc123", Instant.parse("2026-11-12T09:00:00Z")), {}) } },
+        "sheet_wait_proof_send" to { Box(Modifier.fillMaxSize()) { WaitProofSheet(WaitProofLink("https://ieo.example/w/abc123", Instant.parse("2026-11-12T09:00:00Z"), canSend = true), {}) } },
+        "sheet_wait_proof_sent" to { Box(Modifier.fillMaxSize()) { WaitProofSheet(WaitProofLink("https://ieo.example/w/abc123", Instant.parse("2026-11-12T09:00:00Z"), canSend = true, sent = true), {}) } },
         "sheet_delivery_proof" to { Box(Modifier.fillMaxSize()) { DeliveryProofSheet(DeliveryProof("https://ieo.example/d/abc123", DeliveryProofStatus.PENDING, null, null), {}) } },
         "modal_next_order" to { Box(Modifier.fillMaxSize()) { NextOrderOfferModal(offer, false, false, {}, {}, {}) } },
         "sheet_register" to { Box(Modifier.fillMaxSize()) { RegisterTripSheet(true, RegisterTripUiState(), noop<RegisterTripActions>(), {}) } },
