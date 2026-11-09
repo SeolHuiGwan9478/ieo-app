@@ -1,5 +1,7 @@
 package com.ieo.app.ui.theme
 
+import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Typography
 import androidx.compose.material3.darkColorScheme
@@ -12,11 +14,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.sp
 
 // 브랜드색: 주황 (design/README.md 색상 팔레트). Postman 주황에서 출발했다
-val Orange50 = Color(0xFFFFF3EE)   // 선택된 메뉴·강조 바탕
 val Orange100 = Color(0xFFFFE2D6)
 val Orange500 = Color(0xFFFF6C37)  // 로고, 아이콘, 강조 표시
 val Orange600 = Color(0xFFF25A22)  // 주요 버튼 바탕 (흰 굵은 글자 24sp 이상)
-val Orange700 = Color(0xFFC2410C)  // 흰 바탕 위 주황 글자
 
 // 기본색: 무채색
 val Black = Color(0xFF000000)
@@ -28,27 +28,88 @@ val Gray400 = Color(0xFFA3A3A3)
 val Gray100 = Color(0xFFEDEDED)
 val White = Color(0xFFFFFFFF)
 
-// 홈·목록 화면용 (A안 시안): 연회색 바탕에 흰 묶음, 글자는 진한 남회색 계열
-val CanvasGray = Color(0xFFF2F4F6)   // 화면 바탕, 보조 버튼, 시각 칸
-val HoverGray = Color(0xFFF9FAFB)
-val TextStrong = Color(0xFF191F28)   // 제목·금액
-val TextMid = Color(0xFF4E5968)      // 보조 버튼 글자
-val TextSub = Color(0xFF8B95A1)      // 설명 글자
-val WarningPale = Color(0xFFFDECEC)  // 미수금 아이콘 바탕
-val DrivingPale = Color(0xFFE8EFFD)  // 운행 상태 꼬리표 바탕
-val WaitingPale = Color(0xFFFEF9C3)  // 대기 상태 꼬리표 바탕
+/** 라이트·다크에서 값이 달라지는 화면 색. 화면 코드는 아래 이름(CardSurface, TextStrong 등)만 쓴다 */
+private data class Palette(
+    val card: Color,       // 묶음·창 바탕
+    val canvas: Color,     // 화면 바탕, 보조 버튼, 시각 칸
+    val textStrong: Color, // 제목·금액
+    val textMid: Color,    // 보조 버튼 글자
+    val textSub: Color,    // 설명 글자
+    val chevron: Color,    // 목록의 › 표시
+    val disabled: Color,   // 누를 수 없는 표시
+    val orangeTint: Color, // 선택된 메뉴·강조 바탕
+    val orangeText: Color, // 바탕 위 주황 글자
+    val warningPale: Color,
+    val drivingPale: Color,
+    val waitingPale: Color,
+)
+
+private val LightPalette = Palette(
+    card = Color(0xFFFFFFFF),
+    canvas = Color(0xFFF2F4F6),
+    textStrong = Color(0xFF191F28),
+    textMid = Color(0xFF4E5968),
+    textSub = Color(0xFF8B95A1),
+    chevron = Color(0xFFB0B8C1),
+    disabled = Color(0xFFD1D6DB),
+    orangeTint = Color(0xFFFFF3EE),
+    orangeText = Color(0xFFC2410C),
+    warningPale = Color(0xFFFDECEC),
+    drivingPale = Color(0xFFE8EFFD),
+    waitingPale = Color(0xFFFEF9C3),
+)
+
+private val DarkPalette = Palette(
+    card = Gray900,
+    canvas = Gray950,
+    textStrong = Color(0xFFF2F4F6),
+    textMid = Color(0xFFC4CBD4),
+    textSub = Color(0xFF9CA6B2),
+    chevron = Color(0xFF6B7480),
+    disabled = Color(0xFF4A4F57),
+    orangeTint = Color(0xFF3A2418),
+    orangeText = Color(0xFFFF9A73),
+    warningPale = Color(0xFF3B1F1F),
+    drivingPale = Color(0xFF1B2A44),
+    waitingPale = Color(0xFF3A3010),
+)
+
+private val LocalPalette = staticCompositionLocalOf { LightPalette }
+
+val CardSurface: Color @Composable @ReadOnlyComposable get() = LocalPalette.current.card
+val CanvasGray: Color @Composable @ReadOnlyComposable get() = LocalPalette.current.canvas
+val TextStrong: Color @Composable @ReadOnlyComposable get() = LocalPalette.current.textStrong
+val TextMid: Color @Composable @ReadOnlyComposable get() = LocalPalette.current.textMid
+val TextSub: Color @Composable @ReadOnlyComposable get() = LocalPalette.current.textSub
+val ChevronGray: Color @Composable @ReadOnlyComposable get() = LocalPalette.current.chevron
+val DisabledGray: Color @Composable @ReadOnlyComposable get() = LocalPalette.current.disabled
+val Orange50: Color @Composable @ReadOnlyComposable get() = LocalPalette.current.orangeTint
+val Orange700: Color @Composable @ReadOnlyComposable get() = LocalPalette.current.orangeText
+val WarningPale: Color @Composable @ReadOnlyComposable get() = LocalPalette.current.warningPale
+val DrivingPale: Color @Composable @ReadOnlyComposable get() = LocalPalette.current.drivingPale
+val WaitingPale: Color @Composable @ReadOnlyComposable get() = LocalPalette.current.waitingPale
 
 // 키워드 태그(차량·결제·지급): 주황과 잘 어울리는 색 중에서 키워드 성격에 맞게 고른다.
 // 상태색과 헷갈리지 않게 모두 옅은 바탕 + 진한 글자로 쓴다
-data class TagColor(val background: Color, val content: Color)
+class TagColor(
+    private val lightBackground: Color,
+    private val lightContent: Color,
+    private val darkBackground: Color,
+    private val darkContent: Color,
+) {
+    val background: Color
+        @Composable @ReadOnlyComposable get() = if (LocalPalette.current === DarkPalette) darkBackground else lightBackground
+    val content: Color
+        @Composable @ReadOnlyComposable get() = if (LocalPalette.current === DarkPalette) darkContent else lightContent
+}
 
 object IeoTag {
-    val Navy = TagColor(Color(0xFFE8ECF4), Color(0xFF1E2A44))   // 차량: 단단한 장비
-    val Teal = TagColor(Color(0xFFD5F5F0), Color(0xFF0F766E))   // 선불: 바로 받는 돈
-    val Sand = TagColor(Color(0xFFF5EBDD), Color(0xFF7C5A2E))   // 인수증: 종이 서류
-    val Sage = TagColor(Color(0xFFE6EFE2), Color(0xFF3F5F31))   // 지급이 빠른 주선사 (15일 이하)
-    val Plum = TagColor(Color(0xFFF3E6F5), Color(0xFF74307F))   // 지급이 늦은 주선사 (20일 초과)
-    val Gray = TagColor(CanvasGray, TextMid)                    // 보통이거나 판단할 근거가 없을 때
+    val Navy = TagColor(Color(0xFFE8ECF4), Color(0xFF1E2A44), Color(0xFF25304A), Color(0xFFC5D2EE))   // 차량: 단단한 장비
+    val Teal = TagColor(Color(0xFFD5F5F0), Color(0xFF0F766E), Color(0xFF123F3A), Color(0xFF7FE3D3))   // 선불: 바로 받는 돈
+    val Sand = TagColor(Color(0xFFF5EBDD), Color(0xFF7C5A2E), Color(0xFF40331F), Color(0xFFE8CFA6))   // 인수증: 종이 서류
+    val Sage = TagColor(Color(0xFFE6EFE2), Color(0xFF3F5F31), Color(0xFF2A3A24), Color(0xFFB9D8A6))   // 지급이 빠른 주선사 (15일 이하)
+    val Plum = TagColor(Color(0xFFF3E6F5), Color(0xFF74307F), Color(0xFF3E2544), Color(0xFFE6B8EE))   // 지급이 늦은 주선사 (20일 초과)
+    val Gray = TagColor(LightPalette.canvas, LightPalette.textMid, Gray800, DarkPalette.textMid)      // 보통이거나 판단할 근거가 없을 때
 }
 
 // 상태색: 운행 상황을 알릴 때만 사용
@@ -75,14 +136,15 @@ val LightStatus = StatusColors(
 )
 
 private val DarkColors = darkColorScheme(
-    primary = Orange500,
+    // 흰 글자가 잘 보이도록 라이트와 같은 버튼 주황을 쓴다
+    primary = Orange600,
     onPrimary = White,
     secondary = Gray800,
     onSecondary = White,
-    background = Black,
-    onBackground = White,
+    background = Gray950,
+    onBackground = DarkPalette.textStrong,
     surface = Gray900,
-    onSurface = White,
+    onSurface = DarkPalette.textStrong,
     surfaceVariant = Gray800,
     onSurfaceVariant = Gray400,
     outline = Gray800,
@@ -104,18 +166,21 @@ private val LightColors = lightColorScheme(
     error = LightStatus.warning,
 )
 
-/**
- * 앱 테마. 기본은 라이트 모드(흰 바탕, 진한 글씨, 주황 버튼)다.
- * 다크 색상은 남겨 두었으니, 나중에 밤에 어둡게 바꾸려면 darkTheme에 isSystemInDarkTheme()을 넘기면 된다.
- */
+/** 앱 테마. 시스템의 라이트·다크 설정을 따른다 (UX-006) */
 @Composable
-fun IeoTheme(darkTheme: Boolean = false, content: @Composable () -> Unit) {
-    CompositionLocalProvider(LocalStatusColors provides if (darkTheme) DarkStatus else LightStatus) {
+fun IeoTheme(darkTheme: Boolean = isSystemInDarkTheme(), content: @Composable () -> Unit) {
+    val palette = if (darkTheme) DarkPalette else LightPalette
+    CompositionLocalProvider(
+        LocalStatusColors provides if (darkTheme) DarkStatus else LightStatus,
+        LocalPalette provides palette,
+    ) {
         MaterialTheme(
             colorScheme = if (darkTheme) DarkColors else LightColors,
             typography = IeoTypography,
-            content = content,
-        )
+        ) {
+            // 색을 따로 정하지 않은 글자·아이콘도 바탕에 맞는 색으로 나오게 한다
+            CompositionLocalProvider(LocalContentColor provides palette.textStrong, content = content)
+        }
     }
 }
 

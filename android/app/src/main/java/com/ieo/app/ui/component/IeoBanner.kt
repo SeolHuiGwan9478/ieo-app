@@ -46,7 +46,7 @@ import com.ieo.app.ui.theme.IeoStatus
 import com.ieo.app.ui.theme.IeoTheme
 import com.ieo.app.ui.theme.TextMid
 import com.ieo.app.ui.theme.TextStrong
-import com.ieo.app.ui.theme.White
+import com.ieo.app.ui.theme.CardSurface
 import kotlinx.coroutines.delay
 
 /** 배너가 뜻하는 것. 색만으로 구분하지 않도록 아이콘 모양도 다르다 */
@@ -102,7 +102,7 @@ fun ListeningPill(visible: Boolean, modifier: Modifier = Modifier) {
         modifier = modifier
             .heightIn(min = 56.dp)
             .shadow(8.dp, BannerShape)
-            .background(White, BannerShape)
+            .background(CardSurface, BannerShape)
             .padding(horizontal = 22.dp, vertical = 10.dp),
     ) {
         Icon(Icons.Outlined.Mic, contentDescription = null, tint = IeoStatus.colors.driving, modifier = Modifier.size(28.dp))
@@ -151,7 +151,7 @@ private fun BannerCard(banner: IeoBanner, onClose: () -> Unit) {
             .widthIn(max = 760.dp)
             .heightIn(min = 76.dp)
             .shadow(12.dp, BannerShape)
-            .background(White, BannerShape)
+            .background(CardSurface, BannerShape)
             .clickable(onClick = onClose)
             .semantics { liveRegion = LiveRegionMode.Polite }
             .padding(horizontal = 24.dp, vertical = 16.dp),

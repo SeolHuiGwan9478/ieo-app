@@ -9,7 +9,7 @@ import com.ieo.app.ui.home.DeliveryProofSheet
 import com.ieo.app.ui.home.StartGuidanceSheet
 import com.ieo.app.ui.home.WaitProofSheet
 import androidx.compose.ui.draw.clip
-import com.ieo.app.ui.theme.White
+import com.ieo.app.ui.theme.CardSurface
 import com.ieo.app.ui.theme.TextSub
 import com.ieo.app.ui.theme.Orange50
 import com.ieo.app.ui.theme.Orange700
@@ -201,7 +201,7 @@ private fun NavRail(selected: Destination, onSelect: (Destination) -> Unit) {
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(12.dp),
-        modifier = Modifier.width(112.dp).fillMaxHeight().background(White).padding(vertical = 32.dp),
+        modifier = Modifier.width(112.dp).fillMaxHeight().background(CardSurface).padding(vertical = 32.dp),
     ) {
         IeoSymbol(size = 48.dp)
         Spacer(Modifier.height(24.dp))
@@ -219,7 +219,7 @@ private fun NavRailItem(item: Destination, selected: Boolean, onClick: () -> Uni
         modifier = Modifier
             .size(88.dp)
             .clip(RoundedCornerShape(20.dp))
-            .background(if (selected) Orange50 else White)
+            .background(if (selected) Orange50 else CardSurface)
             .clickable(role = Role.Tab, onClick = onClick)
             .padding(top = 14.dp),
     ) {

@@ -77,7 +77,7 @@ import com.ieo.app.ui.theme.TextStrong
 import com.ieo.app.ui.theme.TextSub
 import com.ieo.app.ui.theme.WaitingPale
 import com.ieo.app.ui.theme.WarningPale
-import com.ieo.app.ui.theme.White
+import com.ieo.app.ui.theme.CardSurface
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.util.Locale
@@ -187,7 +187,7 @@ private fun UnpaidRow(unpaid: UnpaidAlert, onClick: () -> Unit) {
         verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier
             .fillMaxWidth()
-            .background(White, RoundedCornerShape(20.dp))
+            .background(CardSurface, RoundedCornerShape(20.dp))
             .clickable(onClick = onClick)
             .padding(horizontal = 24.dp, vertical = 22.dp),
     ) {

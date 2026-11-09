@@ -35,7 +35,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.ieo.app.ui.theme.TextStrong
 import com.ieo.app.ui.theme.TextSub
-import com.ieo.app.ui.theme.White
+import com.ieo.app.ui.theme.CardSurface
 
 /**
  * 아래에서 올라오는 창. [item]이 있으면 열리고 null이면 닫힌다.
@@ -73,7 +73,7 @@ fun <T : Any> BoxScope.IeoBottomSheet(
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .background(White, RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp))
+                    .background(CardSurface, RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp))
                     // 시트 안을 눌러도 뒤의 어두운 바탕이 눌리지 않게 막는다
                     .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null, onClick = {})
                     .verticalScroll(rememberScrollState())

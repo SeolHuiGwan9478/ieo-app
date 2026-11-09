@@ -44,11 +44,12 @@ import com.ieo.app.ui.component.SheetTitle
 import com.ieo.app.ui.component.Tnum
 import com.ieo.app.ui.component.WhiteSection
 import com.ieo.app.ui.theme.CanvasGray
+import com.ieo.app.ui.theme.DisabledGray
 import com.ieo.app.ui.theme.IeoStatus
 import com.ieo.app.ui.theme.IeoTheme
 import com.ieo.app.ui.theme.TextStrong
 import com.ieo.app.ui.theme.TextSub
-import com.ieo.app.ui.theme.White
+import com.ieo.app.ui.theme.CardSurface
 
 private val ScreenPadding = 28.dp
 
@@ -103,7 +104,7 @@ private fun TopBar(state: LedgerUiState, actions: LedgerActions) {
 
 @Composable
 private fun MonthPicker(label: String, canGoNext: Boolean, onPrevious: () -> Unit, onNext: () -> Unit) {
-    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.background(White, RoundedCornerShape(24.dp))) {
+    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.background(CardSurface, RoundedCornerShape(24.dp))) {
         Icon(
             Icons.AutoMirrored.Outlined.KeyboardArrowLeft,
             contentDescription = "이전 달",
@@ -114,7 +115,7 @@ private fun MonthPicker(label: String, canGoNext: Boolean, onPrevious: () -> Uni
         Icon(
             Icons.AutoMirrored.Outlined.KeyboardArrowRight,
             contentDescription = "다음 달",
-            tint = if (canGoNext) TextStrong else Color(0xFFD1D6DB),
+            tint = if (canGoNext) TextStrong else DisabledGray,
             modifier = Modifier.clickable(enabled = canGoNext, onClick = onNext).padding(12.dp),
         )
     }

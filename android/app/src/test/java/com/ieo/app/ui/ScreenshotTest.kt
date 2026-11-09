@@ -92,7 +92,7 @@ private inline fun <reified T : Any> noop(): T =
         }
     } as T
 
-/** 화면을 앱 영역 크기(전체·내비 옆 반 화면)로 그려 글자가 잘리지 않는지 눈으로 본다. 결과는 build/screens */
+/** 화면을 앱 영역 크기(전체·내비 옆 반 화면·다크)로 그려 글자가 잘리지 않는지 눈으로 본다. 결과는 build/screens */
 @RunWith(ParameterizedRobolectricTestRunner::class)
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
 @Config(sdk = [35], qualifiers = "w1900dp-h1300dp-land-mdpi")
@@ -102,12 +102,13 @@ class ScreenshotTest(private val window: String, private val scene: String) {
 
     @Test
     fun capture() {
-        val widthDp = if (window == "half") 840 else 1683
+        val dark = window == "dark"
+        val widthDp = if (window == "wide") 1683 else 840
         val draw = Scenes.all.getValue(scene)
         rule.mainClock.autoAdvance = false
         rule.setContent {
-            IeoTheme {
-                Row(Modifier.size(widthDp.dp, 1208.dp).background(Color.White).testTag("frame")) {
+            IeoTheme(darkTheme = dark) {
+                Row(Modifier.size(widthDp.dp, 1208.dp).background(if (dark) Color(0xFF1E1E1E) else Color.White).testTag("frame")) {
                     // 왼쪽 메뉴 자리
                     Spacer(Modifier.width(112.dp).fillMaxHeight())
                     Box(Modifier.weight(1f).fillMaxHeight()) { draw() }
@@ -126,7 +127,7 @@ class ScreenshotTest(private val window: String, private val scene: String) {
         @JvmStatic
         @ParameterizedRobolectricTestRunner.Parameters(name = "{0}_{1}")
         fun params(): List<Array<Any>> =
-            listOf("half", "wide").flatMap { w -> Scenes.all.keys.map { arrayOf<Any>(w, it) } }
+            listOf("half", "wide", "dark").flatMap { w -> Scenes.all.keys.map { arrayOf<Any>(w, it) } }
     }
 }
 

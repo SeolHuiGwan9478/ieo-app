@@ -47,7 +47,7 @@ import com.ieo.app.ui.theme.IeoTheme
 import com.ieo.app.ui.theme.Orange600
 import com.ieo.app.ui.theme.TextStrong
 import com.ieo.app.ui.theme.TextSub
-import com.ieo.app.ui.theme.White
+import com.ieo.app.ui.theme.CardSurface
 import kotlinx.coroutines.delay
 
 /** 수락을 기다리는 시간. 시간이 끝나면 거절로 치지 않고 다음 후보로 넘어간다 */
@@ -99,7 +99,7 @@ fun BoxScope.NextOrderOfferModal(
                 .padding(24.dp)
                 .widthIn(max = 720.dp)
                 .fillMaxWidth()
-                .background(White, ModalShape)
+                .background(CardSurface, ModalShape)
                 .padding(32.dp),
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {

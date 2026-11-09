@@ -31,13 +31,14 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.ieo.app.ui.theme.CanvasGray
+import com.ieo.app.ui.theme.ChevronGray
 import com.ieo.app.ui.theme.IeoStatus
 import com.ieo.app.ui.theme.Orange50
 import com.ieo.app.ui.theme.Orange700
 import com.ieo.app.ui.theme.TextMid
 import com.ieo.app.ui.theme.TextStrong
 import com.ieo.app.ui.theme.TextSub
-import com.ieo.app.ui.theme.White
+import com.ieo.app.ui.theme.CardSurface
 
 // 목록 화면(홈, 오더, 장부)이 같이 쓰는 조각. 연회색 바탕 위에 흰 묶음을 놓고, 핵심 숫자만 크고 굵게 쓴다
 
@@ -52,7 +53,7 @@ fun WhiteSection(contentPadding: Dp = 16.dp, content: @Composable ColumnScope.()
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .background(White, SectionShape)
+            .background(CardSurface, SectionShape)
             .padding(start = contentPadding, top = contentPadding + 10.dp, end = contentPadding, bottom = contentPadding),
         content = content,
     )
@@ -171,7 +172,7 @@ fun Chevron() {
     Icon(
         Icons.AutoMirrored.Outlined.KeyboardArrowRight,
         contentDescription = null,
-        tint = Color(0xFFB0B8C1),
+        tint = ChevronGray,
         modifier = Modifier.size(30.dp),
     )
 }
@@ -186,7 +187,7 @@ fun FilterChip(text: String, selected: Boolean, onClick: () -> Unit) {
         color = if (selected) Orange700 else TextMid,
         modifier = Modifier
             .heightIn(min = 76.dp)
-            .background(if (selected) Orange50 else White, RoundedCornerShape(24.dp))
+            .background(if (selected) Orange50 else CardSurface, RoundedCornerShape(24.dp))
             .clickable(onClick = onClick)
             .wrapContentHeight()
             .padding(horizontal = 24.dp, vertical = 12.dp),
