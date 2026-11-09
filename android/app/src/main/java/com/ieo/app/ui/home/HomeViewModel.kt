@@ -65,6 +65,7 @@ import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.filterNotNull
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
@@ -543,10 +544,13 @@ class HomeViewModel(
     }
 
     /**
-     * 시동을 다시 걸면 앱이 새로 뜨면서 안내 상태를 잃는다. 달리던 운행이 있으면 앱이 켜질 때 한 번만 이어서 안내한다.
-     * 켜진 동안 기사님이 내비에서 안내를 끝내면 다시 켜지 않는다. 내비가 받지 못하면 화면의 "길 안내 다시"로 이어진다
+     * 시동을 다시 걸면 앱이 새로 뜨면서 안내 상태를 잃는다. 달리던 운행이 있으면 차가 움직이기 시작할 때 한 번만 이어서 안내한다.
+     * 길 안내를 요청하면 내비가 이에오를 가리므로, 정차 중에 앱을 연 기사님을 방해하지 않게 기다린다.
+     * 내비가 받지 못하면 화면의 "길 안내 다시"로 이어진다
      */
-    private fun resumeGuidanceAfterRestart() {
+    private suspend fun resumeGuidanceAfterRestart() {
+        if (snapshot.value.current?.status?.isDriving != true) return
+        sensors.motion.filterNotNull().first { it.gear == Gear.DRIVE || !it.isStopped }
         if (navigator.progress.value != null) return
         val trip = snapshot.value.current?.takeIf { it.status.isDriving } ?: return
         val stop = trip.stop(trip.currentStop ?: return)

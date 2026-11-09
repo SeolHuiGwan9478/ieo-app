@@ -110,15 +110,34 @@ class HomeViewModelTest {
     }
 
     @Test
-    fun `달리던 운행이 있으면 앱이 켜질 때 길 안내를 이어 간다`() = homeTest(prepare = { server.trip = server.trip.copy(status = TripStatus.TO_PICKUP) }) {
+    fun `달리던 운행은 차가 움직일 때 길 안내를 이어 간다`() = homeTest(prepare = { server.trip = server.trip.copy(status = TripStatus.TO_PICKUP) }) {
+        assertTrue(navigator.guidedTo.isEmpty())
+
+        sensors.drive(GeoPoint(36.0, 128.0))
+        runCurrent()
+
         assertEquals(listOf("평택 포승"), navigator.guidedTo)
     }
 
     @Test
-    fun `내비에서 안내를 끝내면 켜진 동안에는 다시 켜지 않는다`() = homeTest(prepare = { server.trip = server.trip.copy(status = TripStatus.TO_PICKUP) }) { vm ->
-        navigator.stopGuidance()
-        vm.refresh()
+    fun `정차 중에는 앱을 켜도 내비를 앞으로 부르지 않는다`() = homeTest(prepare = { server.trip = server.trip.copy(status = TripStatus.TO_PICKUP) }) {
+        sensors.parkAt(GeoPoint(36.0, 128.0))
         runCurrent()
+
+        assertTrue(navigator.guidedTo.isEmpty())
+    }
+
+    @Test
+    fun `내비에서 안내를 끝내면 켜진 동안에는 다시 켜지 않는다`() = homeTest(prepare = { server.trip = server.trip.copy(status = TripStatus.TO_PICKUP) }) {
+        sensors.drive(GeoPoint(36.0, 128.0))
+        runCurrent()
+        navigator.stopGuidance()
+
+        sensors.parkAt(GeoPoint(36.0, 128.0))
+        runCurrent()
+        sensors.drive(GeoPoint(36.0, 128.0))
+        runCurrent()
+
         assertEquals(listOf("평택 포승"), navigator.guidedTo)
     }
 

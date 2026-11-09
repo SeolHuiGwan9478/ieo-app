@@ -1,6 +1,7 @@
 package com.ieo.app.ui.home
 
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.animateFloatAsState
 import android.os.SystemClock
 import androidx.compose.foundation.background
@@ -557,10 +558,16 @@ private fun RowScope.Stat(label: String, value: String) {
     }
 }
 
+private const val PROGRESS_GLIDE_MILLIS = 10_000
+
 @Composable
 private fun ProgressBar(progress: Float, color: Color) {
-    // 값은 10초쯤마다 오므로 그 사이를 이어 움직인다
-    val shown by animateFloatAsState(targetValue = progress.coerceIn(0f, 1f), animationSpec = tween(durationMillis = 1_000), label = "trip-progress")
+    // 내비 값은 10초쯤마다 온다. 다음 값이 올 때까지 같은 속도로 움직여 멈춤 없이 차오르게 한다
+    val shown by animateFloatAsState(
+        targetValue = progress.coerceIn(0f, 1f),
+        animationSpec = tween(durationMillis = PROGRESS_GLIDE_MILLIS, easing = LinearEasing),
+        label = "trip-progress",
+    )
     Box(modifier = Modifier.fillMaxWidth().height(12.dp).background(CanvasGray, CircleShape)) {
         Box(modifier = Modifier.fillMaxWidth(shown).height(12.dp).background(color, CircleShape))
     }
