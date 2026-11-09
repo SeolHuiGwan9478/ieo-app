@@ -1,5 +1,7 @@
 package com.ieo.app.ui.home
 
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.core.animateFloatAsState
 import android.os.SystemClock
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -50,6 +52,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.ieo.app.ui.common.formatDuration
 import com.ieo.app.ui.common.formatMinutesKorean
+import com.ieo.app.ui.common.formatFare
 import com.ieo.app.ui.common.formatWon
 import com.ieo.app.domain.site.HeightWarning
 import com.ieo.app.domain.wait.WaitPolicy
@@ -218,7 +221,7 @@ private fun MyTrips(trips: List<AssignedTrip>, onTripClick: (AssignedTrip) -> Un
                 title = "${trip.pickup.name} → ${trip.dropoff.name}",
                 tags = listOf(Keyword.vehicle(trip.vehicle), Keyword.payment(trip.paymentType)),
                 subtitle = trip.brokerName,
-                amount = formatWon(trip.fare),
+                amount = formatFare(trip.fare),
                 onClick = { onTripClick(trip) },
             )
         }
@@ -376,7 +379,7 @@ private fun WaitDetails(state: HomeState.Waiting, onNextOrderClick: (NextOrderCa
         WhiteSection {
             SectionTitle(title = "이번 운행")
             DetailLine("구간", state.trip.route)
-            DetailLine("운임", "${formatWon(state.trip.fare)} (${state.trip.paymentType})")
+            DetailLine("운임", "${formatFare(state.trip.fare)} (${state.trip.paymentType})")
             DetailLine("주선사", state.trip.brokerName)
         }
         state.site?.let { site -> SiteSection(site, isPickup = state.isPickup) }
@@ -461,16 +464,21 @@ private fun DrivingHome(state: HomeState.Driving, onArrive: () -> Unit, onResume
                         Text(state.etaText, fontSize = 104.sp, fontWeight = FontWeight.ExtraBold, color = TextStrong, letterSpacing = (-3).sp, style = Tnum)
                         Text(" 도착", fontSize = 40.sp, fontWeight = FontWeight.ExtraBold, color = TextStrong, modifier = Modifier.padding(bottom = 20.dp))
                     }
+                } else if (!state.naviActive) {
+                    // 앱을 다시 켰거나 내비가 요청을 받지 못했다. 기다려도 채워지지 않으므로 할 일을 알려 준다
+                    Text("길 안내가 꺼져 있어요", fontSize = 56.sp, fontWeight = FontWeight.ExtraBold, color = TextStrong, modifier = Modifier.padding(vertical = 20.dp))
                 } else {
                     Text("경로 확인 중", fontSize = 56.sp, fontWeight = FontWeight.ExtraBold, color = TextSub, modifier = Modifier.padding(vertical = 28.dp))
                 }
-                Spacer(Modifier.height(16.dp))
-                ProgressBar(progress = state.progress ?: 0f, color = status.driving)
-                Spacer(Modifier.height(24.dp))
-                Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    Stat("남은 거리", state.remainingKm?.let { "${it}km" } ?: "-")
-                    Stat("남은 시간", state.remainingMinutes?.let { formatMinutesKorean(it.toLong()) } ?: "-")
-                    Stat("진행", state.progress?.let { "${(it * 100).toInt()}%" } ?: "-")
+                if (state.naviActive || state.etaText != null) {
+                    Spacer(Modifier.height(16.dp))
+                    ProgressBar(progress = state.progress ?: 0f, color = status.driving)
+                    Spacer(Modifier.height(24.dp))
+                    Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                        Stat("남은 거리", state.remainingKm?.let { "${it}km" } ?: "-")
+                        Stat("남은 시간", state.remainingMinutes?.let { formatMinutesKorean(it.toLong()) } ?: "-")
+                        Stat("진행", state.progress?.let { "${(it * 100).toInt()}%" } ?: "-")
+                    }
                 }
                 state.arrivingInSeconds?.let { seconds ->
                     Spacer(Modifier.height(20.dp))
@@ -500,7 +508,7 @@ private fun DrivingHome(state: HomeState.Driving, onArrive: () -> Unit, onResume
                             text = state.trip.brokerName,
                         )
                     }
-                    Text(formatWon(state.trip.fare), fontSize = 22.sp, fontWeight = FontWeight.ExtraBold, color = TextStrong, style = Tnum)
+                    Text(formatFare(state.trip.fare), fontSize = 22.sp, fontWeight = FontWeight.ExtraBold, color = TextStrong, style = Tnum)
                 }
             }
             state.recommendation?.let { rec ->
@@ -519,8 +527,14 @@ private fun DrivingHome(state: HomeState.Driving, onArrive: () -> Unit, onResume
             }
             if (!state.naviActive) {
                 Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    IeoTonalButton(text = "길 안내 다시", onClick = onResumeGuidance, modifier = Modifier.weight(1f))
-                    IeoPrimaryButton(text = "도착했어요", onClick = onArrive, modifier = Modifier.weight(1f))
+                    // 경로를 모르면 다시 안내가 먼저고, 안내를 마친 뒤라면 도착 처리가 먼저다
+                    if (state.etaText == null) {
+                        IeoTonalButton(text = "도착했어요", onClick = onArrive, modifier = Modifier.weight(1f))
+                        IeoPrimaryButton(text = "길 안내 다시", onClick = onResumeGuidance, modifier = Modifier.weight(1f))
+                    } else {
+                        IeoTonalButton(text = "길 안내 다시", onClick = onResumeGuidance, modifier = Modifier.weight(1f))
+                        IeoPrimaryButton(text = "도착했어요", onClick = onArrive, modifier = Modifier.weight(1f))
+                    }
                 }
             } else if (state.recommendation == null) {
                 Text(
@@ -545,8 +559,10 @@ private fun RowScope.Stat(label: String, value: String) {
 
 @Composable
 private fun ProgressBar(progress: Float, color: Color) {
+    // 값은 10초쯤마다 오므로 그 사이를 이어 움직인다
+    val shown by animateFloatAsState(targetValue = progress.coerceIn(0f, 1f), animationSpec = tween(durationMillis = 1_000), label = "trip-progress")
     Box(modifier = Modifier.fillMaxWidth().height(12.dp).background(CanvasGray, CircleShape)) {
-        Box(modifier = Modifier.fillMaxWidth(progress.coerceIn(0f, 1f)).height(12.dp).background(color, CircleShape))
+        Box(modifier = Modifier.fillMaxWidth(shown).height(12.dp).background(color, CircleShape))
     }
 }
 

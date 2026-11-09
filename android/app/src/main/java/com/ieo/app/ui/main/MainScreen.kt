@@ -88,7 +88,7 @@ fun MainScreen(
     // 버튼을 누른 결과 같은 짧은 말. 서버 알림보다 먼저 보여 준다
     val messages = remember { MessageBanners() }
     var destination by rememberSaveable { mutableStateOf(Destination.HOME) }
-    // 디버그 빌드에서만: 서버 없이 대기·주행 화면을 확인하는 샘플
+    // SHOW_DEMO_SWITCHER로 빌드했을 때만: 서버 없이 대기·주행 화면을 확인하는 샘플
     var demo by rememberSaveable { mutableStateOf(DemoState.LIVE) }
 
     val liveState by homeViewModel.state.collectAsStateWithLifecycle()
@@ -151,7 +151,7 @@ fun MainScreen(
                     Destination.LEDGER -> LedgerRoute(onMessage = messages::show)
                     Destination.SETTINGS -> SettingsRoute(onMessage = messages::show)
                 }
-                if (BuildConfig.DEBUG && destination == Destination.HOME) {
+                if (BuildConfig.SHOW_DEMO_SWITCHER && destination == Destination.HOME) {
                     DemoStateSwitcher(
                         selected = demo,
                         onSelect = { demo = it },

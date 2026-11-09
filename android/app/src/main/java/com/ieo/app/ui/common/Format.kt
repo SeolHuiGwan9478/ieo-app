@@ -4,6 +4,9 @@ import java.text.NumberFormat
 import java.util.Locale
 
 /** 금액 표시. 만 원 단위로 떨어지면 "45만 원", 아니면 "12,500원" */
+/** 운임이 정해지지 않은 배차를 "0원"으로 보이지 않게 한다 */
+fun formatFare(amount: Long): String = if (amount == 0L) "운임 미정" else formatWon(amount)
+
 fun formatWon(amount: Long): String =
     if (amount >= 10_000 && amount % 10_000 == 0L) {
         "${amount / 10_000}만 원"

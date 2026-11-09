@@ -110,6 +110,24 @@ class HomeViewModelTest {
     }
 
     @Test
+    fun `달리던 운행이 있으면 앱이 켜질 때 길 안내를 이어 간다`() = homeTest(prepare = { server.trip = server.trip.copy(status = TripStatus.TO_PICKUP) }) {
+        assertEquals(listOf("평택 포승"), navigator.guidedTo)
+    }
+
+    @Test
+    fun `내비에서 안내를 끝내면 켜진 동안에는 다시 켜지 않는다`() = homeTest(prepare = { server.trip = server.trip.copy(status = TripStatus.TO_PICKUP) }) { vm ->
+        navigator.stopGuidance()
+        vm.refresh()
+        runCurrent()
+        assertEquals(listOf("평택 포승"), navigator.guidedTo)
+    }
+
+    @Test
+    fun `출발 전이면 길 안내를 시작하지 않는다`() = homeTest {
+        assertTrue(navigator.guidedTo.isEmpty())
+    }
+
+    @Test
     fun `안내 시작하면 출발 처리하고 상차지로 길 안내한다`() = homeTest { vm ->
 
         vm.startTrip("1")
@@ -174,7 +192,7 @@ class HomeViewModelTest {
         runCurrent()
 
         assertEquals(listOf("arrive PICKUP", "work PICKUP", "depart PICKUP"), server.calls)
-        assertEquals(listOf("대구 성서"), navigator.guidedTo)
+        assertEquals("대구 성서", navigator.guidedTo.last())
         assertTrue((vm.state.value as HomeState.Driving).isPickup.not())
     }
 
@@ -547,7 +565,7 @@ class HomeViewModelTest {
 
         assertEquals(listOf("arrive PICKUP", "depart PICKUP"), server.calls)
         assertEquals(listOf<Instant?>(NOW.plusSeconds(10)), server.departedAt)
-        assertEquals(listOf("대구 성서"), navigator.guidedTo)
+        assertEquals("대구 성서", navigator.guidedTo.last())
         assertTrue(vm.state.value is HomeState.Driving)
     }
 

@@ -210,7 +210,10 @@ class HomeViewModel(
         }.distinctUntilChanged().stateIn(viewModelScope, SharingStarted.Eagerly, null)
 
     init {
-        refresh()
+        viewModelScope.launch {
+            load()
+            resumeGuidanceAfterRestart()
+        }
         arriveWhenNaviArrives()
         arriveWhenStoppedAtStop()
         departWhenLeavingStop()
@@ -537,6 +540,17 @@ class HomeViewModel(
     private fun currentAtStop(): Pair<Trip, StopType>? {
         val trip = snapshot.value.current?.takeIf { it.status.isAtStop } ?: return null
         return trip.currentStop?.let { trip to it }
+    }
+
+    /**
+     * 시동을 다시 걸면 앱이 새로 뜨면서 안내 상태를 잃는다. 달리던 운행이 있으면 앱이 켜질 때 한 번만 이어서 안내한다.
+     * 켜진 동안 기사님이 내비에서 안내를 끝내면 다시 켜지 않는다. 내비가 받지 못하면 화면의 "길 안내 다시"로 이어진다
+     */
+    private fun resumeGuidanceAfterRestart() {
+        if (navigator.progress.value != null) return
+        val trip = snapshot.value.current?.takeIf { it.status.isDriving } ?: return
+        val stop = trip.stop(trip.currentStop ?: return)
+        navigator.startGuidance(Destination(stop.name, stop.address, stop.latitude, stop.longitude))
     }
 
     private fun guideTo(stop: TripStop) {

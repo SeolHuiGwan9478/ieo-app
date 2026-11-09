@@ -31,10 +31,13 @@ android {
 
     buildTypes {
         debug {
+            // 샘플 화면 전환 버튼. 평소에는 숨기고 필요할 때만 -PieoShowDemoSwitcher=true 로 빌드한다
+            buildConfigField("boolean", "SHOW_DEMO_SWITCHER", providers.gradleProperty("ieoShowDemoSwitcher").getOrElse("false"))
             // 에뮬레이터에서 본 내 컴퓨터(localhost)의 서버
             buildConfigField("String", "API_BASE_URL", "\"http://10.0.2.2:8080/\"")
         }
         release {
+            buildConfigField("boolean", "SHOW_DEMO_SWITCHER", "false")
             isMinifyEnabled = false
             // 배포 서버 주소는 빌드할 때 넘긴다: ./gradlew assembleRelease -PieoApiBaseUrl=https://.../
             val apiBaseUrl = providers.gradleProperty("ieoApiBaseUrl").getOrElse("https://api.ieo.invalid/")

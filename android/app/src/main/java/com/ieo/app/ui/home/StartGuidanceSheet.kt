@@ -8,7 +8,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import com.ieo.app.ui.common.formatWon
+import com.ieo.app.ui.common.formatFare
 import com.ieo.app.ui.common.josa
 import com.ieo.app.ui.component.IeoBottomSheet
 import com.ieo.app.ui.component.IeoPrimaryButton
@@ -24,7 +24,7 @@ fun BoxScope.StartGuidanceSheet(trip: AssignedTrip?, onStart: (AssignedTrip) -> 
         Spacer(Modifier.height(28.dp))
         SheetLine("상차", "${shown.pickupDay} ${shown.pickupTime} · ${shown.pickup.address}")
         SheetLine("하차", shown.dropoff.name)
-        SheetLine("운임", "${formatWon(shown.fare)} (${shown.paymentType})")
+        SheetLine("운임", "${formatFare(shown.fare)} (${shown.paymentType})")
         SheetLine("차량·주선사", "${shown.vehicle} · ${shown.brokerName}")
         Spacer(Modifier.height(36.dp))
         Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
