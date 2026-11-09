@@ -1,5 +1,6 @@
 package com.ieo.app.data.account
 
+import kotlinx.serialization.Serializable
 import retrofit2.Response
 import retrofit2.http.Body
 import retrofit2.http.GET
@@ -14,6 +15,12 @@ interface AccountApi {
     @PATCH("api/users/me")
     suspend fun update(@Body body: UpdateUserRequest): Response<UserResponse>
 
+    @GET("api/users/me/consents")
+    suspend fun consents(): Response<List<ConsentResponse>>
+
     @POST("api/users/me/car-sessions/current/sign-out")
     suspend fun endCarSession(): Response<Unit>
 }
+
+@Serializable
+data class ConsentResponse(val type: String, val agreed: Boolean)

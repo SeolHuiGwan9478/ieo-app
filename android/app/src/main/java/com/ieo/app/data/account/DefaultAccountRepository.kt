@@ -16,5 +16,8 @@ class DefaultAccountRepository(
     override suspend fun updateName(name: String): ApiResult<Profile> =
         caller.call { api.update(UpdateUserRequest(name)) }.mapResponse { it.toDomain() }
 
+    override suspend fun voiceConsent(): Boolean =
+        (caller.call { api.consents() } as? ApiResult.Success)?.data?.any { it.type == "VOICE" && it.agreed } ?: false
+
     override suspend fun endCarSession(): ApiResult<Unit> = caller.callNoContent { api.endCarSession() }
 }

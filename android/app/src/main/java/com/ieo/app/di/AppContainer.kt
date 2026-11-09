@@ -59,6 +59,7 @@ import com.ieo.app.domain.vehicle.CarIdentity
 import com.ieo.app.domain.vehicle.VehicleRepository
 import com.ieo.app.domain.vehicle.VehicleSensors
 import com.ieo.app.domain.voice.Announcer
+import com.ieo.app.domain.voice.ConsentAwareSpeechRecognizer
 import com.ieo.app.domain.voice.SpeechRecognizer
 import com.ieo.app.domain.wait.WaitRepository
 import kotlinx.coroutines.CoroutineScope
@@ -178,7 +179,9 @@ class DefaultAppContainer(context: Context) : AppContainer {
 
     override val announcer: Announcer by lazy { TtsAnnouncer(appContext) }
 
-    override val speechRecognizer: SpeechRecognizer by lazy { PleosSpeechRecognizer(appContext) }
+    override val speechRecognizer: SpeechRecognizer by lazy {
+        ConsentAwareSpeechRecognizer(PleosSpeechRecognizer(appContext), { accountRepository.voiceConsent() })
+    }
 
     /** 앱이 살아 있는 동안 도는 일. 화면이 바뀌거나 내비가 앞에 떠도 이어진다 */
     private val appScope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
