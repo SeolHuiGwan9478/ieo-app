@@ -255,6 +255,7 @@ private fun ColumnScope.EntrySheet(detail: EntryDetail, actions: LedgerActions) 
             IeoSecondaryButton(
                 text = if (fee.paid) "받음 취소" else "받음",
                 onClick = { actions.setWaitFeePaid(fee.id, !fee.paid) },
+                modifier = Modifier.width(160.dp),
             )
         }
     }

@@ -3,6 +3,7 @@ package com.ieo.app.ui.component
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.heightIn
@@ -60,16 +61,20 @@ fun WhiteSection(contentPadding: Dp = 16.dp, content: @Composable ColumnScope.()
 /** 묶음 제목. 개수는 회색, 오른쪽 끝에 짧은 설명 */
 @Composable
 fun SectionTitle(title: String, count: Int? = null, note: String? = null) {
-    Row(verticalAlignment = Alignment.Bottom, modifier = Modifier.padding(start = 12.dp, end = 12.dp, bottom = 10.dp)) {
-        Text(title, fontSize = 26.sp, fontWeight = FontWeight.ExtraBold, color = TextStrong)
-        count?.let {
-            Spacer(Modifier.width(8.dp))
-            Text("$it", fontSize = 26.sp, fontWeight = FontWeight.ExtraBold, color = TextSub)
+    // 반 화면처럼 좁아 한 줄에 안 들어가면 설명은 제목 아래로 내려간다
+    FlowRow(
+        horizontalArrangement = Arrangement.SpaceBetween,
+        itemVerticalAlignment = Alignment.Bottom,
+        modifier = Modifier.fillMaxWidth().padding(start = 12.dp, end = 12.dp, bottom = 10.dp),
+    ) {
+        Row {
+            Text(title, fontSize = 26.sp, fontWeight = FontWeight.ExtraBold, color = TextStrong)
+            count?.let {
+                Spacer(Modifier.width(8.dp))
+                Text("$it", fontSize = 26.sp, fontWeight = FontWeight.ExtraBold, color = TextSub)
+            }
         }
-        note?.let {
-            Spacer(Modifier.weight(1f))
-            Text(it, fontSize = 24.sp, color = TextSub, modifier = Modifier.padding(bottom = 3.dp))
-        }
+        note?.let { Text(it, fontSize = 24.sp, color = TextSub) }
     }
 }
 
@@ -110,7 +115,7 @@ fun ListRow(
             Spacer(Modifier.width(20.dp))
         }
         Column(modifier = Modifier.weight(1f)) {
-            Text(title, fontSize = 25.sp, fontWeight = FontWeight.Bold, color = TextStrong, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            Text(title, fontSize = 25.sp, fontWeight = FontWeight.Bold, color = TextStrong, maxLines = 2, overflow = TextOverflow.Ellipsis)
             if (tags.isNotEmpty() || subtitle != null) {
                 Spacer(Modifier.height(8.dp))
                 TagLine(tags, subtitle, subtitleColor)
@@ -129,7 +134,12 @@ fun ListRow(
 /** 키워드 태그를 늘어놓고, 주선사 이름 같은 남은 설명은 회색 글자로 뒤에 붙인다 */
 @Composable
 fun TagLine(tags: List<Keyword>, text: String? = null, textColor: Color = TextSub) {
-    Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+    // 좁으면 다음 줄로 넘겨 태그가 잘리지 않게 한다
+    FlowRow(
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalArrangement = Arrangement.spacedBy(6.dp),
+        itemVerticalAlignment = Alignment.CenterVertically,
+    ) {
         tags.forEach { KeywordTag(it) }
         text?.let { Text(it, fontSize = 24.sp, color = textColor, maxLines = 1, overflow = TextOverflow.Ellipsis) }
     }

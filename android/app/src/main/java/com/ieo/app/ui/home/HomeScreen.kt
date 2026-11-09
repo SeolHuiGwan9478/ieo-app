@@ -299,7 +299,7 @@ private fun WaitingHome(state: HomeState.Waiting, compact: Boolean, actions: Wai
             verticalArrangement = Arrangement.spacedBy(16.dp),
             modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(ScreenPadding),
         ) {
-            WaitTimer(state, timerSeconds, chargeableMinutes, actions)
+            WaitTimer(state, timerSeconds, chargeableMinutes, actions, compact = true)
             WaitDetails(state, actions.onNextOrderClick)
         }
     } else {
@@ -308,7 +308,7 @@ private fun WaitingHome(state: HomeState.Waiting, compact: Boolean, actions: Wai
             verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier.fillMaxSize().padding(ScreenPadding),
         ) {
-            Box(modifier = Modifier.weight(0.55f)) { WaitTimer(state, timerSeconds, chargeableMinutes, actions) }
+            Box(modifier = Modifier.weight(0.55f)) { WaitTimer(state, timerSeconds, chargeableMinutes, actions, compact = false) }
             Box(modifier = Modifier.weight(0.45f).fillMaxHeight().verticalScroll(rememberScrollState())) {
                 WaitDetails(state, actions.onNextOrderClick)
             }
@@ -317,7 +317,7 @@ private fun WaitingHome(state: HomeState.Waiting, compact: Boolean, actions: Wai
 }
 
 @Composable
-private fun WaitTimer(state: HomeState.Waiting, timerSeconds: Long, chargeableMinutes: Long, actions: WaitActions) {
+private fun WaitTimer(state: HomeState.Waiting, timerSeconds: Long, chargeableMinutes: Long, actions: WaitActions, compact: Boolean) {
     val waiting = IeoStatus.colors.waiting
     val work = if (state.isPickup) "상차" else "하차"
     WhiteSection(contentPadding = 36.dp) {
@@ -343,17 +343,31 @@ private fun WaitTimer(state: HomeState.Waiting, timerSeconds: Long, chargeableMi
             )
         }
         Spacer(Modifier.height(36.dp))
-        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+        // 반 화면에서 버튼 3개를 한 줄에 두면 글자가 깨지므로 하차지에서는 주 버튼을 아랫줄로 내린다
+        val stacked = compact && !state.isPickup
+        val proofButtons: @Composable RowScope.() -> Unit = {
             IeoTonalButton(text = "대기 증빙 보내기", onClick = actions.onSendWaitProof, modifier = Modifier.weight(1f))
             // 인수증은 하차지에서만 받는다 (POD-003)
             if (!state.isPickup) {
                 IeoTonalButton(text = "인수증 받기", onClick = actions.onRequestDeliveryProof, modifier = Modifier.weight(1f))
             }
+        }
+        val mainButton: @Composable (Modifier) -> Unit = { modifier ->
             when {
-                !state.isWorking -> IeoPrimaryButton(text = "$work 시작", onClick = actions.onStartWork, modifier = Modifier.weight(1f))
+                !state.isWorking -> IeoPrimaryButton(text = "$work 시작", onClick = actions.onStartWork, modifier = modifier)
                 // 하차지를 떠나면 운행이 끝난다
-                state.isPickup -> IeoPrimaryButton(text = "상차 끝, 출발", onClick = actions.onDepart, modifier = Modifier.weight(1f))
-                else -> IeoPrimaryButton(text = "운행 완료", onClick = actions.onDepart, modifier = Modifier.weight(1f))
+                state.isPickup -> IeoPrimaryButton(text = "상차 끝, 출발", onClick = actions.onDepart, modifier = modifier)
+                else -> IeoPrimaryButton(text = "운행 완료", onClick = actions.onDepart, modifier = modifier)
+            }
+        }
+        if (stacked) {
+            Row(horizontalArrangement = Arrangement.spacedBy(12.dp), content = proofButtons)
+            Spacer(Modifier.height(12.dp))
+            mainButton(Modifier)
+        } else {
+            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                proofButtons()
+                mainButton(Modifier.weight(1f))
             }
         }
     }

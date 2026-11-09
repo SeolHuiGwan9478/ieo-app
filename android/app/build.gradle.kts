@@ -10,6 +10,14 @@ android {
     namespace = "com.ieo.app"
     compileSdk = 37
 
+    testOptions {
+        unitTests {
+            // 스크린샷 테스트가 앱 리소스를 읽는다
+            isIncludeAndroidResources = true
+            all { it.systemProperty("roborazzi.test.record", "true") }
+        }
+    }
+
     defaultConfig {
         applicationId = "com.ieo.app"
         // Pleos 차량 보안 요건(사이닝 키 로테이션)으로 28 이상 필수
@@ -86,4 +94,10 @@ dependencies {
 
     testImplementation(libs.junit)
     testImplementation(libs.kotlinx.coroutines.test)
+    testImplementation(libs.robolectric)
+    testImplementation(libs.roborazzi.core)
+    testImplementation(libs.roborazzi.compose)
+    testImplementation(platform(libs.compose.bom))
+    testImplementation(libs.compose.ui.test.junit4)
+    debugImplementation(libs.compose.ui.test.manifest)
 }

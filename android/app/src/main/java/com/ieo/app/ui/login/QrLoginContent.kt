@@ -25,6 +25,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.style.LineBreak
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -80,7 +82,7 @@ fun QrLoginContent(
         }
         Spacer(Modifier.height(24.dp))
 
-        Text(text = stringResource(R.string.qr_instruction), fontSize = 24.sp, fontWeight = FontWeight.Medium)
+        Text(text = stringResource(R.string.qr_instruction), fontSize = 24.sp, fontWeight = FontWeight.Medium, style = TextStyle(lineBreak = LineBreak.Heading))
         Spacer(Modifier.height(8.dp))
         Text(
             text = stringResource(R.string.qr_code_label) + "  " + (waiting?.code ?: "----"),
