@@ -1,8 +1,5 @@
 package com.ieo.app.ui.home
 
-import com.ieo.app.ui.theme.TextSub
-import androidx.compose.ui.unit.sp
-import androidx.compose.material3.Text
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.Row
@@ -29,9 +26,6 @@ fun BoxScope.StartGuidanceSheet(trip: AssignedTrip?, onStart: (AssignedTrip) -> 
         SheetLine("하차", shown.dropoff.name)
         SheetLine("운임", "${formatFare(shown.fare)} (${shown.paymentType})")
         SheetLine("차량·주선사", "${shown.vehicle} · ${shown.brokerName}")
-        // 앱이 2창을 직접 켤 수 없어 (Pleos에 해당 API 없음) 기사님께 방법을 알려 준다
-        Spacer(Modifier.height(20.dp))
-        Text("안내가 시작되면 내비가 앞으로 나와요. 오른쪽 끝 ⋮를 끌면 이에오와 나란히 볼 수 있어요", fontSize = 24.sp, lineHeight = 32.sp, color = TextSub)
         Spacer(Modifier.height(36.dp))
         Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             IeoTonalButton(text = "닫기", onClick = onDismiss, modifier = Modifier.weight(1f))
