@@ -164,6 +164,7 @@ private fun OrderList(state: OrdersUiState, onOrderClick: (Long) -> Unit) {
                 subtitle = if (row.requested) "요청함" else row.brokerName,
                 subtitleColor = if (row.requested) Orange700 else TextSub,
                 amount = row.fare,
+                amountNote = row.netProfit,
                 onClick = { onOrderClick(row.id) },
             )
         }

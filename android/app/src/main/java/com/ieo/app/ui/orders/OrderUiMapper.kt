@@ -25,6 +25,8 @@ data class OrderRow(
     val cargo: CargoCategory? = null,
     /** 주선사 신뢰 지표. 서버가 주지 않으면 null */
     val brokerMetrics: BrokerMetrics? = null,
+    /** "실수익 28만 원". 위치를 몰라 계산하지 못하면 null */
+    val netProfit: String? = null,
 )
 
 /** 아래에서 올라오는 상세 */
@@ -69,6 +71,7 @@ class OrderUiMapper(private val labels: DayTimeFormatter) {
         distanceMeters = order.distanceMeters,
         cargo = order.specialCargo,
         brokerMetrics = order.brokerMetrics,
+        netProfit = order.netProfit?.let { "실수익 ${formatWon(it)}" },
     )
 
     fun detail(order: Order) = OrderDetail(
@@ -80,6 +83,7 @@ class OrderUiMapper(private val labels: DayTimeFormatter) {
             "차량" to order.vehicleLabel,
             "화물" to cargo(order),
             "운임" to "${formatWon(order.fare)} · ${order.paymentTypeLabel} · ${order.expectedPaymentDays}일 안에 지급",
+            order.netProfit?.let { "실수익" to "${formatWon(it)} (공차 연료비를 뺀 금액)" },
             "주선사" to order.brokerName,
             order.brokerMetrics?.let { "주선사 기록" to metricsSummary(it) },
         ),

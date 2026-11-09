@@ -17,8 +17,7 @@ class OrderCardMapper(clock: Clock = Clock.system(DayTimeFormatter.KOREA)) {
         pickupTime = labels.time(order.pickupFrom),
         vehicle = order.vehicleLabel,
         fare = order.fare,
-        // TODO: 배차 추천(03)의 실수익 계산을 만들면 채운다 (docs/design/04_배차추천.md)
-        netProfit = null,
+        netProfit = order.netProfit,
         brokerMetrics = order.brokerMetrics,
         distanceMeters = order.distanceMeters,
         cargo = order.specialCargo,

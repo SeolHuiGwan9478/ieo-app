@@ -102,10 +102,10 @@ fun ListRow(
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.Center,
-                modifier = Modifier.size(76.dp).background(CanvasGray, RoundedCornerShape(18.dp)),
+                modifier = Modifier.width(124.dp).height(84.dp).background(CanvasGray, RoundedCornerShape(18.dp)),
             ) {
                 Text(time, fontSize = 24.sp, fontWeight = FontWeight.ExtraBold, color = TextStrong, style = Tnum)
-                day?.let { Text(it, fontSize = 24.sp, fontWeight = FontWeight.Medium, color = TextSub) }
+                day?.let { Text(it, fontSize = 24.sp, fontWeight = FontWeight.Medium, color = TextSub, maxLines = 1) }
             }
             Spacer(Modifier.width(20.dp))
         }
