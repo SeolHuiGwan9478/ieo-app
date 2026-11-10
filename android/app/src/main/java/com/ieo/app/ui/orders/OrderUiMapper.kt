@@ -28,6 +28,14 @@ data class OrderRow(
     val brokerMetrics: BrokerMetrics? = null,
     /** "실수익 약 28만 원" 어림값. 위치를 몰라 계산하지 못하면 null */
     val netProfit: String? = null,
+    val pickupName: String = "",
+    /** "오늘 08:00~10:00" */
+    val pickupTime: String = "",
+    val dropoffName: String = "",
+    /** "오늘 14:00까지" */
+    val dropoffTime: String = "",
+    /** 자동 새로고침으로 새로 들어왔다 */
+    val isNew: Boolean = false,
 )
 
 /** 아래에서 올라오는 상세 */
@@ -50,16 +58,17 @@ data class PendingRequest(
 /** 오더([Order])를 오더 탭에 그릴 모양으로 바꾼다. 날짜 표기는 [labels]가 정한다 */
 class OrderUiMapper(private val labels: DayTimeFormatter) {
 
-    fun matches(order: Order, filter: OrderDayFilter): Boolean {
+    fun matches(order: Order, conditions: OrderConditions): Boolean {
         val day = order.pickupFrom.atZone(DayTimeFormatter.KOREA).toLocalDate()
-        return when (filter) {
+        val dayOk = when (conditions.day) {
             OrderDayFilter.ALL -> true
             OrderDayFilter.TODAY -> day == labels.today()
             OrderDayFilter.TOMORROW -> day == labels.today().plusDays(1)
         }
+        return dayOk && order.cargoCategory !in conditions.excluded
     }
 
-    fun row(order: Order) = OrderRow(
+    fun row(order: Order, isNew: Boolean = false) = OrderRow(
         id = order.id,
         time = labels.time(order.pickupFrom),
         day = labels.day(order.pickupFrom),
@@ -74,6 +83,11 @@ class OrderUiMapper(private val labels: DayTimeFormatter) {
         cargo = order.specialCargo,
         brokerMetrics = order.brokerMetrics,
         netProfit = order.netProfit?.let { "실수익 약 ${formatWon(roundedToManwon(it))}" },
+        pickupName = order.pickup.name,
+        pickupTime = "${labels.dayTime(order.pickupFrom)}~${labels.time(order.pickupUntil)}",
+        dropoffName = order.dropoff.name,
+        dropoffTime = "${labels.dayTime(order.dropoffBy)}까지",
+        isNew = isNew,
     )
 
     fun detail(order: Order, profit: OrderProfit? = null) = OrderDetail(
@@ -119,7 +133,7 @@ class OrderUiMapper(private val labels: DayTimeFormatter) {
 
     /** "평균 지급 12일 · 지급 지연 8% · 대기비 지급 90% · 이 회사 운행 평균 대기 35분". 대기는 상하차지 탓일 때가 많아 중립적으로 적는다 */
     private fun metricsSummary(metrics: BrokerMetrics): String {
-        if (!metrics.published) return "기록 쌓는 중"
+        if (!metrics.published) return "거래 기록 적음"
         return listOfNotNull(
             metrics.avgPaymentDays?.let { "평균 지급 ${it}일" },
             metrics.latePaymentPercent?.let { "지급 지연 $it%" },

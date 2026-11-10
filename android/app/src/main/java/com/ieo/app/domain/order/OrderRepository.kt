@@ -4,7 +4,7 @@ import com.ieo.app.core.network.ApiResult
 import com.ieo.app.domain.vehicle.GeoPoint
 
 /** 오더 탭 거르기 (DSP-010). 거리는 [near]가 있을 때만 쓴다 */
-data class OrderSearch(val radiusKm: Int = 50, val minFare: Long? = null)
+data class OrderSearch(val radiusKm: Int = 50, val minFare: Long? = null, val paymentType: String? = null)
 
 interface OrderRepository {
 

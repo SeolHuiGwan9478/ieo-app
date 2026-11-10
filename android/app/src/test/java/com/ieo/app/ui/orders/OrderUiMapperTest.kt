@@ -71,16 +71,16 @@ class OrderUiMapperTest {
     }
 
     @Test
-    fun `운행이 모자란 주선사는 기록 쌓는 중이고 지표가 없으면 줄을 뺀다`() {
+    fun `운행이 모자란 주선사는 거래 기록 적음이고 지표가 없으면 줄을 뺀다`() {
         val building = TripFixtures.order().copy(brokerMetrics = BrokerMetrics(published = false))
 
-        assertEquals("기록 쌓는 중", mapper.detail(building).lines.toMap()["주선사 기록"])
+        assertEquals("거래 기록 적음", mapper.detail(building).lines.toMap()["주선사 기록"])
         assertNull(mapper.detail(TripFixtures.order()).lines.toMap()["주선사 기록"])
     }
 
     @Test
     fun `지급 태그는 공개 여부와 평균 일수로 정한다`() {
-        assertEquals("기록 쌓는 중", Keyword.brokerPayment(BrokerMetrics(published = false)).text)
+        assertEquals("거래 기록 적음", Keyword.brokerPayment(BrokerMetrics(published = false)).text)
         assertEquals("지급 이력 없음", Keyword.brokerPayment(BrokerMetrics(published = true)).text)
         assertEquals("지급 평균 12일", Keyword.brokerPayment(BrokerMetrics(published = true, avgPaymentDays = 12)).text)
     }

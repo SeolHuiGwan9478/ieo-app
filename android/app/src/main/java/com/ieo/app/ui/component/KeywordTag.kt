@@ -34,9 +34,11 @@ data class Keyword(val text: String, val color: TagColor) {
         )
 
         /** 지금 위치에서 상차지까지 직선거리. 1km보다 가까우면 "1km 안" */
+        /** 서버가 주는 거리는 도로 거리 어림이라 "약"을 붙인다. 상세는 실제 경로로 다시 잰다 */
+        fun distanceText(meters: Long): String = if (meters < 1_000) "1km 안" else "약 ${(meters + 500) / 1_000}km"
+
         fun distance(meters: Long) = Keyword(
-            // 서버가 주는 거리는 도로 거리 어림이라 "약"을 붙인다. 상세는 실제 경로로 다시 잰다
-            if (meters < 1_000) "상차지 1km 안" else "상차지 약 ${(meters + 500) / 1_000}km",
+            "상차지 ${distanceText(meters)}",
             IeoTag.Gray,
         )
 
@@ -59,7 +61,7 @@ data class Keyword(val text: String, val color: TagColor) {
         fun brokerPayment(metrics: BrokerMetrics): Keyword {
             val days = metrics.avgPaymentDays
             return when {
-                !metrics.published -> Keyword("기록 쌓는 중", IeoTag.Gray)
+                !metrics.published -> Keyword("거래 기록 적음", IeoTag.Gray)
                 days == null -> Keyword("지급 이력 없음", IeoTag.Gray)
                 days <= 15 -> Keyword("지급 평균 ${days}일", IeoTag.Sage)
                 days > 20 -> Keyword("지급 평균 ${days}일", IeoTag.Plum)

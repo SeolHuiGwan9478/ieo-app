@@ -54,12 +54,14 @@ class OrdersViewModelTest {
         advanceUntilIdle()
         assertEquals(com.ieo.app.domain.order.OrderSearch(50, null), market.lastSearch)
 
-        viewModel.selectRadius(OrderRadius.NEAR)
-        viewModel.selectMinFare(OrderMinFare.OVER_30)
+        viewModel.openConditions()
+        viewModel.editDraft { it.copy(radius = OrderRadius.NEAR, minFare = OrderMinFare.OVER_30) }
+        viewModel.applyConditions()
         advanceUntilIdle()
 
         assertEquals(com.ieo.app.domain.order.OrderSearch(20, 300_000), market.lastSearch)
-        assertEquals(OrderRadius.NEAR, viewModel.state.value.radius)
+        assertEquals(OrderRadius.NEAR, viewModel.state.value.conditions.radius)
+        assertEquals(listOf("내 주변 20km", "30만 원 이상"), viewModel.state.value.conditions.summary)
     }
 
     @Test
@@ -72,16 +74,42 @@ class OrdersViewModelTest {
     }
 
     @Test
-    fun `날짜 칩으로 오늘·내일 오더를 거른다`() = runTest(main.dispatcher) {
+    fun `조건 창에서 날짜를 고르고 적용하면 오늘·내일 오더만 남는다`() = runTest(main.dispatcher) {
         viewModel.refresh()
         advanceUntilIdle()
         assertEquals(2, viewModel.state.value.rows.size)
 
-        viewModel.selectFilter(OrderDayFilter.TODAY)
+        viewModel.openConditions()
+        viewModel.editDraft { it.copy(day = OrderDayFilter.TODAY) }
+        advanceUntilIdle()
+        assertEquals(1, viewModel.state.value.draftCount)
+        assertEquals(2, viewModel.state.value.rows.size)   // 적용 전에는 그대로
+        viewModel.applyConditions()
+        advanceUntilIdle()
         assertEquals(listOf(1L), viewModel.state.value.rows.map { it.id })
 
-        viewModel.selectFilter(OrderDayFilter.TOMORROW)
+        viewModel.openConditions()
+        viewModel.editDraft { it.copy(day = OrderDayFilter.TOMORROW) }
+        viewModel.applyConditions()
+        advanceUntilIdle()
         assertEquals(listOf(2L), viewModel.state.value.rows.map { it.id })
+    }
+
+    @Test
+    fun `자동 새로고침은 새 오더에 표시를 붙이고 상세가 열려 있으면 닫은 뒤에 받는다`() = runTest(main.dispatcher) {
+        viewModel.refresh()
+        advanceUntilIdle()
+        val extra = market.orders.first().copy(id = 9)
+        market.orders.add(extra)
+        viewModel.open(1)
+        viewModel.autoRefresh()
+        advanceUntilIdle()
+        assertEquals(2, viewModel.state.value.rows.size)
+
+        viewModel.close()
+        advanceUntilIdle()
+        assertEquals(true, viewModel.state.value.rows.first { it.id == 9L }.isNew)
+        assertEquals(false, viewModel.state.value.rows.first { it.id == 1L }.isNew)
     }
 
     @Test

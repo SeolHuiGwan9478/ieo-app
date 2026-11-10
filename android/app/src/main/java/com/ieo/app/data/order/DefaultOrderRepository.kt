@@ -23,7 +23,7 @@ class DefaultOrderRepository(
         caller.call {
             api.openOrders(
                 lat = near?.latitude, lng = near?.longitude, size = limit,
-                radiusM = near?.let { search.radiusKm * 1_000 }, minFare = search.minFare,
+                radiusM = near?.let { search.radiusKm * 1_000 }, minFare = search.minFare, paymentType = search.paymentType,
             )
         }.mapResponse { orders -> orders.map(OrderResponse::toDomain) }
 

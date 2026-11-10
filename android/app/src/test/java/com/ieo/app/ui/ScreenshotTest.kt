@@ -152,7 +152,8 @@ private object Scenes {
     )
     private val orderRow = OrderRow(
         1, "17:03", "11월 12일", "대전 산업단지 → 부산 신항 CY", "5톤 카고", "인수증", "한빛물류", "58만 원",
-        requested = false, distanceMeters = 4_000, netProfit = "실수익 약 58만 원",
+        requested = false, distanceMeters = 4_000, netProfit = "실수익 약 50만 원",
+        pickupName = "대전 산업단지", pickupTime = "오늘 17:03~20:03", dropoffName = "부산 신항 CY", dropoffTime = "11월 13일 14:00까지",
     )
     private val orderDetail = OrderDetail(
         1, "대전 산업단지 → 부산 신항 CY",
@@ -161,7 +162,7 @@ private object Scenes {
             "하차" to "11월 13일 14:00까지 · 부산 강서구 신항로 300",
             "차량" to "5톤 카고", "화물" to "가전 박스 · 4.5톤 · 지게차",
             "운임" to "58만 원 · 인수증 · 30일 안에 지급",
-            "실수익" to "497,000원 (기름값·통행료 뺀 금액)", "예상 통행료" to "17,000원", "기름값" to "66,000원", "상차지까지" to "4km", "주선사" to "한빛물류", "주선사 기록" to "기록 쌓는 중",
+            "실수익" to "497,000원 (기름값·통행료 뺀 금액)", "예상 통행료" to "17,000원", "기름값" to "66,000원", "상차지까지" to "4km", "주선사" to "한빛물류", "주선사 기록" to "거래 기록 적음",
         ),
         requested = false,
     )
@@ -184,7 +185,8 @@ private object Scenes {
         "sheet_car_link" to { Box(Modifier.fillMaxSize()) { CarLinkSheet(CarLinkUiState(listOf(VehicleChoice(1, "경기80바1234", "5톤 카고"), VehicleChoice(2, "서울90사5678", "11톤 윙바디"))), noop<CarLinkActions>()) } },
         "sheet_link_invite" to { Box(Modifier.fillMaxSize()) { LinkInvitationSheet(link, false, noop<DriverLinksActions>()) } },
         "sheet_unlink" to { Box(Modifier.fillMaxSize()) { UnlinkSheet(link, false, noop<DriverLinksActions>()) } },
-        "orders_list" to { OrdersScreen(OrdersUiState(nearby = true, rows = listOf(orderRow, orderRow.copy(id = 2, day = "오늘"))), noop<OrdersActions>(), false) },
+        "orders_list" to { OrdersScreen(OrdersUiState(nearby = true, rows = listOf(orderRow.copy(isNew = true), orderRow.copy(id = 2, day = "오늘")), conditions = com.ieo.app.ui.orders.OrderConditions(minFare = com.ieo.app.ui.orders.OrderMinFare.OVER_30), updatedAt = java.time.Instant.now()), noop<OrdersActions>(), false) },
+        "orders_conditions" to { OrdersScreen(OrdersUiState(nearby = true, rows = listOf(orderRow), draft = com.ieo.app.ui.orders.OrderConditions(minFare = com.ieo.app.ui.orders.OrderMinFare.OVER_30), draftCount = 3), noop<OrdersActions>(), false) },
         "orders_detail" to { OrdersScreen(OrdersUiState(nearby = true, rows = listOf(orderRow), detail = orderDetail), noop<OrdersActions>(), false) },
         "orders_unverified" to { OrdersScreen(OrdersUiState(nearby = true, rows = listOf(orderRow), verified = false), noop<OrdersActions>(), false) },
         "orders_detail_unverified" to { OrdersScreen(OrdersUiState(nearby = true, rows = listOf(orderRow), detail = orderDetail.copy(lines = orderDetail.lines.map { (k, v) -> k to when (k) { "주선사" -> "서류 승인 후 보여요"; "상차" -> "오늘 17:03 ~ 20:03 · 대전 대덕구 (정확한 주소는 승인 후)"; "하차" -> "11월 13일 14:00까지 · 부산 강서구 (정확한 주소는 승인 후)"; else -> v } }), verified = false), noop<OrdersActions>(), false) },
