@@ -1,5 +1,6 @@
 package com.ieo.app.ui.login
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -11,10 +12,16 @@ import androidx.lifecycle.viewmodel.compose.viewModel
  */
 @Composable
 fun LoginRoute(
+    /** 처음 화면으로 돌아간다. 그 전에 입력한 번호·인증번호를 비운다 */
+    onBack: () -> Unit,
     phoneViewModel: PhoneLoginViewModel = viewModel(factory = PhoneLoginViewModel.Factory),
     qrViewModel: QrLoginViewModel = viewModel(factory = QrLoginViewModel.Factory),
 ) {
     val phone by phoneViewModel.state.collectAsStateWithLifecycle()
     val qr by qrViewModel.state.collectAsStateWithLifecycle()
+    BackHandler {
+        phoneViewModel.reset()
+        onBack()
+    }
     LoginScreen(phone = phone, phoneActions = phoneViewModel, qr = qr, qrActions = qrViewModel)
 }

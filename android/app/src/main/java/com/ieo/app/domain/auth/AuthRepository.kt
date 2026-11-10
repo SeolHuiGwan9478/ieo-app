@@ -10,7 +10,8 @@ import com.ieo.app.core.network.ApiResult
 interface AuthRepository {
 
     /** 인증번호 문자 보내기 */
-    suspend fun requestCode(phone: String): ApiResult<Unit>
+    /** 성공하면 시연용 인증번호(시연 서버만, 운영은 null)를 준다 */
+    suspend fun requestCode(phone: String): ApiResult<String?>
 
     /** 인증번호 확인. 가입된 계정이 있는지도 함께 알려 준다 */
     suspend fun verifyCode(phone: String, code: String): ApiResult<PhoneVerification>

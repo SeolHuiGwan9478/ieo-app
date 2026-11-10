@@ -13,7 +13,7 @@ import java.time.Instant
 /** 서버 없이 ViewModel을 시험하려고 결과를 미리 정해 두는 저장소 */
 class FakeAuthRepository : AuthRepository {
 
-    var requestCodeResult: ApiResult<Unit> = ApiResult.Success(Unit)
+    var requestCodeResult: ApiResult<String?> = ApiResult.Success("381942")
     var verifyResult: ApiResult<PhoneVerification> =
         ApiResult.Success(PhoneVerification("phone-token", ExistingAccount("홍길동", UserRole.DRIVER)))
     var loginResult: ApiResult<Unit> = ApiResult.Success(Unit)

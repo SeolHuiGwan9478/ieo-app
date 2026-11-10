@@ -5,7 +5,6 @@ import android.car.Car
 import android.content.pm.PackageManager
 import android.os.Bundle
 import androidx.activity.ComponentActivity
-import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
@@ -142,8 +141,7 @@ private fun IeoScreens(isLoggedIn: Boolean, onHomeShown: () -> Unit) {
             onAutoLogin = { screen = Screen.HOME },
         )
         Screen.LOGIN -> {
-            BackHandler { screen = Screen.SPLASH }
-            LoginRoute()
+            LoginRoute(onBack = { screen = Screen.SPLASH })
         }
         Screen.HOME -> {
             LaunchedEffect(Unit) { onHomeShown() }

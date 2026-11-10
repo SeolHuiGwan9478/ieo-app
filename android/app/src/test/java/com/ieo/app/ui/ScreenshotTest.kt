@@ -205,7 +205,7 @@ private object Scenes {
         "settings_recommend" to { SettingsScreen(settings.copy(form = SettingsForm.EditRecommendation(preference)), noop<SettingsActions>()) },
         "settings_sign_out" to { SettingsScreen(settings.copy(form = SettingsForm.ConfirmSignOut), noop<SettingsActions>()) },
         "login_qr" to { LoginScreen(PhoneLoginUiState(), noop<PhoneLoginActions>(), QrLoginUiState.Waiting("ABC123", "ieo://login/ABC123", Long.MAX_VALUE / 2), noop<QrLoginActions>()) },
-        "login_phone" to { LoginScreen(PhoneLoginUiState(phone = "01012345678", code = "123", codeExpiresAt = Long.MAX_VALUE / 2), noop<PhoneLoginActions>(), QrLoginUiState.Loading, noop<QrLoginActions>()) },
+        "login_phone" to { LoginScreen(PhoneLoginUiState(phone = "01012345678", code = "123", codeExpiresAt = Long.MAX_VALUE / 2, demoCode = "381942"), noop<PhoneLoginActions>(), QrLoginUiState.Loading, noop<QrLoginActions>()) },
         "login_phone_error" to { LoginScreen(PhoneLoginUiState(phone = "01012345678", code = "123456", codeExpiresAt = Long.MAX_VALUE / 2, errorMessage = "인증번호가 달라요 (4번 남음)"), noop<PhoneLoginActions>(), QrLoginUiState.Loading, noop<QrLoginActions>()) },
     )
 }

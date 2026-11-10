@@ -243,6 +243,14 @@ private fun LoginForm(
                 shape = RoundedCornerShape(16.dp),
                 modifier = Modifier.fillMaxWidth(),
             )
+            phone.demoCode?.let {
+                Spacer(Modifier.height(8.dp))
+                Text(
+                    text = stringResource(R.string.login_demo_code, it),
+                    fontSize = 24.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
             if (codeExpired) {
                 Spacer(Modifier.height(8.dp))
                 ErrorText(stringResource(R.string.login_code_expired))
@@ -320,6 +328,7 @@ private object PreviewPhoneLoginActions : PhoneLoginActions {
     override fun onCodeChange(input: String) = Unit
     override fun requestCode() = Unit
     override fun login() = Unit
+    override fun reset() = Unit
 }
 
 private object PreviewQrLoginActions : QrLoginActions {

@@ -15,6 +15,10 @@ import kotlinx.serialization.Serializable
 @Serializable
 data class SendCodeRequest(val phone: String)
 
+/** 시연 서버는 문자를 보내지 않고 인증번호를 그대로 준다. 운영에서는 null */
+@Serializable
+data class SendCodeResponse(val demoCode: String? = null)
+
 @Serializable
 data class VerifyCodeRequest(val phone: String, val code: String, val deviceId: String)
 

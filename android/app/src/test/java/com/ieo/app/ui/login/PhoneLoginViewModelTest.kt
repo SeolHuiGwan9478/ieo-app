@@ -40,6 +40,20 @@ class PhoneLoginViewModelTest {
 
         assertEquals(1_000L + 180_000L, viewModel.state.value.codeExpiresAt)
         assertFalse(viewModel.state.value.isRequestingCode)
+        // 시연 서버가 준 인증번호를 화면에 보여 준다
+        assertEquals("381942", viewModel.state.value.demoCode)
+    }
+
+    @Test
+    fun `처음 화면으로 돌아가면 입력을 비운다`() = runTest(main.dispatcher) {
+        viewModel.onPhoneChange("01012345678")
+        viewModel.requestCode()
+        advanceUntilIdle()
+        viewModel.onCodeChange("123")
+
+        viewModel.reset()
+
+        assertEquals(PhoneLoginUiState(), viewModel.state.value)
     }
 
     @Test

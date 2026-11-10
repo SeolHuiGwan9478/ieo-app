@@ -19,15 +19,17 @@
     <string name="qr_instruction">휴대폰 카메라로 QR 코드를 찍어 주세요</string>
     <string name="qr_code_label">로그인 코드</string>
     <string name="qr_waiting">휴대폰에서 승인을 기다리는 중</string>
-    <string name="qr_expired">QR이 만료됐습니다. 새로 받아 주세요</string>
+    <string name="qr_expired">QR이 만료됐어요. 새로 받아 주세요</string>
     <string name="qr_refresh">새 QR 받기</string>
-    <string name="qr_rejected">휴대폰에서 로그인을 거절했습니다. 새로 받아 주세요</string>
+    <string name="qr_rejected">휴대폰에서 로그인을 거절했어요. 새로 받아 주세요</string>
     <string name="login_phone_label">휴대폰 번호</string>
     <string name="login_phone_placeholder">01012345678</string>
     <string name="login_request_code">인증번호 받기</string>
     <string name="login_resend_code">인증번호 재요청</string>
     <string name="login_code_label">인증번호 6자리</string>
     <string name="login_code_sent">인증번호를 보냈어요</string>
+    <!-- 시연 서버만 인증번호를 돌려준다. 문자 대신 화면에 보여 준다 -->
+    <string name="login_demo_code">시연용 인증번호 %1$s</string>
     <string name="login_code_expired">인증 시간이 지났어요</string>
     <string name="login_submit">로그인</string>
     <string name="login_or">또는</string>

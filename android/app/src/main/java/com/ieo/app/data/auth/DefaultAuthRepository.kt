@@ -20,8 +20,8 @@ class DefaultAuthRepository(
     private val device: DeviceInfo,
 ) : AuthRepository {
 
-    override suspend fun requestCode(phone: String): ApiResult<Unit> =
-        caller.callNoContent { api.requestCode(SendCodeRequest(phone)) }
+    override suspend fun requestCode(phone: String): ApiResult<String?> =
+        caller.call { api.requestCode(SendCodeRequest(phone)) }.mapResponse { it.demoCode }
 
     override suspend fun verifyCode(phone: String, code: String): ApiResult<PhoneVerification> =
         caller.call { api.verifyCode(VerifyCodeRequest(phone, code, device.deviceId)) }.mapResponse { it.toDomain() }

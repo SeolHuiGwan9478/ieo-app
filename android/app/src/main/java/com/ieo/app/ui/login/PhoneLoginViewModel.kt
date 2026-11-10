@@ -23,6 +23,8 @@ data class PhoneLoginUiState(
     val code: String = "",
     /** 인증번호 만료 시각 (SystemClock.elapsedRealtime 기준). 0이면 아직 받지 않음 */
     val codeExpiresAt: Long = 0L,
+    /** 시연 서버가 돌려준 인증번호. 운영에서는 문자로만 간다 */
+    val demoCode: String? = null,
     val isRequestingCode: Boolean = false,
     val isLoggingIn: Boolean = false,
     val errorMessage: String? = null,
@@ -38,6 +40,9 @@ interface PhoneLoginActions {
     fun onCodeChange(input: String)
     fun requestCode()
     fun login()
+
+    /** 처음 화면으로 돌아갈 때 입력을 비운다. 차를 여러 사람이 쓰면 앞 사람 번호가 남지 않게 */
+    fun reset()
 }
 
 /**
@@ -57,7 +62,7 @@ class PhoneLoginViewModel(
         val digits = input.filter(Char::isDigit).take(PHONE_MAX_LENGTH)
         if (digits == _state.value.phone) return
         // 번호를 바꾸면 이전에 받은 인증번호는 쓸 수 없다
-        _state.update { it.copy(phone = digits, code = "", codeExpiresAt = 0L, errorMessage = null) }
+        _state.update { it.copy(phone = digits, code = "", codeExpiresAt = 0L, demoCode = null, errorMessage = null) }
     }
 
     override fun onCodeChange(input: String) {
@@ -71,7 +76,7 @@ class PhoneLoginViewModel(
         viewModelScope.launch {
             when (val result = authRepository.requestCode(current.phone)) {
                 is ApiResult.Success -> _state.update {
-                    it.copy(isRequestingCode = false, code = "", codeExpiresAt = elapsedRealtime() + CODE_VALID_MILLIS)
+                    it.copy(isRequestingCode = false, code = "", demoCode = result.data, codeExpiresAt = elapsedRealtime() + CODE_VALID_MILLIS)
                 }
                 is ApiResult.Failure -> _state.update {
                     it.copy(isRequestingCode = false, errorMessage = result.error.message)
@@ -88,6 +93,11 @@ class PhoneLoginViewModel(
             val message = verifyAndLogin(current.phone, current.code)
             _state.update { it.copy(isLoggingIn = false, errorMessage = message) }
         }
+    }
+
+    override fun reset() {
+        // 진행 중인 요청이 있으면 그 결과가 돌아와도 상관없게 상태만 새로 둔다
+        _state.value = PhoneLoginUiState()
     }
 
     /** 성공하면 null, 실패하면 보여 줄 문장 */
@@ -113,8 +123,8 @@ class PhoneLoginViewModel(
         const val CODE_VALID_SECONDS = 180
         private const val CODE_VALID_MILLIS = CODE_VALID_SECONDS * 1000L
 
-        const val NO_ACCOUNT_MESSAGE = "가입된 계정이 없습니다. 휴대폰 앱에서 먼저 가입해 주세요."
-        const val NOT_DRIVER_MESSAGE = "차주 계정으로만 로그인할 수 있습니다."
+        const val NO_ACCOUNT_MESSAGE = "가입된 계정이 없어요. 휴대폰 앱에서 먼저 가입해 주세요."
+        const val NOT_DRIVER_MESSAGE = "차주 계정으로만 로그인할 수 있어요."
 
         val Factory: ViewModelProvider.Factory = viewModelFactory {
             initializer { PhoneLoginViewModel(appContainer().authRepository) }
