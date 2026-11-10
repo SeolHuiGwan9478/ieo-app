@@ -15,6 +15,9 @@ class DefaultOrderRepository(
     private val caller: ApiCaller,
 ) : OrderRepository {
 
+    override suspend fun documentsVerified(): ApiResult<Boolean> =
+        caller.call { api.documents() }.mapResponse { it.verified }
+
     override suspend fun openOrders(limit: Int, near: GeoPoint?): ApiResult<List<Order>> =
         caller.call { api.openOrders(lat = near?.latitude, lng = near?.longitude, size = limit) }.mapResponse { orders -> orders.map(OrderResponse::toDomain) }
 

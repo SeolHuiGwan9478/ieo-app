@@ -45,6 +45,8 @@ data class OrdersUiState(
     val reporting: Boolean = false,
     val isLoading: Boolean = false,
     val isBusy: Boolean = false,
+    /** 필수 서류가 모두 승인됐다. 모르면 막지 않는다 (서버가 한 번 더 막는다) */
+    val verified: Boolean = true,
     /** 한 번 보여 주고 지운다 */
     val message: String? = null,
 )
@@ -160,6 +162,7 @@ class OrdersViewModel(
             orders = list
             _state.update { it.copy(nearby = near != null) }
         }
+        (orderRepository.documentsVerified() as? ApiResult.Success)?.let { result -> _state.update { it.copy(verified = result.data) } }
         publish()
     }
 

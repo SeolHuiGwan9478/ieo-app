@@ -116,7 +116,7 @@ class ScreenshotTest(private val window: String, private val scene: String) {
             }
         }
         rule.mainClock.advanceTimeBy(1_500)
-        if (scene == "login_phone") {
+        if (scene == "login_phone" || scene == "login_phone_error") {
             rule.onNodeWithText("휴대폰 번호", useUnmergedTree = true).performClick()
             rule.mainClock.advanceTimeBy(1_000)
         }
@@ -186,6 +186,7 @@ private object Scenes {
         "sheet_unlink" to { Box(Modifier.fillMaxSize()) { UnlinkSheet(link, false, noop<DriverLinksActions>()) } },
         "orders_list" to { OrdersScreen(OrdersUiState(nearby = true, rows = listOf(orderRow, orderRow.copy(id = 2, day = "오늘"))), noop<OrdersActions>(), false) },
         "orders_detail" to { OrdersScreen(OrdersUiState(nearby = true, rows = listOf(orderRow), detail = orderDetail), noop<OrdersActions>(), false) },
+        "orders_detail_unverified" to { OrdersScreen(OrdersUiState(nearby = true, rows = listOf(orderRow), detail = orderDetail.copy(lines = orderDetail.lines.map { (k, v) -> k to when (k) { "주선사" -> "서류 승인 후 보여요"; "상차" -> "오늘 17:03 ~ 20:03 · 대전 대덕구 (정확한 주소는 승인 후)"; "하차" -> "11월 13일 14:00까지 · 부산 강서구 (정확한 주소는 승인 후)"; else -> v } }), verified = false), noop<OrdersActions>(), false) },
         "orders_report" to { OrdersScreen(OrdersUiState(nearby = true, rows = listOf(orderRow), detail = orderDetail, reporting = true), noop<OrdersActions>(), false) },
         "ledger_entries" to { LedgerScreen(ledger, noop<LedgerActions>()) },
         "ledger_receivables" to { LedgerScreen(ledger.copy(tab = LedgerTab.RECEIVABLES), noop<LedgerActions>()) },
@@ -202,5 +203,6 @@ private object Scenes {
         "settings_sign_out" to { SettingsScreen(settings.copy(form = SettingsForm.ConfirmSignOut), noop<SettingsActions>()) },
         "login_qr" to { LoginScreen(PhoneLoginUiState(), noop<PhoneLoginActions>(), QrLoginUiState.Waiting("ABC123", "ieo://login/ABC123", Long.MAX_VALUE / 2), noop<QrLoginActions>()) },
         "login_phone" to { LoginScreen(PhoneLoginUiState(phone = "01012345678", code = "123", codeExpiresAt = Long.MAX_VALUE / 2), noop<PhoneLoginActions>(), QrLoginUiState.Loading, noop<QrLoginActions>()) },
+        "login_phone_error" to { LoginScreen(PhoneLoginUiState(phone = "01012345678", code = "123456", codeExpiresAt = Long.MAX_VALUE / 2, errorMessage = "인증번호가 달라요 (4번 남음)"), noop<PhoneLoginActions>(), QrLoginUiState.Loading, noop<QrLoginActions>()) },
     )
 }

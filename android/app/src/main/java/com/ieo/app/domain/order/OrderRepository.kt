@@ -14,6 +14,9 @@ interface OrderRepository {
     /** 실제 경로로 계산한 실수익 내역 (오더 상세) */
     suspend fun profit(orderId: Long, from: GeoPoint): ApiResult<OrderProfit>
 
+    /** 필수 서류가 모두 승인됐는지. 아니면 배차를 요청할 수 없다 (서류는 휴대폰 앱에서 올린다) */
+    suspend fun documentsVerified(): ApiResult<Boolean> = ApiResult.Success(true)
+
     /** 배차 요청 (기본 차량으로). 동시에 3건까지 */
     suspend fun request(orderId: Long): ApiResult<DispatchRequest>
 

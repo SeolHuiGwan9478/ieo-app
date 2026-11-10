@@ -137,7 +137,7 @@ class HomeStateFactory(
         vehicle = next.order.vehicleLabel,
         netProfit = next.netProfit,
         fare = next.order.fare,
-        brokerName = next.order.brokerName,
+        brokerName = next.order.brokerLabel,
         emptyMeters = next.emptyMeters,
         longWait = next.longWait,
         cargo = next.order.specialCargo,

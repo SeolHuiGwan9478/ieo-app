@@ -35,7 +35,12 @@ data class Order(
     val brokerMetrics: BrokerMetrics? = null,
     /** 위치를 보내고 찾았을 때만: 운임에서 상차지까지 공차 연료비를 뺀 금액 */
     val netProfit: Long? = null,
+    /** 서류 심사 전이라 줄여 받은 오더. 상하차지는 시·구까지, 주선사·화물 내용은 비어 있다 */
+    val limited: Boolean = false,
 ) {
+    /** 화면과 음성에 쓰는 주선사 이름. 서류 심사 전이면 가린다 */
+    val brokerLabel: String get() = if (limited) "서류 승인 후 공개" else brokerName
+
     val vehicleLabel: String get() = "$tonnageLabel $bodyTypeLabel"
 
     /** 일반이 아닌 화물 종류. 목록에 태그로 붙인다 (일반은 대부분이라 붙이지 않는다) */

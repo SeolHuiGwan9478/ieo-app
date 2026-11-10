@@ -77,7 +77,7 @@ fun OrdersScreen(state: OrdersUiState, actions: OrdersActions, isDriving: Boolea
             OrderList(state, onOrderClick = actions::open)
         }
         IeoBottomSheet(item = state.detail, onDismiss = actions::close) { detail ->
-            DetailSheet(detail, reporting = state.reporting, busy = state.isBusy, actions = actions)
+            DetailSheet(detail, reporting = state.reporting, busy = state.isBusy, verified = state.verified, actions = actions)
         }
     }
 }
@@ -172,7 +172,7 @@ private fun OrderList(state: OrdersUiState, onOrderClick: (Long) -> Unit) {
 }
 
 @Composable
-private fun DetailSheet(detail: OrderDetail, reporting: Boolean, busy: Boolean, actions: OrdersActions) {
+private fun DetailSheet(detail: OrderDetail, reporting: Boolean, busy: Boolean, actions: OrdersActions, verified: Boolean = true) {
     SheetTitle(detail.route)
     Spacer(Modifier.height(24.dp))
     detail.lines.forEach { (label, value) -> SheetLine(label, value) }
@@ -190,13 +190,17 @@ private fun DetailSheet(detail: OrderDetail, reporting: Boolean, busy: Boolean, 
         IeoSecondaryButton(text = "취소", onClick = actions::close, modifier = Modifier.fillMaxWidth())
         return
     }
+    if (!verified && !detail.requested) {
+        Text("서류 4가지가 승인되면 배차를 요청할 수 있어요.\n휴대폰 앱 내 정보 > 서류에서 올려 주세요", fontSize = 24.sp, lineHeight = 34.sp, color = TextSub)
+        Spacer(Modifier.height(20.dp))
+    }
     Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
         IeoTonalButton(text = "신고", onClick = actions::startReport, modifier = Modifier.weight(1f))
         IeoTonalButton(text = "닫기", onClick = actions::close, modifier = Modifier.weight(1f))
         if (detail.requested) {
             IeoSecondaryButton(text = "요청 철회", onClick = actions::withdraw, modifier = Modifier.weight(2f))
         } else {
-            IeoPrimaryButton(text = if (busy) "요청 중…" else "배차 요청", onClick = actions::request, modifier = Modifier.weight(2f))
+            IeoPrimaryButton(text = if (busy) "요청 중…" else "배차 요청", onClick = actions::request, modifier = Modifier.weight(2f), enabled = verified)
         }
     }
 }

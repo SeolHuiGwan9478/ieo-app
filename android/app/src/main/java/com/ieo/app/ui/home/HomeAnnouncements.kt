@@ -102,7 +102,7 @@ object HomeAnnouncements {
     fun nextOrderDetail(next: NextOrder, pickupDay: String, pickupTime: String): Announcement {
         val order = next.order
         return nextOrderLine(
-            "${order.brokerName}, ${order.vehicleLabel}, $pickupDay $pickupTime 상차, " +
+            "${if (order.limited) "" else order.brokerName + ", "}${order.vehicleLabel}, $pickupDay $pickupTime 상차, " +
                 "운임 ${formatWonSpoken(order.fare)}, 빈 차로 약 ${(next.emptyMeters + 500) / 1000}킬로미터예요.",
         )
     }

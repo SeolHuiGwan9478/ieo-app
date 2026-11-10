@@ -66,7 +66,7 @@ class OrderUiMapper(private val labels: DayTimeFormatter) {
         route = route(order),
         vehicle = order.vehicleLabel,
         paymentType = order.paymentTypeLabel,
-        brokerName = order.brokerName,
+        brokerName = brokerOf(order),
         fare = formatWon(order.fare),
         requested = order.isRequestedByMe,
         distanceMeters = order.distanceMeters,
@@ -79,8 +79,8 @@ class OrderUiMapper(private val labels: DayTimeFormatter) {
         id = order.id,
         route = route(order),
         lines = listOfNotNull(
-            "상차" to "${labels.dayTime(order.pickupFrom)} ~ ${labels.time(order.pickupUntil)} · ${order.pickup.address}",
-            "하차" to "${labels.dayTime(order.dropoffBy)}까지 · ${order.dropoff.address}",
+            "상차" to "${labels.dayTime(order.pickupFrom)} ~ ${labels.time(order.pickupUntil)} · ${addressOf(order, order.pickup.address)}",
+            "하차" to "${labels.dayTime(order.dropoffBy)}까지 · ${addressOf(order, order.dropoff.address)}",
             "차량" to order.vehicleLabel,
             "화물" to cargo(order),
             "운임" to "${formatWon(order.fare)} · ${order.paymentTypeLabel} · ${order.expectedPaymentDays}일 안에 지급",
@@ -88,11 +88,17 @@ class OrderUiMapper(private val labels: DayTimeFormatter) {
             profit?.tollFare?.let { "예상 통행료" to formatWon(it) },
             profit?.let { "기름값" to formatWon(it.fuelCost) },
             profit?.let { "상차지까지" to "${(it.emptyMeters + 500) / 1000}km" },
-            "주선사" to order.brokerName,
+            "주선사" to brokerOf(order),
             order.brokerMetrics?.let { "주선사 기록" to metricsSummary(it) },
         ),
         requested = order.isRequestedByMe,
     )
+
+    /** 서류 심사 전이면 주선사를 가린다 */
+    private fun brokerOf(order: Order): String = if (order.limited) "서류 승인 후 보여요" else order.brokerName
+
+    /** 서류 심사 전이면 시·구까지만 온다 */
+    private fun addressOf(order: Order, address: String): String = if (order.limited) "$address (정확한 주소는 승인 후)" else address
 
     private fun profitLine(order: Order, profit: OrderProfit?): Pair<String, String>? = when {
         profit != null && profit.tollFare != null -> "실수익" to "${formatWon(profit.netProfit)} (기름값·통행료 뺀 금액)"

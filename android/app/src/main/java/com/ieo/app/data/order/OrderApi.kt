@@ -35,6 +35,10 @@ interface OrderApi {
     @POST("api/dispatch-requests/{requestId}/withdraw")
     suspend fun withdraw(@Path("requestId") requestId: Long): Response<DispatchRequestResponse>
 
+    /** 서류 심사 상태. 필수 서류 4종이 모두 승인돼야(verified) 배차를 요청할 수 있다. 서류는 휴대폰 앱에서 올린다 */
+    @GET("api/drivers/me/documents")
+    suspend fun documents(): Response<DocumentsStatusResponse>
+
     @POST("api/orders/{orderId}/reports")
     suspend fun report(@Path("orderId") orderId: Long, @Body body: CreateOrderReportRequest): Response<Unit>
 }
