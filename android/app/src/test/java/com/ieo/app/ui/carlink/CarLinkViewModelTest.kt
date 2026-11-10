@@ -118,7 +118,5 @@ class CarLinkViewModelTest {
 
         override suspend fun update(vehicleId: Long, tonnage: Tonnage, bodyType: BodyType, heightMeters: Double?, dimensions: com.ieo.app.domain.vehicle.VehicleDimensions): ApiResult<Vehicle> =
             error("쓰지 않음")
-
-        override suspend fun setDefault(vehicleId: Long): ApiResult<Vehicle> = error("쓰지 않음")
     }
 }

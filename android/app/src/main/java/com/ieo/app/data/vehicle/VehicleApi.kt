@@ -15,9 +15,6 @@ interface VehicleApi {
     @PATCH("api/vehicles/{vehicleId}")
     suspend fun update(@Path("vehicleId") vehicleId: Long, @Body body: UpdateVehicleRequest): Response<VehicleResponse>
 
-    @POST("api/vehicles/{vehicleId}/default")
-    suspend fun setDefault(@Path("vehicleId") vehicleId: Long): Response<VehicleResponse>
-
     @POST("api/vehicles/pleos/resolve")
     suspend fun resolvePleos(@Body body: PleosVinRequest): Response<PleosResolveResponse>
 

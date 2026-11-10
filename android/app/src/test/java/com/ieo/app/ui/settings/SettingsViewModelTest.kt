@@ -104,17 +104,6 @@ class SettingsViewModelTest {
     }
 
     @Test
-    fun `기본 차량을 바꾸면 그 차가 맨 앞으로 온다`() = runTest(main.dispatcher) {
-        vm.refresh()
-        runCurrent()
-
-        vm.setDefault(2)
-        runCurrent()
-
-        assertEquals("경기81사5678", vm.state.value.vehicles.first().plateNumber)
-    }
-
-    @Test
     fun `빈 이름은 저장하지 않는다`() = runTest(main.dispatcher) {
         vm.saveName("  ")
         runCurrent()
@@ -169,11 +158,6 @@ class SettingsViewModelTest {
         override suspend fun update(vehicleId: Long, tonnage: Tonnage, bodyType: BodyType, heightMeters: Double?, dimensions: com.ieo.app.domain.vehicle.VehicleDimensions): ApiResult<Vehicle> {
             updates += vehicleId to heightMeters
             vehicles = vehicles.map { if (it.id == vehicleId) it.copy(tonnage = tonnage, bodyType = bodyType, heightMeters = heightMeters) else it }
-            return ApiResult.Success(vehicles.first { it.id == vehicleId })
-        }
-
-        override suspend fun setDefault(vehicleId: Long): ApiResult<Vehicle> {
-            vehicles = vehicles.map { it.copy(isDefault = it.id == vehicleId) }
             return ApiResult.Success(vehicles.first { it.id == vehicleId })
         }
 

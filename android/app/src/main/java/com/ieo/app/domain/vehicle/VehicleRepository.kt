@@ -16,9 +16,6 @@ interface VehicleRepository {
         dimensions: VehicleDimensions = VehicleDimensions(),
     ): ApiResult<Vehicle>
 
-    /** 배차 요청·운행 등록에 쓰는 기본 차량 */
-    suspend fun setDefault(vehicleId: Long): ApiResult<Vehicle>
-
     /** 차량 앱에 로그인한 뒤: 이 트럭(차대번호)이 내 차량 중 어느 것인지 찾는다 (VEH-004) */
     suspend fun resolvePleos(vin: String): ApiResult<PleosMatch>
 

@@ -46,7 +46,7 @@ private const val DEFAULT_HEIGHT = 3.5
 @Composable
 fun ColumnScope.NameForm(form: SettingsForm.EditName, busy: Boolean, onSubmit: (String) -> Unit, onCancel: () -> Unit) {
     var name by remember(form) { mutableStateOf(form.current) }
-    SheetTitle("이름 변경")
+    SheetTitle("내 정보 수정")
     Spacer(Modifier.height(24.dp))
     OutlinedTextField(
         value = name,
@@ -57,6 +57,9 @@ fun ColumnScope.NameForm(form: SettingsForm.EditName, busy: Boolean, onSubmit: (
         shape = RoundedCornerShape(16.dp),
         modifier = Modifier.fillMaxWidth(),
     )
+    // 번호를 바꾸려면 새 번호로 인증번호를 받아야 해서 휴대폰에서 한다 (ACC-008)
+    Spacer(Modifier.height(16.dp))
+    Text("휴대폰 번호는 휴대폰 앱의 내 정보 수정에서 바꿔요", fontSize = 24.sp, color = TextSub)
     FormButtons(busy, onCancel = onCancel, onSave = { onSubmit(name) })
 }
 

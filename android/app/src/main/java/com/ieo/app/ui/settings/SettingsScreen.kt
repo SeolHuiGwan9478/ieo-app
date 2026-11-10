@@ -109,7 +109,7 @@ private fun ProfileSection(profile: Profile?, standing: DriverStanding?, onEdit:
             DetailLine("내 기록", "완료 운행 ${it.completedTripCount}건 · 직전 취소 ${it.lateCancelCount}건")
         }
         Spacer(Modifier.height(12.dp))
-        IeoTonalButton(text = "이름 변경", onClick = onEdit)
+        IeoTonalButton(text = "내 정보 수정", onClick = onEdit)
     }
 }
 
@@ -241,7 +241,6 @@ private object PreviewSettingsActions : SettingsActions {
     override fun close() = Unit
     override fun saveName(name: String) = Unit
     override fun saveVehicle(tonnage: Tonnage, bodyType: BodyType, heightMeters: Double?, dimensions: VehicleDimensions) = Unit
-    override fun setDefault(vehicleId: Long) = Unit
     override fun saveRecommendation(preference: RecommendationPreference) = Unit
     override fun signOut() = Unit
 }

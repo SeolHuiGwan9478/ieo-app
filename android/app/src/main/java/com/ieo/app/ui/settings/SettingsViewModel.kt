@@ -56,7 +56,6 @@ interface SettingsActions {
     fun close()
     fun saveName(name: String)
     fun saveVehicle(tonnage: Tonnage, bodyType: BodyType, heightMeters: Double?, dimensions: VehicleDimensions)
-    fun setDefault(vehicleId: Long)
     fun saveRecommendation(preference: RecommendationPreference)
     fun signOut()
 }
@@ -103,12 +102,6 @@ class SettingsViewModel(
             _state.update { it.copy(form = null, message = "${vehicle.plateNumber} 차량 정보를 고쳤어요") }
             load()
         }
-    }
-
-    override fun setDefault(vehicleId: Long) = runAction {
-        val vehicle = vehicleRepository.setDefault(vehicleId).orShow() ?: return@runAction
-        _state.update { it.copy(form = null, message = "${vehicle.plateNumber} 차량을 기본 차량으로 정했어요") }
-        load()
     }
 
     override fun saveRecommendation(preference: RecommendationPreference) {
