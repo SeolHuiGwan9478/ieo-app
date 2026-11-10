@@ -18,6 +18,7 @@ import com.ieo.app.ui.common.josa
 import com.ieo.app.ui.component.IeoBottomSheet
 import com.ieo.app.ui.component.IeoPrimaryButton
 import com.ieo.app.ui.component.IeoTonalButton
+import com.ieo.app.R
 import com.ieo.app.ui.component.SectionTitle
 import com.ieo.app.ui.component.SheetTitle
 import com.ieo.app.ui.component.StatusTag
@@ -68,7 +69,7 @@ fun BoxScope.UnlinkSheet(link: LinkRow?, busy: Boolean, actions: DriverLinksActi
 @Composable
 fun DriverLinksSection(state: DriverLinksUiState, actions: DriverLinksActions) {
     WhiteSection {
-        SectionTitle(title = "단골 주선사", count = state.links.size, note = "연결된 회사 일을 하는 동안 위치를 공유해요")
+        SectionTitle(title = "단골 주선사", count = state.links.size, note = "연결된 회사 일을 하는 동안 위치를 공유해요", icon = R.drawable.ic_menu_partner)
         if (state.invitations.isEmpty() && state.links.isEmpty()) {
             Text("연결된 회사가 없어요", fontSize = 24.sp, color = TextSub, modifier = Modifier.padding(8.dp))
         }

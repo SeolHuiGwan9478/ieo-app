@@ -197,7 +197,7 @@ private object Scenes {
         "ledger_add_trip" to { LedgerScreen(ledger.copy(form = LedgerForm.AddTrip), noop<LedgerActions>()) },
         "ledger_edit_fare" to { LedgerScreen(ledger.copy(detail = detail, form = LedgerForm.EditFare(1, 320_000, PaymentType.RECEIPT)), noop<LedgerActions>()) },
         "settings" to { SettingsScreen(settings, noop<SettingsActions>()) },
-        "settings_verified" to { SettingsScreen(settings.copy(standing = com.ieo.app.domain.account.DriverStanding(true, 4, 4, 37, 1)), noop<SettingsActions>()) },
+        "settings_verified" to { SettingsScreen(settings.copy(standing = com.ieo.app.domain.account.DriverStanding(true, 4, 4, 37, 1)), noop<SettingsActions>(), linkCount = 2) },
         "settings_unverified" to { SettingsScreen(settings.copy(standing = com.ieo.app.domain.account.DriverStanding(false, 2, 4, 0, 0)), noop<SettingsActions>()) },
         "settings_name" to { SettingsScreen(settings.copy(form = SettingsForm.EditName("김기사")), noop<SettingsActions>()) },
         "settings_vehicle" to { SettingsScreen(settings.copy(form = SettingsForm.EditVehicle(vehicle)), noop<SettingsActions>()) },

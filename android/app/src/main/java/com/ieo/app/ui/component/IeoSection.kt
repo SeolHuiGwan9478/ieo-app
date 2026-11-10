@@ -1,6 +1,10 @@
 package com.ieo.app.ui.component
 
 import androidx.compose.foundation.background
+import androidx.compose.ui.res.painterResource
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.Image
+import androidx.annotation.DrawableRes
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.FlowRow
@@ -61,14 +65,21 @@ fun WhiteSection(contentPadding: Dp = 16.dp, content: @Composable ColumnScope.()
 
 /** 묶음 제목. 개수는 회색, 오른쪽 끝에 짧은 설명 */
 @Composable
-fun SectionTitle(title: String, count: Int? = null, note: String? = null) {
+fun SectionTitle(title: String, count: Int? = null, note: String? = null, @DrawableRes icon: Int? = null) {
     // 반 화면처럼 좁아 한 줄에 안 들어가면 설명은 제목 아래로 내려간다
     FlowRow(
         horizontalArrangement = Arrangement.SpaceBetween,
         itemVerticalAlignment = Alignment.Bottom,
         modifier = Modifier.fillMaxWidth().padding(start = 12.dp, end = 12.dp, bottom = 10.dp),
     ) {
-        Row {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            // 휴대폰 앱 내 정보와 같은 색 아이콘을 회색 칸에 담는다
+            icon?.let {
+                Box(Modifier.size(48.dp).background(CanvasGray, RoundedCornerShape(14.dp)), contentAlignment = Alignment.Center) {
+                    Image(painterResource(it), contentDescription = null, modifier = Modifier.size(30.dp))
+                }
+                Spacer(Modifier.width(14.dp))
+            }
             Text(title, fontSize = 26.sp, fontWeight = FontWeight.ExtraBold, color = TextStrong)
             count?.let {
                 Spacer(Modifier.width(8.dp))

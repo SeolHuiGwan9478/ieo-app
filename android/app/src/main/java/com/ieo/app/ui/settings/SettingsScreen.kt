@@ -1,6 +1,13 @@
 package com.ieo.app.ui.settings
 
 import com.ieo.app.ui.theme.Orange600
+import com.ieo.app.R
+import com.ieo.app.ui.theme.TextMid
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.border
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.ui.res.painterResource
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.Icon
@@ -57,7 +64,12 @@ private val ScreenPadding = 28.dp
  * [linksSection]: 단골 주선사 칸. 상태를 따로 가진 ui/links가 그린다
  */
 @Composable
-fun SettingsScreen(state: SettingsUiState, actions: SettingsActions, linksSection: @Composable () -> Unit = {}) {
+fun SettingsScreen(
+    state: SettingsUiState,
+    actions: SettingsActions,
+    linkCount: Int = 0,
+    linksSection: @Composable () -> Unit = {},
+) {
     Box(modifier = Modifier.fillMaxSize().background(CanvasGray)) {
         Column(
             verticalArrangement = Arrangement.spacedBy(16.dp),
@@ -67,7 +79,7 @@ fun SettingsScreen(state: SettingsUiState, actions: SettingsActions, linksSectio
                 .padding(ScreenPadding)
                 .widthIn(max = 880.dp),
         ) {
-            ProfileSection(state.profile, state.standing, onEdit = { actions.openForm(SettingsForm.EditName(state.profile?.name.orEmpty())) })
+            ProfileSection(state.profile, state.standing, linkCount, onEdit = { actions.openForm(SettingsForm.EditName(state.profile?.name.orEmpty())) })
             VehicleSection(state.vehicles, isLoading = state.isLoading, onEdit = { actions.openForm(SettingsForm.EditVehicle(it)) })
             RecommendationSection(state.recommendation, onEdit = { actions.openForm(SettingsForm.EditRecommendation(it)) })
             linksSection()
@@ -94,22 +106,70 @@ fun SettingsScreen(state: SettingsUiState, actions: SettingsActions, linksSectio
     }
 }
 
+/** 휴대폰 앱 내 정보처럼 얼굴 그림, 이름과 인증 마크, 주선사에게 보이는 내 기록 */
 @Composable
-private fun ProfileSection(profile: Profile?, standing: DriverStanding?, onEdit: () -> Unit) {
+private fun ProfileSection(profile: Profile?, standing: DriverStanding?, linkCount: Int, onEdit: () -> Unit) {
     WhiteSection {
-        SectionTitle(title = "내 정보")
-        // 휴대폰 앱과 같은 인증 마크
-        if (standing?.verified == true) {
-            Box(Modifier.padding(start = 8.dp, bottom = 8.dp)) { VerifiedBadge() }
+        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(start = 8.dp, end = 8.dp, bottom = 16.dp)) {
+            Image(painterResource(R.drawable.ic_avatar_driver), contentDescription = null, modifier = Modifier.size(88.dp))
+            Spacer(Modifier.width(18.dp))
+            Column {
+                FlowRow(horizontalArrangement = Arrangement.spacedBy(10.dp), itemVerticalAlignment = Alignment.CenterVertically) {
+                    Text(profile?.name ?: "-", fontSize = 30.sp, fontWeight = FontWeight.ExtraBold, color = TextStrong)
+                    // 휴대폰 앱과 같은 인증 마크
+                    if (standing?.verified == true) VerifiedBadge()
+                }
+                Text(profile?.phone?.let(::maskPhone) ?: "-", fontSize = 24.sp, color = TextSub, modifier = Modifier.padding(top = 4.dp))
+            }
         }
-        DetailLine("이름", profile?.name ?: "-")
-        DetailLine("휴대폰", profile?.phone?.let(::maskPhone) ?: "-")
-        standing?.let {
-            DetailLine("서류", documentsLabel(it))
-            DetailLine("내 기록", "완료 운행 ${it.completedTripCount}건 · 직전 취소 ${it.lateCancelCount}건")
-        }
-        Spacer(Modifier.height(12.dp))
+        standing?.let { RecordCard(it, linkCount) }
+        Spacer(Modifier.height(16.dp))
         IeoTonalButton(text = "내 정보 수정", onClick = onEdit)
+    }
+}
+
+/** 휴대폰 앱 내 정보의 "주선사에게 보이는 내 기록"과 같은 칸. 서류는 휴대폰에서 올리므로 누르는 곳은 없다 */
+@Composable
+private fun RecordCard(standing: DriverStanding, linkCount: Int) {
+    Column(
+        Modifier
+            .padding(horizontal = 8.dp)
+            .border(2.dp, CanvasGray, RoundedCornerShape(18.dp))
+            .padding(20.dp),
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text("주선사에게 보이는 내 기록", fontSize = 24.sp, fontWeight = FontWeight.SemiBold, color = TextMid, modifier = Modifier.weight(1f))
+            Text(documentsSummary(standing), fontSize = 24.sp, fontWeight = FontWeight.Bold, color = Orange700)
+        }
+        Spacer(Modifier.height(16.dp))
+        Row {
+            RecordStat("${standing.completedTripCount}건", "완료 운행", Modifier.weight(1f))
+            RecordStat("${standing.lateCancelCount}건", "직전 취소", Modifier.weight(1f))
+            RecordStat("${linkCount}곳", "단골 주선사", Modifier.weight(1f))
+        }
+        if (!standing.verified) {
+            Row(
+                Modifier.fillMaxWidth().padding(top = 18.dp).background(Orange50, RoundedCornerShape(14.dp)).padding(16.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Image(painterResource(R.drawable.ic_menu_document), contentDescription = null, modifier = Modifier.size(32.dp))
+                Spacer(Modifier.width(10.dp))
+                Text("서류를 올리면 인증 차주 마크가 붙어요. 휴대폰 앱 내 정보 > 서류에서 올려요", fontSize = 24.sp, fontWeight = FontWeight.SemiBold, color = Orange700)
+            }
+        }
+    }
+}
+
+/** 휴대폰 앱과 같은 짧은 서류 상태: "인증됨" 또는 "승인 2/4" */
+internal fun documentsSummary(standing: DriverStanding): String =
+    if (standing.verified) "인증됨" else "승인 ${standing.approvedRequired}/${standing.requiredTotal}"
+
+/** 주선사가 보는 내 기록 한 칸: 큰 숫자와 이름 (휴대폰 앱 Stat과 같은 모양) */
+@Composable
+private fun RecordStat(value: String, label: String, modifier: Modifier) {
+    Column(modifier, horizontalAlignment = Alignment.CenterHorizontally) {
+        Text(value, fontSize = 32.sp, fontWeight = FontWeight.ExtraBold, color = TextStrong)
+        Text(label, fontSize = 24.sp, color = TextSub)
     }
 }
 
@@ -117,7 +177,7 @@ private fun ProfileSection(profile: Profile?, standing: DriverStanding?, onEdit:
 private fun VehicleSection(vehicles: List<Vehicle>, isLoading: Boolean, onEdit: (Vehicle) -> Unit) {
     WhiteSection {
         // 차주 한 명에 차 한 대 (VEH-001). 예전에 여러 대를 넣은 계정이면 기본 차량만 보여 준다
-        SectionTitle(title = "내 차량", note = "번호 변경은 휴대폰 앱에서")
+        SectionTitle(title = "내 차량", note = "번호 변경은 휴대폰 앱에서", icon = R.drawable.ic_menu_truck)
         val vehicle = vehicles.firstOrNull { it.isDefault } ?: vehicles.firstOrNull()
         if (vehicle == null) {
             Text(if (isLoading) "불러오는 중…" else "휴대폰 앱에서 내 차를 등록해 주세요", fontSize = 24.sp, color = TextSub, modifier = Modifier.padding(8.dp))
@@ -145,7 +205,7 @@ private fun VehicleRow(vehicle: Vehicle, onClick: () -> Unit) {
 @Composable
 private fun RecommendationSection(preference: RecommendationPreference?, onEdit: (RecommendationPreference) -> Unit) {
     WhiteSection {
-        SectionTitle(title = "다음 배차 추천", note = "운송 중 음성으로, 하차지에서 카드로 알려 드려요")
+        SectionTitle(title = "다음 배차 추천", note = "운송 중 음성으로, 하차지에서 카드로 알려 드려요", icon = R.drawable.ic_menu_recommend)
         if (preference == null) {
             Text("설정을 불러오지 못했어요", fontSize = 24.sp, color = TextSub, modifier = Modifier.padding(8.dp))
             return@WhiteSection
@@ -160,11 +220,6 @@ private fun RecommendationSection(preference: RecommendationPreference?, onEdit:
         IeoTonalButton(text = "수정", onClick = { onEdit(preference) })
     }
 }
-
-/** 서류 칸: 다 승인됐으면 "인증됨", 아니면 몇 장 승인됐고 어디서 올리는지 */
-internal fun documentsLabel(standing: DriverStanding): String =
-    if (standing.verified) "인증됨 · 배차를 요청할 수 있어요"
-    else "승인 ${standing.approvedRequired}/${standing.requiredTotal} · 휴대폰 앱 내 정보 > 서류에서 올려요"
 
 /** 이름 옆 "인증 차주" 표시. 휴대폰 앱과 같은 주황 마크 */
 @Composable
@@ -188,7 +243,7 @@ internal fun minNetProfitLabel(won: Long?): String = won?.let { "${formatWon(it)
 @Composable
 private fun AppSection(appVersion: String, onSignOut: () -> Unit) {
     WhiteSection {
-        SectionTitle(title = "앱")
+        SectionTitle(title = "앱", icon = R.drawable.ic_menu_car_login)
         DetailLine("버전", appVersion)
         Spacer(Modifier.height(12.dp))
         IeoTonalButton(text = "로그아웃", onClick = onSignOut)

@@ -27,6 +27,7 @@ fun SettingsRoute(
     SettingsScreen(
         state = state,
         actions = viewModel,
+        linkCount = linksState.links.size,
         linksSection = { DriverLinksSection(linksState, linksViewModel) },
     )
 }
