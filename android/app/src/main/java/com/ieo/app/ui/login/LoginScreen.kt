@@ -1,5 +1,7 @@
 package com.ieo.app.ui.login
 
+import androidx.compose.foundation.text.TextAutoSize
+import androidx.compose.foundation.text.BasicText
 import android.os.SystemClock
 import com.ieo.app.ui.component.IeoWordmark
 import androidx.compose.foundation.layout.fillMaxHeight
@@ -268,7 +270,13 @@ private fun LoginForm(
 
 @Composable
 private fun ErrorText(message: String, bottomSpace: Dp = 0.dp) {
-    Text(text = message, fontSize = 24.sp, color = MaterialTheme.colorScheme.error)
+    // 좁은 반 화면에서도 한 줄로 보이게, 넘치면 글자를 줄인다
+    BasicText(
+        text = message,
+        style = TextStyle(color = MaterialTheme.colorScheme.error),
+        maxLines = 1,
+        autoSize = TextAutoSize.StepBased(minFontSize = 18.sp, maxFontSize = 24.sp),
+    )
     if (bottomSpace > 0.dp) Spacer(Modifier.height(bottomSpace))
 }
 

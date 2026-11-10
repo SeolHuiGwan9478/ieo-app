@@ -94,7 +94,7 @@ private fun ProfileSection(profile: Profile?, onEdit: () -> Unit) {
         DetailLine("이름", profile?.name ?: "-")
         DetailLine("휴대폰", profile?.phone?.let(::maskPhone) ?: "-")
         Spacer(Modifier.height(12.dp))
-        IeoTonalButton(text = "이름 바꾸기", onClick = onEdit)
+        IeoTonalButton(text = "이름 변경", onClick = onEdit)
     }
 }
 
@@ -120,7 +120,7 @@ private fun VehicleRow(vehicle: Vehicle, onClick: () -> Unit) {
         Spacer(Modifier.height(4.dp))
         Text(vehicleSummary(vehicle), fontSize = 24.sp, color = TextSub)
         Spacer(Modifier.height(10.dp))
-        IeoTonalButton(text = "고치기", onClick = onClick)
+        IeoTonalButton(text = "수정", onClick = onClick)
     }
 }
 
@@ -140,7 +140,7 @@ private fun RecommendationSection(preference: RecommendationPreference?, onEdit:
             DetailLine("빼는 화물", excludedCargoLabel(preference.excludedCargo))
         }
         Spacer(Modifier.height(12.dp))
-        IeoTonalButton(text = "고치기", onClick = { onEdit(preference) })
+        IeoTonalButton(text = "수정", onClick = { onEdit(preference) })
     }
 }
 

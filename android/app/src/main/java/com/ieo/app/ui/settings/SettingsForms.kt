@@ -40,13 +40,12 @@ import com.ieo.app.ui.theme.TextSub
 import kotlin.math.roundToInt
 
 /** 높이를 ± 버튼으로 0.1m씩 바꾼다. 정차 중에도 키보드 없이 고칠 수 있게 */
-private const val HEIGHT_STEP = 0.1
 private const val DEFAULT_HEIGHT = 3.5
 
 @Composable
 fun ColumnScope.NameForm(form: SettingsForm.EditName, busy: Boolean, onSubmit: (String) -> Unit, onCancel: () -> Unit) {
     var name by remember(form) { mutableStateOf(form.current) }
-    SheetTitle("이름 바꾸기")
+    SheetTitle("이름 변경")
     Spacer(Modifier.height(24.dp))
     OutlinedTextField(
         value = name,
@@ -73,37 +72,27 @@ fun ColumnScope.VehicleForm(
     var bodyType by remember(vehicle) { mutableStateOf(vehicle.bodyType) }
     var height by remember(vehicle) { mutableStateOf(vehicle.heightMeters) }
     var dimensions by remember(vehicle) { mutableStateOf(vehicle.dimensions) }
-    var showDimensions by remember(vehicle) { mutableStateOf(vehicle.dimensions != VehicleDimensions()) }
 
-    SheetTitle("${vehicle.plateNumber} 고치기")
+    SheetTitle("${vehicle.plateNumber} 수정")
     Spacer(Modifier.height(24.dp))
     FieldLabel("톤수")
+    TonnageStepper(tonnage) { tonnage = it }
+    Spacer(Modifier.height(12.dp))
+    // 바로 고르기
     FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Tonnage.entries.forEach { FilterChip(it.label, selected = tonnage == it, onClick = { tonnage = it }) }
     }
-    Spacer(Modifier.height(20.dp))
+    Spacer(Modifier.height(28.dp))
     FieldLabel("차종")
-    FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        BodyType.entries.forEach { FilterChip(it.label, selected = bodyType == it, onClick = { bodyType = it }) }
-    }
-    Spacer(Modifier.height(20.dp))
-    FieldLabel("높이 (짐칸 위까지)")
-    HeightStepper(height = height, onChange = { height = it })
-    Text("상하차지 높이 제한과 비교해 알려 드려요", fontSize = 24.sp, color = TextSub)
-    Spacer(Modifier.height(12.dp))
-    if (showDimensions) {
-        Text("안 적으면 톤수 기준으로 경로와 통행료를 계산해요", fontSize = 24.sp, color = TextSub)
-        Spacer(Modifier.height(12.dp))
-        DimensionRow("폭", dimensions.widthCm, VehicleDimensions.WIDTH, ::formatCmAsMeters) { dimensions = dimensions.copy(widthCm = it) }
-        DimensionRow("길이", dimensions.lengthCm, VehicleDimensions.LENGTH, ::formatCmAsMeters) { dimensions = dimensions.copy(lengthCm = it) }
-        DimensionRow("총중량", dimensions.totalWeightKg, VehicleDimensions.TOTAL_WEIGHT, ::formatKgAsTons) { dimensions = dimensions.copy(totalWeightKg = it) }
-        DimensionRow("축 수", dimensions.axleCount, VehicleDimensions.AXLES, { "${it}축" }) { dimensions = dimensions.copy(axleCount = it) }
-    } else {
-        IeoTonalButton(text = "폭·길이·중량·축 수 입력 (선택)", onClick = { showDimensions = true })
-    }
+    BodyTypeTiles(bodyType) { bodyType = it }
+    Spacer(Modifier.height(28.dp))
+    FieldLabel("제원 (선택)")
+    VehicleSpecList(height, dimensions, onHeight = { height = it }, onDimensions = { dimensions = it })
+    Spacer(Modifier.height(10.dp))
+    Text("자동차등록증에 적힌 값을 넣어 주세요. 비워 두면 톤수 기준으로 계산해요.", fontSize = 24.sp, color = TextSub)
     if (!vehicle.isDefault) {
         Spacer(Modifier.height(20.dp))
-        IeoTonalButton(text = "기본 차량으로 정하기", onClick = { if (!busy) onSetDefault() })
+        IeoTonalButton(text = "기본 차량으로", onClick = { if (!busy) onSetDefault() })
     }
     FormButtons(busy, onCancel = onCancel, onSave = { onSubmit(tonnage, bodyType, height, dimensions) })
 }
@@ -202,45 +191,6 @@ fun ColumnScope.SignOutConfirm(onSignOut: () -> Unit, onCancel: () -> Unit) {
         IeoTonalButton(text = "취소", onClick = onCancel, modifier = Modifier.weight(1f))
         IeoPrimaryButton(text = "로그아웃", onClick = onSignOut, modifier = Modifier.weight(2f))
     }
-}
-
-/** 선택 입력 한 줄. 키보드 없이 ± 로 맞춘다 */
-@Composable
-private fun DimensionRow(label: String, value: Int?, range: DimensionRange, format: (Int) -> String, onChange: (Int?) -> Unit) {
-    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-        Text(label, fontSize = 24.sp, fontWeight = FontWeight.Bold, color = TextStrong, modifier = Modifier.width(92.dp))
-        IeoTonalButton(text = "−", onClick = { onChange(range.next(value, -range.step)) }, modifier = Modifier.width(88.dp))
-        Text(
-            text = value?.let(format) ?: "모름",
-            fontSize = 28.sp,
-            fontWeight = FontWeight.ExtraBold,
-            color = if (value == null) TextSub else TextStrong,
-            style = Tnum,
-            modifier = Modifier.width(110.dp),
-        )
-        IeoTonalButton(text = "+", onClick = { onChange(range.next(value, range.step)) }, modifier = Modifier.width(88.dp))
-        if (value != null) IeoTonalButton(text = "모름", onClick = { onChange(null) }, modifier = Modifier.weight(1f))
-    }
-    Spacer(Modifier.height(8.dp))
-}
-
-/** null이면 "모름". 처음 누르면 3.5m에서 시작한다 */
-@Composable
-private fun HeightStepper(height: Double?, onChange: (Double?) -> Unit) {
-    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-        IeoTonalButton(text = "−", onClick = { onChange(step(height, -HEIGHT_STEP)) }, modifier = Modifier.width(88.dp))
-        Text(
-            text = height?.let(::formatMeters) ?: "모름",
-            fontSize = 32.sp,
-            fontWeight = FontWeight.ExtraBold,
-            color = if (height == null) TextSub else TextStrong,
-            style = Tnum,
-            modifier = Modifier.width(140.dp),
-        )
-        IeoTonalButton(text = "+", onClick = { onChange(step(height, HEIGHT_STEP)) }, modifier = Modifier.width(88.dp))
-        if (height != null) IeoTonalButton(text = "모름", onClick = { onChange(null) })
-    }
-    Spacer(Modifier.height(8.dp))
 }
 
 /** 0.1m 단위로 맞추고 1.5~4.2m 안으로 자른다 */
