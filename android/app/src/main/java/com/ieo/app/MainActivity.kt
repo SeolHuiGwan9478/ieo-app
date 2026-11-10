@@ -85,6 +85,49 @@ private enum class Screen { SPLASH, LOGIN, HOME }
 @Composable
 private fun IeoApp(session: SessionManager, onHomeShown: () -> Unit) {
     val isLoggedIn by session.isLoggedIn.collectAsStateWithLifecycle()
+    // 로그인 상태가 바뀌면 화면 상태(ViewModel)를 통째로 비운다. 그러지 않으면 로그아웃 뒤 다른 계정으로 들어와도
+    // 앞 계정의 운행·오더가 홈에 남는다 (휴대폰 앱 LoginScope와 같다)
+    val scope: LoginScope = androidx.lifecycle.viewmodel.compose.viewModel()
+    scope.sync(isLoggedIn)
+    androidx.compose.runtime.CompositionLocalProvider(androidx.lifecycle.viewmodel.compose.LocalViewModelStoreOwner provides scope) {
+        IeoScreens(isLoggedIn, onHomeShown)
+    }
+}
+
+/**
+ * 로그인 상태가 바뀔 때마다 비우는 ViewModel 보관함. 화면 회전에는 살아남는다.
+ * 화면 ViewModel 팩토리가 CreationExtras에서 Application을 꺼내므로 그 값을 넘겨 준다
+ */
+class LoginScope(application: android.app.Application) :
+    androidx.lifecycle.AndroidViewModel(application),
+    androidx.lifecycle.ViewModelStoreOwner,
+    androidx.lifecycle.HasDefaultViewModelProviderFactory {
+
+    override val defaultViewModelProviderFactory: androidx.lifecycle.ViewModelProvider.Factory =
+        androidx.lifecycle.ViewModelProvider.AndroidViewModelFactory.getInstance(application)
+
+    override val defaultViewModelCreationExtras: androidx.lifecycle.viewmodel.CreationExtras
+        get() = androidx.lifecycle.viewmodel.MutableCreationExtras().apply {
+            set(androidx.lifecycle.ViewModelProvider.AndroidViewModelFactory.APPLICATION_KEY, getApplication())
+        }
+
+    override var viewModelStore = androidx.lifecycle.ViewModelStore()
+        private set
+    private var loggedIn: Boolean? = null
+
+    fun sync(now: Boolean) {
+        if (loggedIn != null && loggedIn != now) {
+            viewModelStore.clear()
+            viewModelStore = androidx.lifecycle.ViewModelStore()
+        }
+        loggedIn = now
+    }
+
+    override fun onCleared() = viewModelStore.clear()
+}
+
+@Composable
+private fun IeoScreens(isLoggedIn: Boolean, onHomeShown: () -> Unit) {
     var screen by rememberSaveable { mutableStateOf(Screen.SPLASH) }
 
     LaunchedEffect(isLoggedIn) {
