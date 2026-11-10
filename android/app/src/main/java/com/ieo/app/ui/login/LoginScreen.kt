@@ -307,7 +307,7 @@ private fun CodeTimer(secondsLeft: Int) {
 internal fun secondsUntil(expiresAt: Long): Int {
     if (expiresAt == 0L) return 0
     val millisLeft = expiresAt - SystemClock.elapsedRealtime()
-    return ((millisLeft + 999) / 1000).toInt().coerceAtLeast(0)
+    return ((millisLeft + 999) / 1000).coerceIn(0L, Int.MAX_VALUE.toLong()).toInt()
 }
 
 @Preview(widthDp = 1280, heightDp = 900)

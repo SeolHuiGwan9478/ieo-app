@@ -78,6 +78,60 @@ body {
 .rules { margin: 0; padding: 0; list-style: none; display: grid; grid-template-columns: repeat(4, 1fr); gap: 2cqw; border-top: .15cqw solid var(--ink); padding-top: 1.4cqw; }
 .rules li { font-size: 1.1cqw; line-height: 1.6; color: var(--ink-mid); }
 .rules b { display: block; color: var(--ink); font-size: 1.2cqw; margin-bottom: .3cqw; }
+
+/* 브랜드 페이지: 네이버 브랜드 리소스처럼 왼쪽에 짧은 설명, 오른쪽에 넓은 판에 로고를 크게 둔다 */
+.split { display: grid; grid-template-columns: 24cqw 1fr; gap: 4cqw; flex: 1; min-height: 0; }
+.side h3 { margin: 0 0 1.2cqw; font-size: 1.55cqw; font-weight: 700; }
+.side p { margin: 0 0 1cqw; font-size: 1.2cqw; line-height: 1.75; color: var(--ink-mid); }
+.side .small { font-size: 1.02cqw; color: var(--ink-sub); }
+.boards { display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: 1.35fr 1fr; gap: 1.4cqw; min-height: 0; }
+.board { position: relative; border-radius: .5cqw; display: flex; align-items: center; justify-content: center; min-height: 0; }
+.board.wide { grid-column: 1 / -1; }
+.board > span { position: absolute; left: 1.4cqw; top: 1.2cqw; font-size: .95cqw; font-weight: 500; }
+.board img { height: 42%; width: auto; }
+.board.icons { gap: 3cqw; }
+.board.icons img { height: 46%; }
+.gray-board { background: #F2F4F6; color: var(--ink-sub); }
+.orange-board { background: var(--orange); color: rgba(255,255,255,.85); }
+.dark-board { background: #191F28; color: rgba(255,255,255,.6); }
+.meaning { display: flex; align-items: center; gap: 1.6cqw; margin-top: 1.4cqw; }
+.meaning img { width: 11cqw; }
+.meaning ol { margin: 0; padding: 0 0 0 1.2cqw; font-size: 1.05cqw; line-height: 1.7; color: var(--ink-mid); }
+
+/* 로고 쓸 때: 빗금 친 잘못된 예 */
+.donts { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1.6cqw 1.4cqw; }
+.dont figure { margin: 0; }
+.dont .box { position: relative; aspect-ratio: 16 / 9; background: #F2F4F6; border-radius: .45cqw; overflow: hidden;
+  display: flex; align-items: center; justify-content: center; }
+.dont .box::after { content: ""; position: absolute; inset: 0;
+  background: linear-gradient(to top right, transparent calc(50% - .08cqw), #F04452 calc(50% - .08cqw), #F04452 calc(50% + .08cqw), transparent calc(50% + .08cqw)); opacity: .55; }
+.dont .box img { height: 34%; width: auto; }
+.dont figcaption { display: flex; gap: .6cqw; align-items: flex-start; margin-top: .8cqw; font-size: 1.02cqw; line-height: 1.5; color: var(--ink-mid); }
+.dont figcaption::before { content: "×"; flex: none; width: 1.3cqw; height: 1.3cqw; border-radius: 50%; background: #F04452; color: #fff;
+  font-size: 1cqw; line-height: 1.3cqw; text-align: center; font-weight: 700; margin-top: .15cqw; }
+
+/* 기능 페이지: 화면을 나란히 두고 아래에 한두 줄 */
+.shots { display: flex; gap: 1.8cqw; align-items: flex-start; }
+.shot { margin: 0; display: flex; flex-direction: column; gap: .9cqw; }
+.shot img { display: block; height: var(--h, 30cqw); width: auto; border-radius: 1cqw; box-shadow: 0 0 0 .1cqw var(--line); }
+.shot.car img { border-radius: .5cqw; }
+.shot figcaption { font-size: 1.02cqw; line-height: 1.55; color: var(--ink-mid); max-width: var(--cap, 14cqw); }
+.shot figcaption b { display: block; color: var(--ink); font-weight: 700; margin-bottom: .15cqw; }
+.step { font-variant-numeric: tabular-nums; color: var(--orange-text); font-weight: 700; margin-right: .35cqw; }
+.text-col { display: flex; flex-direction: column; gap: 1.4cqw; min-width: 0; }
+.text-col .lead { max-width: none; }
+.facts { margin: 0; padding: 0; list-style: none; border-top: .15cqw solid var(--ink); }
+.facts li { padding: .9cqw 0; border-bottom: .1cqw solid var(--line); font-size: 1.08cqw; line-height: 1.6; color: var(--ink-mid); }
+.facts li b { color: var(--ink); font-weight: 700; }
+.twocol { display: grid; grid-template-columns: 30cqw 1fr; gap: 3.6cqw; flex: 1; min-height: 0; }
+.mini { width: 100%; border-collapse: collapse; font-size: 1cqw; font-variant-numeric: tabular-nums; }
+.mini th, .mini td { padding: .45cqw .3cqw; text-align: center; border-bottom: .1cqw solid var(--line); }
+.mini th { color: var(--ink-sub); font-weight: 500; }
+.order3 { display: flex; align-items: center; gap: .7cqw; font-size: 1.08cqw; flex-wrap: wrap; }
+.order3 span { padding: .35cqw .8cqw; border-radius: .35cqw; background: #F2F4F6; color: var(--ink); font-weight: 500; }
+.order3 span:first-child { background: #FFF3EE; color: var(--orange-text); }
+.order3 i { font-style: normal; color: var(--ink-sub); }
+.note { font-size: .98cqw; color: var(--ink-sub); line-height: 1.6; margin: 0; }
 </style>
 
 <div class="pages">
@@ -96,7 +150,10 @@ body {
       <div>
         <h3>브랜드</h3>
         <ol>
+          <li>로고</li>
+          <li>아이콘</li>
           <li>브랜드 색</li>
+          <li>로고를 쓸 때</li>
         </ol>
       </div>
       <div>
@@ -119,15 +176,60 @@ body {
       <div>
         <h3>휴대폰 앱</h3>
         <ol>
-          <li class="later">차량 앱 확인 뒤에 채워요</li>
+          <li>가입</li>
+          <li>서류 올리기</li>
+          <li>내 정보</li>
+          <li>내 차량과 연비</li>
+          <li class="later">나머지는 차량 앱 확인 뒤에 채워요</li>
         </ol>
       </div>
     </div>
     <div class="foot"><img src="assets/ieo_wordmark_orange.svg" alt="ieo"><span>목차</span></div>
   </section>
 
-  <section class="page sheet" aria-label="브랜드 색">
+
+  <section class="page sheet" aria-label="로고">
     <div class="eyebrow">BRAND · 01</div>
+    <h2>로고</h2>
+    <div class="split">
+      <div class="side">
+        <h3>이름</h3>
+        <p>이에오는 '이어서', '이어짐'에서 왔어요. 짐을 내린 자리에서 다음 일이 이어진다는 뜻이고, '이어'를 로마자로 적으면 ieo예요.</p>
+        <h3 style="margin-top:2cqw">텍스트 로고</h3>
+        <p>소문자 ieo 뒤에 마침표까지가 로고예요. 글꼴은 Outfit ExtraBold이고, 글자 사이를 조금 좁혀서 한 덩어리로 읽히게 했어요.</p>
+        <p>문장 안에서는 한글로 이에오, 영문으로 Ieo라고 써요. 로고 모양 그대로 ieo.라고 쓰지 않아요.</p>
+        <p class="small">밝은 바탕에는 주황 로고, 주황이나 어두운 바탕에는 흰 로고를 써요. 파일은 design/logo/wordmark에 있어요.</p>
+      </div>
+      <div class="boards">
+        <div class="board wide gray-board"><span>기본 로고</span><img src="assets/ieo_wordmark_orange.svg" alt="주황 ieo. 로고"></div>
+        <div class="board orange-board"><span>주황 바탕</span><img src="assets/ieo_wordmark_white.svg" alt="흰 ieo. 로고"></div>
+        <div class="board dark-board"><span>어두운 바탕</span><img src="assets/ieo_wordmark_white.svg" alt="흰 ieo. 로고"></div>
+      </div>
+    </div>
+    <div class="foot"><img src="assets/ieo_wordmark_orange.svg" alt="ieo"><span>로고</span></div>
+  </section>
+
+  <section class="page sheet" aria-label="아이콘">
+    <div class="eyebrow">BRAND · 02</div>
+    <h2>아이콘</h2>
+    <div class="split">
+      <div class="side">
+        <h3>막대 하나, 점 두 개</h3>
+        <p>긴 막대는 지금 달리고 있는 운행이에요. 옆의 점 두 개는 그다음에 이어질 일이고, 멀수록 작게 그렸어요.</p>
+        <p>이름처럼 일이 끊기지 않고 이어지는 모습이에요. 짐을 내린 자리에서 빈 차로 돌아가지 않고 바로 다음 짐으로 넘어가게 돕는 게 이에오가 하는 일이라서요.</p>
+        <p class="small">아이콘과 텍스트 로고는 붙여서 하나로 쓰지 않아요. 같이 놓아야 하면 떨어뜨려 따로 둬요.</p>
+      </div>
+      <div class="boards">
+        <div class="board wide gray-board icons"><span>앱 아이콘</span><img src="assets/ieo_icon_orange.svg" alt="주황 앱 아이콘"><img src="assets/ieo_icon_white.svg" alt="흰 앱 아이콘" style="filter: drop-shadow(0 0 .1cqw rgba(0,0,0,.15))"></div>
+        <div class="board gray-board"><span>심볼만</span><img src="assets/ieo_symbol_orange.svg" alt="주황 심볼" style="height:20%"></div>
+        <div class="board orange-board"><span>주황 바탕 심볼</span><img src="assets/ieo_symbol_white.svg" alt="흰 심볼" style="height:20%"></div>
+      </div>
+    </div>
+    <div class="foot"><img src="assets/ieo_wordmark_orange.svg" alt="ieo"><span>아이콘</span></div>
+  </section>
+
+  <section class="page sheet" aria-label="브랜드 색">
+    <div class="eyebrow">BRAND · 03</div>
     <h2>주황은 이에오, 신호등은 운행 상황</h2>
     <p class="lead">로고와 가장 중요한 버튼에는 주황을 쓰고, 운행 상황을 알릴 때만 신호등 색을 써요. 운전 중에 한눈에 봐도 "누르는 곳"과 "지금 상태"가 섞이지 않게 하려는 거예요.</p>
     <div class="colors">
@@ -135,7 +237,7 @@ body {
         <h3>브랜드색</h3>
         <div class="hero-swatch">
           <img src="assets/ieo_wordmark_white.svg" alt="ieo">
-          <div><b>Orange 500 · #FF6C37</b><br><span>로고, 앱 아이콘, 시작 화면</span></div>
+          <div><b>Orange 500 · #FF6C37</b><br><span>RGB 255 108 55 · CMYK 0 58 78 0</span><br><span>로고, 앱 아이콘, 시작 화면</span></div>
         </div>
         <div class="chips">
           <div class="chip"><i style="background:#F25A22"></i><div><b>Orange 600</b><small>주요 버튼 바탕</small></div><code>#F25A22</code></div>
@@ -170,6 +272,118 @@ body {
       <li><b>대기는 노랑</b>호박색은 주황과 헷갈려서 노랑으로 바꿨어요.</li>
     </ul>
     <div class="foot"><img src="assets/ieo_wordmark_orange.svg" alt="ieo"><span>브랜드 색</span></div>
+  </section>
+
+  <section class="page sheet" aria-label="로고를 쓸 때">
+    <div class="eyebrow">BRAND · 04</div>
+    <h2>로고를 쓸 때</h2>
+    <p class="lead">파일에 있는 모양과 색 그대로 써 주세요. 발표 자료나 홍보물을 만들다 보면 아래처럼 바꾸고 싶어지는데, 그러면 이에오로 안 보여요.</p>
+    <div class="donts">
+      <div class="dont"><figure><div class="box"><img src="assets/ieo_wordmark_orange.svg" alt="" style="transform: scaleX(1.6)"></div><figcaption>가로세로 비율을 바꾸지 마세요</figcaption></figure></div>
+      <div class="dont"><figure><div class="box"><img src="assets/ieo_wordmark_orange.svg" alt="" style="filter: hue-rotate(170deg)"></div><figcaption>색을 바꾸지 마세요</figcaption></figure></div>
+      <div class="dont"><figure><div class="box"><img src="assets/ieo_wordmark_orange.svg" alt="" style="filter: drop-shadow(.25cqw .25cqw .2cqw rgba(0,0,0,.45))"></div><figcaption>그림자나 테두리 같은 효과를 넣지 마세요</figcaption></figure></div>
+      <div class="dont"><figure><div class="box"><img src="assets/ieo_wordmark_orange.svg" alt="" style="transform: rotate(-14deg)"></div><figcaption>기울이거나 돌리지 마세요</figcaption></figure></div>
+      <div class="dont"><figure><div class="box"><div style="height:34%; aspect-ratio: 138 / 90; overflow:hidden"><img src="assets/ieo_wordmark_orange.svg" alt="" style="height:100%"></div></div><figcaption>마침표를 빼지 마세요</figcaption></figure></div>
+      <div class="dont"><figure><div class="box" style="gap:.5cqw"><img src="assets/ieo_icon_orange.svg" alt="" style="height:30%"><img src="assets/ieo_wordmark_orange.svg" alt=""></div><figcaption>아이콘과 붙여 한 덩어리로 쓰지 마세요</figcaption></figure></div>
+      <div class="dont"><figure><div class="box" style="background:#FF9A73"><img src="assets/ieo_wordmark_orange.svg" alt=""></div><figcaption>비슷한 색 바탕에 올리지 마세요</figcaption></figure></div>
+      <div class="dont"><figure><div class="box" style="background: repeating-linear-gradient(45deg, #FFD6C4 0 .6cqw, #DCE6F5 .6cqw 1.2cqw, #F7E7A6 1.2cqw 1.8cqw)"><img src="assets/ieo_wordmark_orange.svg" alt=""></div><figcaption>복잡한 무늬나 사진 위에 올리지 마세요</figcaption></figure></div>
+    </div>
+    <div class="foot"><img src="assets/ieo_wordmark_orange.svg" alt="ieo"><span>로고를 쓸 때</span></div>
+  </section>
+
+  <section class="page sheet" aria-label="가입">
+    <div class="eyebrow">ACCOUNT · 01</div>
+    <h2>가입은 휴대폰으로 해요</h2>
+    <p class="lead">차 화면에서는 가입을 받지 않아요. 운전석에서 약관을 읽고 이름을 치는 건 불편하고 위험해서, 가입은 휴대폰 앱에서 끝내고 차에서는 로그인만 하게 했어요.</p>
+    <div class="shots" style="--h: 34cqw; --cap: 15.5cqw">
+      <figure class="shot"><img src="assets/m_V01_phone.jpg" alt="휴대폰 번호 입력 화면"><figcaption><b><span class="step">1</span>휴대폰 번호</b>문자로 온 6자리로 본인을 확인해요.</figcaption></figure>
+      <figure class="shot"><img src="assets/m_V04_terms.jpg" alt="약관 동의 화면"><figcaption><b><span class="step">2</span>약관</b>필수 셋, 선택 셋. 주선사에 위치를 보여 줄지는 기사님이 골라요.</figcaption></figure>
+      <figure class="shot"><img src="assets/m_V08_vehicle.jpg" alt="차량 번호와 톤수 화면"><figcaption><b><span class="step">3</span>번호와 톤수</b>폭·길이 같은 제원은 몰라도 '나중에'로 넘어가요.</figcaption></figure>
+      <figure class="shot"><img src="assets/m_V09_body.jpg" alt="차종 고르는 화면"><figcaption><b><span class="step">4</span>차종</b>카고, 윙바디처럼 그림을 보고 고르면 돼요.</figcaption></figure>
+      <figure class="shot"><img src="assets/m_V07_done.jpg" alt="가입 완료 화면"><figcaption><b><span class="step">5</span>끝</b>차는 한 사람당 한 대만 등록해요.</figcaption></figure>
+    </div>
+    <div class="foot"><img src="assets/ieo_wordmark_orange.svg" alt="ieo"><span>계정과 차량 · 가입</span></div>
+  </section>
+
+  <section class="page sheet" aria-label="서류 올리기">
+    <div class="eyebrow">ACCOUNT · 02</div>
+    <div class="twocol">
+      <div class="text-col">
+        <h2>서류 네 장을 올리면<br>배차를 받을 수 있어요</h2>
+        <p class="lead">아무나 가입해서 짐을 받아 가면 주선사가 이에오를 믿지 못해요. 그래서 사업자등록증, 자동차등록증, 운전면허증, 화물운송종사 자격증을 사진으로 받고, 운영자가 하나씩 확인해요.</p>
+        <ul class="facts">
+          <li><b>확인 전에도 쓸 수 있는 것</b><br>운행 안내, 장부, 오더 구경. 오더는 시·구까지만 보이고 정확한 주소와 주선사 이름은 가려져요.</li>
+          <li><b>반려되면</b><br>타일에 빨간 표시가 뜨고, 누르면 아래에 이유가 나와요. 사진만 다시 올리면 돼요.</li>
+          <li><b>네 장이 모두 확인되면</b><br>이름 옆에 인증 차주 표시가 붙고, 그때부터 배차를 요청할 수 있어요.</li>
+        </ul>
+      </div>
+      <div class="shots" style="--h: 50cqw; --cap: 23cqw">
+        <figure class="shot"><img src="assets/m_D02_documents_mixed.jpg" alt="서류 네 가지 상태 화면"><figcaption>확인 완료, 확인 중, 반려, 아직 안 올림. 네 가지 상태가 한 화면에 보여요.</figcaption></figure>
+        <figure class="shot"><img src="assets/m_M09_detail_limited.jpg" alt="인증 전 오더 상세 화면"><figcaption>인증 전 오더 상세. 운임과 화물은 보이고, 주소와 주선사는 승인 뒤에 보여요.</figcaption></figure>
+      </div>
+    </div>
+    <div class="foot"><img src="assets/ieo_wordmark_orange.svg" alt="ieo"><span>계정과 차량 · 서류</span></div>
+  </section>
+
+  <section class="page sheet" aria-label="내 정보">
+    <div class="eyebrow">ACCOUNT · 03</div>
+    <div class="twocol">
+      <div class="text-col">
+        <h2>내 정보</h2>
+        <p class="lead">휴대폰 앱 내 정보에는 주선사가 나를 볼 때 보는 기록을 그대로 띄웠어요. 완료한 운행 수, 직전에 취소한 횟수, 단골 주선사 수예요.</p>
+        <ul class="facts">
+          <li><b>번호를 바꾸려면</b> 새 번호로 인증번호를 다시 받아야 해요. 다른 계정이 쓰는 번호면 거기서 막혀요.</li>
+          <li><b>이름은</b> 그냥 고치고 저장하면 돼요.</li>
+          <li><b>차 화면에서는</b> 이름만 고칠 수 있어요. 번호는 문자를 받아야 해서 휴대폰에서 바꿔요.</li>
+        </ul>
+      </div>
+      <div class="shots" style="--h: 47cqw; --cap: 21cqw">
+        <figure class="shot"><img src="assets/m_M11_my_verified.jpg" alt="휴대폰 내 정보 화면"><figcaption>휴대폰 내 정보</figcaption></figure>
+        <figure class="shot car"><img src="assets/c_settings_verified.jpg" alt="차량 앱 설정 화면"><figcaption>차량 앱 설정. 휴대폰 번호는 가운데를 가려서 보여 줘요.</figcaption></figure>
+      </div>
+    </div>
+    <div class="foot"><img src="assets/ieo_wordmark_orange.svg" alt="ieo"><span>계정과 차량 · 내 정보</span></div>
+  </section>
+
+  <section class="page sheet" aria-label="내 차량과 연비">
+    <div class="eyebrow">ACCOUNT · 04</div>
+    <div class="twocol">
+      <div class="text-col">
+        <h2>내 차량과 연비</h2>
+        <p class="lead">차는 한 대만 등록해요. 번호, 톤수, 차종은 자동차등록증에 적힌 값이라 바꾸면 등록증을 다시 확인받을 때까지 배차 요청이 멈춰요. 높이나 폭 같은 제원은 언제든 고쳐도 돼요.</p>
+        <div>
+          <p class="note" style="margin-bottom:.8cqw">기름값을 계산할 때 연비는 이 순서로 찾아요.</p>
+          <div class="order3"><span>차가 잰 연비</span><i>없으면</i><span>기사님이 적은 연비</span><i>없으면</i><span>톤수별 평균</span></div>
+        </div>
+        <table class="mini" aria-label="톤수별 평균 연비">
+          <tr><th>톤</th><td>1</td><td>2.5</td><td>3.5</td><td>5</td><td>8</td><td>11</td><td>14</td><td>25</td></tr>
+          <tr><th>km/L</th><td>8.5</td><td>7.5</td><td>6.5</td><td>5.0</td><td>4.5</td><td>4.2</td><td>4.0</td><td>3.3</td></tr>
+        </table>
+        <p class="note">3.5톤이 넘는 화물차는 공인 연비가 없어서, 국토부가 2016년에 공개한 값과 업계 자료를 묶어 짐 실은 평균으로 잡았어요. 차 쪽 연비는 Pleos 차량에서만 읽혀요.</p>
+      </div>
+      <div class="shots" style="--h: 50cqw; --cap: 23cqw">
+        <figure class="shot"><img src="assets/m_VH_identity.jpg" alt="톤수를 바꾼 내 차량 화면"><figcaption>톤수를 바꾸면 저장 전에 미리 알려 줘요.</figcaption></figure>
+        <figure class="shot"><img src="assets/m_VH_fuel.jpg" alt="평소 연비 입력 화면"><figcaption>평소 연비는 비워 둬도 돼요. 비우면 톤수 평균으로 계산해요.</figcaption></figure>
+      </div>
+    </div>
+    <div class="foot"><img src="assets/ieo_wordmark_orange.svg" alt="ieo"><span>계정과 차량 · 내 차량</span></div>
+  </section>
+
+  <section class="page sheet" aria-label="차량 로그인">
+    <div class="eyebrow">ACCOUNT · 05</div>
+    <h2>차에서는 QR 한 번이면 로그인돼요</h2>
+    <p class="lead">차 화면에 뜬 QR을 휴대폰 카메라로 찍고, 휴대폰에서 승인을 누르면 끝이에요. 비밀번호는 따로 만들지 않아요.</p>
+    <div class="shots" style="--h: 31cqw">
+      <figure class="shot car" style="--cap: 23cqw"><img src="assets/c_login_qr.jpg" alt="차량 QR 로그인 화면"><figcaption><b><span class="step">1</span>차 화면</b>QR과 로그인 코드가 같이 떠요. 5분이 지나면 새로 받아요.</figcaption></figure>
+      <figure class="shot" style="--cap: 14.3cqw"><img src="assets/m_CL_ask.jpg" alt="휴대폰 로그인 승인 화면"><figcaption><b><span class="step">2</span>휴대폰</b>코드가 차 화면과 같은지 보고 승인해요.</figcaption></figure>
+      <figure class="shot car" style="--cap: 23cqw"><img src="assets/c_login_phone.jpg" alt="차량 휴대폰 번호 로그인 화면"><figcaption><b>카메라를 못 쓸 때</b>휴대폰 번호로 인증번호를 받아 들어와요. 시연 서버에서는 인증번호가 화면에 나와요.</figcaption></figure>
+    </div>
+    <ul class="rules" style="grid-template-columns: repeat(3, 1fr); margin-top: auto; margin-bottom: 3.4cqw">
+      <li><b>가입은 안 받아요</b>가입하지 않은 번호면 휴대폰 앱에서 먼저 가입하라고 알려 줘요.</li>
+      <li><b>로그아웃하면 비워요</b>다음 사람이 같은 차에 타도 앞 사람 화면이 남지 않아요.</li>
+      <li><b>어느 차에 들어왔는지 보여요</b>휴대폰 내 정보의 로그인된 차량에서 확인하고 끊을 수 있어요.</li>
+    </ul>
+    <div class="foot"><img src="assets/ieo_wordmark_orange.svg" alt="ieo"><span>계정과 차량 · 차량 로그인</span></div>
   </section>
 
 </div>
