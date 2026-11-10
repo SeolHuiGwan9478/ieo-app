@@ -1,5 +1,6 @@
 package com.ieo.app.ui.settings
 
+import com.ieo.app.ui.theme.Orange700
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
@@ -65,7 +66,6 @@ fun ColumnScope.VehicleForm(
     vehicle: Vehicle,
     busy: Boolean,
     onSubmit: (Tonnage, BodyType, Double?, VehicleDimensions) -> Unit,
-    onSetDefault: () -> Unit,
     onCancel: () -> Unit,
 ) {
     var tonnage by remember(vehicle) { mutableStateOf(vehicle.tonnage) }
@@ -90,9 +90,10 @@ fun ColumnScope.VehicleForm(
     VehicleSpecList(height, dimensions, onHeight = { height = it }, onDimensions = { dimensions = it })
     Spacer(Modifier.height(10.dp))
     Text("자동차등록증에 적힌 값을 넣어 주세요. 비워 두면 톤수 기준으로 계산해요.", fontSize = 24.sp, color = TextSub)
-    if (!vehicle.isDefault) {
-        Spacer(Modifier.height(20.dp))
-        IeoTonalButton(text = "기본 차량으로", onClick = { if (!busy) onSetDefault() })
+    // 톤수·차종은 자동차등록증에 적힌 값이라 바꾸면 다시 확인받는다 (VEH-001)
+    if (tonnage != vehicle.tonnage || bodyType != vehicle.bodyType) {
+        Spacer(Modifier.height(16.dp))
+        Text("톤수·차종을 바꾸면 자동차등록증을 다시 확인해요. 확인 전까지 배차 요청이 막혀요", fontSize = 24.sp, lineHeight = 34.sp, color = Orange700)
     }
     FormButtons(busy, onCancel = onCancel, onSave = { onSubmit(tonnage, bodyType, height, dimensions) })
 }

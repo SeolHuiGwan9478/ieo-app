@@ -80,7 +80,6 @@ fun SettingsScreen(state: SettingsUiState, actions: SettingsActions, linksSectio
                     vehicle = form.vehicle,
                     busy = state.isBusy,
                     onSubmit = actions::saveVehicle,
-                    onSetDefault = { actions.setDefault(form.vehicle.id) },
                     onCancel = actions::close,
                 )
                 is SettingsForm.EditRecommendation -> RecommendationForm(
@@ -117,11 +116,14 @@ private fun ProfileSection(profile: Profile?, standing: DriverStanding?, onEdit:
 @Composable
 private fun VehicleSection(vehicles: List<Vehicle>, isLoading: Boolean, onEdit: (Vehicle) -> Unit) {
     WhiteSection {
-        SectionTitle(title = "내 차량", count = vehicles.size, note = "추가·삭제는 휴대폰 앱에서")
-        if (vehicles.isEmpty()) {
-            Text(if (isLoading) "불러오는 중…" else "등록된 차량이 없어요", fontSize = 24.sp, color = TextSub, modifier = Modifier.padding(8.dp))
+        // 차주 한 명에 차 한 대 (VEH-001). 예전에 여러 대를 넣은 계정이면 기본 차량만 보여 준다
+        SectionTitle(title = "내 차량", note = "번호 변경은 휴대폰 앱에서")
+        val vehicle = vehicles.firstOrNull { it.isDefault } ?: vehicles.firstOrNull()
+        if (vehicle == null) {
+            Text(if (isLoading) "불러오는 중…" else "휴대폰 앱에서 내 차를 등록해 주세요", fontSize = 24.sp, color = TextSub, modifier = Modifier.padding(8.dp))
+        } else {
+            VehicleRow(vehicle, onClick = { onEdit(vehicle) })
         }
-        vehicles.forEach { vehicle -> VehicleRow(vehicle, onClick = { onEdit(vehicle) }) }
     }
 }
 
@@ -130,7 +132,6 @@ private fun VehicleRow(vehicle: Vehicle, onClick: () -> Unit) {
     Column(modifier = Modifier.padding(vertical = 8.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
             Text(vehicle.plateNumber, fontSize = 24.sp, fontWeight = FontWeight.Bold, color = TextStrong)
-            if (vehicle.isDefault) StatusTag(text = "기본 차량", color = Orange700, background = Orange50)
             if (vehicle.pleosLinked) StatusTag(text = "이 차와 연결됨", color = TextSub, background = CanvasGray)
         }
         Spacer(Modifier.height(4.dp))
