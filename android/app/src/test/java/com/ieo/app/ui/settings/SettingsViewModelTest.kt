@@ -164,6 +164,8 @@ class SettingsViewModelTest {
         override suspend fun resolvePleos(vin: String): ApiResult<PleosMatch> = error("설정에서는 쓰지 않음")
 
         override suspend fun linkPleos(vehicleId: Long, vin: String): ApiResult<Vehicle> = error("설정에서는 쓰지 않음")
+
+        override suspend fun reportFuelEconomy(vehicleId: Long, litersPer100Km: Float): ApiResult<Vehicle> = error("설정에서는 쓰지 않음")
     }
 
     private companion object {

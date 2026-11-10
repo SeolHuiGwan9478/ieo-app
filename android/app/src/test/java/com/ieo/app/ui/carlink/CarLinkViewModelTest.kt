@@ -94,15 +94,56 @@ class CarLinkViewModelTest {
 
         assertTrue(server.calls.isEmpty())
         assertNull(viewModel.state.value.message)
+        // 기본 차량으로 운행하므로 연비는 기본 차량 것으로 보낸다
+        assertEquals(listOf("1 28.5"), server.fuelReports)
     }
 
-    private class FakeIdentity(var vin: String?) : CarIdentity {
+    @Test
+    fun `내 차량으로 이어지면 누적 연비를 보낸다`() = runTest(main.dispatcher) {
+        server.match = PleosMatch.Linked(cargo, autoLinked = false)
+
+        viewModel.resolve()
+        advanceUntilIdle()
+
+        assertEquals(listOf("1 28.5"), server.fuelReports)
+    }
+
+    @Test
+    fun `골라서 이은 차량에 누적 연비를 보낸다`() = runTest(main.dispatcher) {
+        server.match = PleosMatch.Select(listOf(cargo, box))
+        viewModel.resolve()
+        advanceUntilIdle()
+        assertTrue(server.fuelReports.isEmpty())
+
+        viewModel.choose(2)
+        advanceUntilIdle()
+
+        assertEquals(listOf("2 28.5"), server.fuelReports)
+    }
+
+    @Test
+    fun `다른 차주의 트럭이거나 연비를 못 읽으면 보내지 않는다`() = runTest(main.dispatcher) {
+        server.match = PleosMatch.OtherOwner(cargo)
+        viewModel.resolve()
+        advanceUntilIdle()
+        assertTrue(server.fuelReports.isEmpty())
+
+        identity.fuelEconomy = null
+        server.match = PleosMatch.Linked(cargo, autoLinked = false)
+        viewModel.resolve()
+        advanceUntilIdle()
+        assertTrue(server.fuelReports.isEmpty())
+    }
+
+    private class FakeIdentity(var vin: String?, var fuelEconomy: Float? = 28.5f) : CarIdentity {
         override suspend fun vin(): String? = vin
+        override suspend fun cumulativeFuelEconomy(): Float? = fuelEconomy
     }
 
     private inner class FakeVehicles : VehicleRepository {
         var match: PleosMatch = PleosMatch.Register
         val calls = mutableListOf<String>()
+        val fuelReports = mutableListOf<String>()
 
         override suspend fun resolvePleos(vin: String): ApiResult<PleosMatch> {
             calls += "resolve $vin"
@@ -112,6 +153,11 @@ class CarLinkViewModelTest {
         override suspend fun linkPleos(vehicleId: Long, vin: String): ApiResult<Vehicle> {
             calls += "link $vehicleId $vin"
             return ApiResult.Success(listOf(cargo, box).first { it.id == vehicleId }.copy(pleosLinked = true, isDefault = true))
+        }
+
+        override suspend fun reportFuelEconomy(vehicleId: Long, litersPer100Km: Float): ApiResult<Vehicle> {
+            fuelReports += "$vehicleId $litersPer100Km"
+            return ApiResult.Success(listOf(cargo, box).first { it.id == vehicleId })
         }
 
         override suspend fun vehicles(): ApiResult<List<Vehicle>> = ApiResult.Success(listOf(cargo, box))

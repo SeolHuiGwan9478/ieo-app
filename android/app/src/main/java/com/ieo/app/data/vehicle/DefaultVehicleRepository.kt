@@ -33,10 +33,12 @@ class DefaultVehicleRepository(
         }
             .mapResponse { it.toDomain() }
 
-
     override suspend fun resolvePleos(vin: String): ApiResult<PleosMatch> =
         caller.call { api.resolvePleos(PleosVinRequest(vin)) }.mapResponse { it.toDomain() }
 
     override suspend fun linkPleos(vehicleId: Long, vin: String): ApiResult<Vehicle> =
         caller.call { api.linkPleos(vehicleId, PleosVinRequest(vin)) }.mapResponse { it.toDomain() }
+
+    override suspend fun reportFuelEconomy(vehicleId: Long, litersPer100Km: Float): ApiResult<Vehicle> =
+        caller.call { api.reportFuelEconomy(vehicleId, FuelEconomyRequest(litersPer100Km)) }.mapResponse { it.toDomain() }
 }

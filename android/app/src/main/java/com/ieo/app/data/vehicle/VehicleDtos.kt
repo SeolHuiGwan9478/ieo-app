@@ -52,6 +52,9 @@ data class UpdateVehicleRequest(
 @Serializable
 data class PleosVinRequest(val vin: String)
 
+/** Pleos getCumulativeFuelEconomy() 값 그대로. 단위 L/100km */
+data class FuelEconomyRequest(val litersPer100Km: Float)
+
 /** status: LINKED, SELECT, REGISTER, OTHER_OWNER */
 @Serializable
 data class PleosResolveResponse(

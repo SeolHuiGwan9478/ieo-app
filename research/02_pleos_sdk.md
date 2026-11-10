@@ -183,7 +183,7 @@ dependencies {
 | **누적 주행거리** | **있음** (Odometer) | `getCurrentDistanceDriven`, `registerDistanceDriven`, `checkCurrentDistanceDrivenCapabilities`. 권한은 `CAR_DRIVE`. 단위는 문서에서 확인 안 됨(Odometer 도메인에 "주행 거리 단위 조회"가 있다고 소개됨). |
 | 트립 거리/시간 | 있음 (Odometer) | `get/registerTripCurrentDrivingDistance`, `TripCurrentDrivingTime`, `TripCumulativeDrivingDistance/Time`, `TripDrivingDistance/Time`(check만 확인), `TripSinceRefillDrivingDistance/Time`, `TripInstantaneousDrivingDistance`. 연속운전 시간 계산에 쓸 수 있다. |
 | **연료량** | **있음** (Fuel) | `getFuelPercent`, `registerFuelPercent`, `checkFuelPercentCapabilities`. 권한은 `CAR_ENERGY`. |
-| **연비** | **있음** (Fuel) | `get/registerInstantaneousFuelEconomy`, `CurrentFuelEconomy`, `CumulativeFuelEconomy`, `SinceChargeFuelEconomy`. 단위는 문서에서 확인 안 됨. |
+| **연비** | **있음** (Fuel) | `get/registerInstantaneousFuelEconomy`, `CurrentFuelEconomy`, `CumulativeFuelEconomy`, `SinceChargeFuelEconomy`. 단위는 문서에서 확인 안 됨. 에뮬레이터 확인(2026-11-10): Fuel 함수 5개(누적·현재·순간·주유 후 연비, 연료량)와 EV 효율 3개가 모두 "property ID is not in carPropertyConfig list"로 실패했다. 에뮬레이터 VHAL에 값이 없어서다(누적 연비 0x21600be2, 순간 0x21600be0, 주유 후 0x21600be1, 연료량 0x21400be5). EV 배터리 충전율만 값(100)이 왔다. 실차 확인 필요. |
 | 주행가능거리 | 일부 | Odometer에 `setRangeRemainingDistance`(set)만 있다. 조회 API는 문서 목록에 없다. `RangeRemainingListener`는 "문서 숨김" 처리됐다. |
 | 기타 | 있음 | Brake: `getCurrentBrakePedalStatus`/`register...`. DrivingMode: 드라이브 모드, 크루즈 상태/목표속도. Safety: 텔테일(`getTelltalesInfo`, 주차 브레이크 경고등 포함), 엔진오일, 안전벨트, 에어백. TurnSignal 상태. Tire: `getLowTirePressure`. CarInfo: `getVINInfo`. SteeringWheel 각도. Toll(하이패스 안내 음량). Seat 탑승(occupancy). |
 

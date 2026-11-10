@@ -7,6 +7,9 @@ package com.ieo.app.domain.vehicle
 interface CarIdentity {
     /** 차대번호(VIN). 읽지 못하면 null. 서버에는 해시로만 남는다 */
     suspend fun vin(): String?
+
+    /** 이 트럭의 누적 연비(L/100km, Pleos 값 그대로). 읽지 못하면 null (VEH-003) */
+    suspend fun cumulativeFuelEconomy(): Float?
 }
 
 /** 이 트럭이 내 차량 중 어느 것인지 서버가 찾은 결과 */

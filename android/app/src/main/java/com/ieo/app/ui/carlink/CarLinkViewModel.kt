@@ -38,6 +38,7 @@ interface CarLinkActions {
  * Pleos 트럭과 내 차량 잇기 (VEH-004). 로그인해서 홈에 들어올 때마다 차대번호를 읽어 서버에 묻는다.
  * 서버가 찾은 차량이 기본 차량이 되어 배차 요청·운행 등록에 쓰인다.
  * 차대번호를 못 읽거나 서버에 닿지 않으면 조용히 넘어간다. 설정 탭의 기본 차량을 그대로 쓴다.
+ * 내 차량으로 이어지면(차대번호를 모르면 기본 차량) 이 트럭의 누적 연비도 보낸다. 서버가 실측 연비로 저장해 기름값 계산에 쓴다 (VEH-003).
  */
 class CarLinkViewModel(
     private val identity: CarIdentity,
@@ -55,10 +56,18 @@ class CarLinkViewModel(
         resolving = true
         viewModelScope.launch {
             try {
-                val read = vin ?: identity.vin()?.also { vin = it } ?: return@launch
+                val read = vin ?: identity.vin()?.also { vin = it }
+                if (read == null) {
+                    // 차대번호를 모르면 기본 차량으로 운행하므로 연비도 기본 차량 것으로 보낸다
+                    defaultVehicleId()?.let(::reportFuelEconomy)
+                    return@launch
+                }
                 val match = (vehicles.resolvePleos(read) as? ApiResult.Success)?.data ?: return@launch
                 when (match) {
-                    is PleosMatch.Linked -> if (match.autoLinked) show(linkedMessage(match.vehicle))
+                    is PleosMatch.Linked -> {
+                        if (match.autoLinked) show(linkedMessage(match.vehicle))
+                        reportFuelEconomy(match.vehicle.id)
+                    }
                     is PleosMatch.Select -> _state.update { it.copy(choices = match.candidates.map(::choice)) }
                     PleosMatch.Register -> show(REGISTER_MESSAGE)
                     is PleosMatch.OtherOwner -> show(otherOwnerMessage(match.myDefault))
@@ -78,6 +87,7 @@ class CarLinkViewModel(
                 is ApiResult.Success -> {
                     _state.update { it.copy(choices = null) }
                     show(linkedMessage(result.data))
+                    reportFuelEconomy(result.data.id)
                 }
                 is ApiResult.Failure -> show(result.error.message)
             }
@@ -89,6 +99,19 @@ class CarLinkViewModel(
     override fun dismiss() = _state.update { it.copy(choices = null) }
 
     fun messageShown() = _state.update { it.copy(message = null) }
+
+    /** 화면을 붙잡지 않게 따로 보낸다. 못 읽거나 보내지 못해도 조용히 넘어간다. 서버는 톤수별 기본 연비를 쓴다 */
+    private fun reportFuelEconomy(vehicleId: Long) {
+        viewModelScope.launch {
+            val litersPer100Km = identity.cumulativeFuelEconomy() ?: return@launch
+            vehicles.reportFuelEconomy(vehicleId, litersPer100Km)
+        }
+    }
+
+    private suspend fun defaultVehicleId(): Long? {
+        val list = (vehicles.vehicles() as? ApiResult.Success)?.data ?: return null
+        return (list.firstOrNull { it.isDefault } ?: list.firstOrNull())?.id
+    }
 
     private fun show(message: String) = _state.update { it.copy(message = message) }
 

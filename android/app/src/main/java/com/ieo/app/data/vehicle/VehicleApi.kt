@@ -5,6 +5,7 @@ import retrofit2.http.Body
 import retrofit2.http.GET
 import retrofit2.http.PATCH
 import retrofit2.http.POST
+import retrofit2.http.PUT
 import retrofit2.http.Path
 
 interface VehicleApi {
@@ -20,4 +21,7 @@ interface VehicleApi {
 
     @POST("api/vehicles/{vehicleId}/pleos")
     suspend fun linkPleos(@Path("vehicleId") vehicleId: Long, @Body body: PleosVinRequest): Response<VehicleResponse>
+
+    @PUT("api/vehicles/{vehicleId}/fuel-economy")
+    suspend fun reportFuelEconomy(@Path("vehicleId") vehicleId: Long, @Body body: FuelEconomyRequest): Response<VehicleResponse>
 }

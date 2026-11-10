@@ -15,6 +15,8 @@
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <!-- 차대번호로 이 트럭과 내 차량을 잇는다 (VEH-004) -->
     <uses-permission android:name="pleos.car.permission.CAR_INFO" />
+    <!-- 누적 연비를 서버에 보내 실수익 기름값에 쓴다 (VEH-003, REC-011) -->
+    <uses-permission android:name="pleos.car.permission.CAR_ENERGY" />
 
     <!-- 운행 위치 보내기 (TRIP-013): 내비가 앞에 떠도 GPS를 받도록 운행 중에만 포그라운드 서비스를 켠다 -->
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />

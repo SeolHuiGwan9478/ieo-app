@@ -21,4 +21,7 @@ interface VehicleRepository {
 
     /** [PleosMatch.Select]에서 고른 차량에 이 트럭을 잇고 기본 차량으로 정한다 */
     suspend fun linkPleos(vehicleId: Long, vin: String): ApiResult<Vehicle>
+
+    /** 이 트럭의 누적 연비(L/100km)를 보낸다. 서버가 실측 연비로 저장해 기름값 계산에 쓴다 (VEH-003) */
+    suspend fun reportFuelEconomy(vehicleId: Long, litersPer100Km: Float): ApiResult<Vehicle>
 }

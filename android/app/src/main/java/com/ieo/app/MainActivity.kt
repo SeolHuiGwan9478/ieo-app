@@ -55,13 +55,13 @@ class MainActivity : ComponentActivity() {
 
     /** 로그인한 뒤에 묻는다. 이미 허락했으면 바로 시작한다 */
     private fun askCarPermissions() {
-        val missing = (SENSOR_PERMISSIONS + CAR_INFO_PERMISSION).filterNot(::isGranted)
+        val missing = (SENSOR_PERMISSIONS + PLEOS_PERMISSIONS).filterNot(::isGranted)
         if (missing.isEmpty()) startCarFeatures() else carPermissions.launch(missing.toTypedArray())
     }
 
     private fun startCarFeatures() {
         if (SENSOR_PERMISSIONS.all(::isGranted)) sensors.start()
-        // 차량 정보 권한이 없으면 차대번호를 못 읽고 조용히 넘어간다
+        // 차량 정보·에너지 권한이 없으면 차대번호·연비를 못 읽고 조용히 넘어간다
         carLink.resolve()
     }
 
@@ -70,8 +70,8 @@ class MainActivity : ComponentActivity() {
     private companion object {
         val SENSOR_PERMISSIONS = listOf(Car.PERMISSION_SPEED, Manifest.permission.ACCESS_FINE_LOCATION)
 
-        /** Pleos 차대번호(CarInfo.getVINInfo) */
-        const val CAR_INFO_PERMISSION = "pleos.car.permission.CAR_INFO"
+        /** Pleos 차대번호(CarInfo.getVINInfo)와 누적 연비(Fuel.getCumulativeFuelEconomy) */
+        val PLEOS_PERMISSIONS = listOf("pleos.car.permission.CAR_INFO", "pleos.car.permission.CAR_ENERGY")
     }
 }
 
