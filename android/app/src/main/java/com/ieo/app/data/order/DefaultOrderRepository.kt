@@ -7,6 +7,7 @@ import com.ieo.app.domain.order.DispatchRequest
 import com.ieo.app.domain.order.Order
 import com.ieo.app.domain.order.OrderProfit
 import com.ieo.app.domain.order.OrderRepository
+import com.ieo.app.domain.order.OrderSearch
 import com.ieo.app.domain.order.ReportType
 import com.ieo.app.domain.vehicle.GeoPoint
 
@@ -18,8 +19,13 @@ class DefaultOrderRepository(
     override suspend fun documentsVerified(): ApiResult<Boolean> =
         caller.call { api.documents() }.mapResponse { it.verified }
 
-    override suspend fun openOrders(limit: Int, near: GeoPoint?): ApiResult<List<Order>> =
-        caller.call { api.openOrders(lat = near?.latitude, lng = near?.longitude, size = limit) }.mapResponse { orders -> orders.map(OrderResponse::toDomain) }
+    override suspend fun openOrders(limit: Int, near: GeoPoint?, search: OrderSearch): ApiResult<List<Order>> =
+        caller.call {
+            api.openOrders(
+                lat = near?.latitude, lng = near?.longitude, size = limit,
+                radiusM = near?.let { search.radiusKm * 1_000 }, minFare = search.minFare,
+            )
+        }.mapResponse { orders -> orders.map(OrderResponse::toDomain) }
 
     override suspend fun profit(orderId: Long, from: GeoPoint): ApiResult<OrderProfit> =
         caller.call { api.profit(orderId, from.latitude, from.longitude) }.mapResponse { it.toDomain() }

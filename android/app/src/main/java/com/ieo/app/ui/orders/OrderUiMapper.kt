@@ -66,7 +66,8 @@ class OrderUiMapper(private val labels: DayTimeFormatter) {
         route = route(order),
         vehicle = order.vehicleLabel,
         paymentType = order.paymentTypeLabel,
-        brokerName = brokerOf(order),
+        // 서류 승인 전에는 화면 위 안내가 한 번 말해 주므로 줄마다 되풀이하지 않는다
+        brokerName = if (order.limited) "" else order.brokerName,
         fare = formatWon(order.fare),
         requested = order.isRequestedByMe,
         distanceMeters = order.distanceMeters,
@@ -88,6 +89,7 @@ class OrderUiMapper(private val labels: DayTimeFormatter) {
             profit?.tollFare?.let { "예상 통행료" to formatWon(it) },
             profit?.let { "기름값" to formatWon(it.fuelCost) },
             profit?.let { "상차지까지" to "${(it.emptyMeters + 500) / 1000}km" },
+            order.routeAverageFare?.let { "노선 평균 운임" to "${formatWon(roundedToManwon(it))} (Ieo에서 끝난 운행 기준)" },
             "주선사" to brokerOf(order),
             order.brokerMetrics?.let { "주선사 기록" to metricsSummary(it) },
         ),

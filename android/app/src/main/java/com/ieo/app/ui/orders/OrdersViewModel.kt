@@ -12,6 +12,7 @@ import com.ieo.app.domain.notification.AppNotification
 import com.ieo.app.domain.order.Order
 import com.ieo.app.domain.order.OrderProfit
 import com.ieo.app.domain.order.OrderRepository
+import com.ieo.app.domain.order.OrderSearch
 import com.ieo.app.domain.order.ReportType
 import com.ieo.app.domain.vehicle.VehicleSensors
 import com.ieo.app.ui.common.DayTimeFormatter
@@ -31,9 +32,25 @@ enum class OrderDayFilter(val label: String) {
     TOMORROW("내일"),
 }
 
+/** 상차지 거리 거르기. 위치를 알 때만 쓴다 */
+enum class OrderRadius(val km: Int, val label: String) {
+    NEAR(20, "20km"),
+    NORMAL(50, "50km"),
+    FAR(100, "100km"),
+}
+
+/** 최소 운임 거르기 */
+enum class OrderMinFare(val won: Long?, val label: String) {
+    ANY(null, "운임 전체"),
+    OVER_30(300_000, "30만 원 이상"),
+    OVER_50(500_000, "50만 원 이상"),
+}
+
 /** 오더 탭 화면 상태. 목록 한 줄과 상세는 [OrderUiMapper]가 만든다 */
 data class OrdersUiState(
     val filter: OrderDayFilter = OrderDayFilter.ALL,
+    val radius: OrderRadius = OrderRadius.NORMAL,
+    val minFare: OrderMinFare = OrderMinFare.ANY,
     /** 차량 위치로 근처 오더를 찾았다. 위치를 몰라 전체에서 찾았으면 false */
     val nearby: Boolean = false,
     val rows: List<OrderRow> = emptyList(),
@@ -53,6 +70,8 @@ data class OrdersUiState(
 
 interface OrdersActions {
     fun selectFilter(filter: OrderDayFilter)
+    fun selectRadius(radius: OrderRadius)
+    fun selectMinFare(minFare: OrderMinFare)
     fun open(orderId: Long)
     fun close()
     fun request()
@@ -103,6 +122,17 @@ class OrdersViewModel(
     override fun selectFilter(filter: OrderDayFilter) {
         _state.update { it.copy(filter = filter) }
         publish()
+    }
+
+    /** 거리·운임은 서버가 거른다 (DSP-010). 날짜는 받아 둔 목록에서 거른다 */
+    override fun selectRadius(radius: OrderRadius) {
+        _state.update { it.copy(radius = radius) }
+        viewModelScope.launch { reload() }
+    }
+
+    override fun selectMinFare(minFare: OrderMinFare) {
+        _state.update { it.copy(minFare = minFare) }
+        viewModelScope.launch { reload() }
     }
 
     override fun open(orderId: Long) {
@@ -158,7 +188,8 @@ class OrdersViewModel(
 
     private suspend fun reload() {
         val near = sensors.location.value
-        orderRepository.openOrders(limit = LIST_SIZE, near = near).orShow()?.let { list ->
+        val search = OrderSearch(radiusKm = _state.value.radius.km, minFare = _state.value.minFare.won)
+        orderRepository.openOrders(limit = LIST_SIZE, near = near, search = search).orShow()?.let { list ->
             orders = list
             _state.update { it.copy(nearby = near != null) }
         }

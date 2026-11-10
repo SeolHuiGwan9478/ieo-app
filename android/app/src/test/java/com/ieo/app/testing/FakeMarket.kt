@@ -29,8 +29,10 @@ class FakeOrderMarket(var orders: MutableList<Order>) : OrderRepository {
     var requestError: ApiError? = null
 
     val searchedNear = mutableListOf<GeoPoint?>()
+    var lastSearch: com.ieo.app.domain.order.OrderSearch? = null
 
-    override suspend fun openOrders(limit: Int, near: GeoPoint?): ApiResult<List<Order>> {
+    override suspend fun openOrders(limit: Int, near: GeoPoint?, search: com.ieo.app.domain.order.OrderSearch): ApiResult<List<Order>> {
+        lastSearch = search
         searchedNear += near
         return ApiResult.Success(orders.take(limit))
     }

@@ -129,7 +129,7 @@ class FakeTripServer(var trip: Trip) :
     override suspend fun profit(orderId: Long, from: GeoPoint): ApiResult<com.ieo.app.domain.order.OrderProfit> =
         ApiResult.Failure(com.ieo.app.core.network.ApiError.Network)
 
-    override suspend fun openOrders(limit: Int, near: GeoPoint?): ApiResult<List<Order>> {
+    override suspend fun openOrders(limit: Int, near: GeoPoint?, search: com.ieo.app.domain.order.OrderSearch): ApiResult<List<Order>> {
         ordersNear += near
         return ApiResult.Success(listOf(TripFixtures.order(distanceMeters = near?.let { 12_300L })))
     }

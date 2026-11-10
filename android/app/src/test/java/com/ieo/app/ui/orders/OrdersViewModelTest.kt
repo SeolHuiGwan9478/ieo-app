@@ -48,6 +48,21 @@ class OrdersViewModelTest {
     }
 
     @Test
+    fun `거리와 최소 운임 칩을 고르면 그 조건으로 서버에 다시 묻는다`() = runTest(main.dispatcher) {
+        sensors.parkAt(GeoPoint(36.9690, 126.8410))
+        viewModel.refresh()
+        advanceUntilIdle()
+        assertEquals(com.ieo.app.domain.order.OrderSearch(50, null), market.lastSearch)
+
+        viewModel.selectRadius(OrderRadius.NEAR)
+        viewModel.selectMinFare(OrderMinFare.OVER_30)
+        advanceUntilIdle()
+
+        assertEquals(com.ieo.app.domain.order.OrderSearch(20, 300_000), market.lastSearch)
+        assertEquals(OrderRadius.NEAR, viewModel.state.value.radius)
+    }
+
+    @Test
     fun `위치를 모르면 모집 중 오더 전체에서 찾는다`() = runTest(main.dispatcher) {
         viewModel.refresh()
         advanceUntilIdle()

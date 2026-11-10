@@ -3,13 +3,16 @@ package com.ieo.app.domain.order
 import com.ieo.app.core.network.ApiResult
 import com.ieo.app.domain.vehicle.GeoPoint
 
+/** 오더 탭 거르기 (DSP-010). 거리는 [near]가 있을 때만 쓴다 */
+data class OrderSearch(val radiusKm: Int = 50, val minFare: Long? = null)
+
 interface OrderRepository {
 
     /**
      * 내 차량으로 맡을 수 있는 모집 중 오더 (상차가 빠른 순), 최대 [limit]건.
      * [near]를 주면 그곳에서 상차지까지 50km 안만 주고, 오더마다 거리를 붙인다 (근처 오더)
      */
-    suspend fun openOrders(limit: Int, near: GeoPoint? = null): ApiResult<List<Order>>
+    suspend fun openOrders(limit: Int, near: GeoPoint? = null, search: OrderSearch = OrderSearch()): ApiResult<List<Order>>
 
     /** 실제 경로로 계산한 실수익 내역 (오더 상세) */
     suspend fun profit(orderId: Long, from: GeoPoint): ApiResult<OrderProfit>

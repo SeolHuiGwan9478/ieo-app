@@ -10,6 +10,7 @@ import android.os.SystemClock
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -74,9 +75,20 @@ fun OrdersScreen(state: OrdersUiState, actions: OrdersActions, isDriving: Boolea
             verticalArrangement = Arrangement.spacedBy(16.dp),
             modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(ScreenPadding),
         ) {
-            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            // 날짜 · 거리 · 운임. 반 화면처럼 좁으면 다음 줄로 넘어간다
+            FlowRow(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 OrderDayFilter.entries.forEach { filter ->
                     FilterChip(filter.label, selected = state.filter == filter, onClick = { actions.selectFilter(filter) })
+                }
+                if (state.nearby) {
+                    ChipGap()
+                    OrderRadius.entries.forEach { radius ->
+                        FilterChip(radius.label, selected = state.radius == radius, onClick = { actions.selectRadius(radius) })
+                    }
+                }
+                ChipGap()
+                OrderMinFare.entries.forEach { fare ->
+                    FilterChip(fare.label, selected = state.minFare == fare, onClick = { actions.selectMinFare(fare) })
                 }
             }
             if (!state.verified) UnverifiedNotice()
@@ -88,6 +100,10 @@ fun OrdersScreen(state: OrdersUiState, actions: OrdersActions, isDriving: Boolea
         }
     }
 }
+
+/** 칩 묶음 사이 간격 */
+@Composable
+private fun ChipGap() = Spacer(Modifier.width(12.dp))
 
 @Composable
 private fun DrivingNotice() {
@@ -146,7 +162,7 @@ private fun OrderList(state: OrdersUiState, onOrderClick: (Long) -> Unit) {
         SectionTitle(
             title = if (state.nearby) "근처 오더" else "모집 중인 오더",
             count = state.rows.size,
-            note = if (state.nearby) "지금 위치에서 50km 안, 내 차로 실을 수 있는 것만" else "내 차로 실을 수 있는 것만",
+            note = if (state.nearby) "지금 위치에서 ${state.radius.label} 안, 내 차로 실을 수 있는 것만" else "내 차로 실을 수 있는 것만",
         )
         if (state.rows.isEmpty()) {
             Text(
@@ -168,7 +184,7 @@ private fun OrderList(state: OrdersUiState, onOrderClick: (Long) -> Unit) {
                     Keyword.payment(row.paymentType),
                     row.brokerMetrics?.let(Keyword::brokerPayment),
                 ),
-                subtitle = if (row.requested) "요청함" else row.brokerName,
+                subtitle = if (row.requested) "요청함" else row.brokerName.ifEmpty { null },
                 subtitleColor = if (row.requested) Orange700 else TextSub,
                 amount = row.fare,
                 amountNote = row.netProfit,
@@ -248,6 +264,8 @@ private fun OrdersScreenPreview() {
 
 private object PreviewOrdersActions : OrdersActions {
     override fun selectFilter(filter: OrderDayFilter) = Unit
+    override fun selectRadius(radius: OrderRadius) = Unit
+    override fun selectMinFare(minFare: OrderMinFare) = Unit
     override fun open(orderId: Long) = Unit
     override fun close() = Unit
     override fun request() = Unit
