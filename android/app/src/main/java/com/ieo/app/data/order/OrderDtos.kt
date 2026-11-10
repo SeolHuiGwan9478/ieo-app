@@ -37,6 +37,7 @@ data class OrderResponse(
     val netProfit: Long? = null,
     val limited: Boolean = false,
     val routeAverageFare: Long? = null,
+    val reportedByMe: Boolean = false,
 ) {
     fun toDomain() = Order(
         id = id,
@@ -61,6 +62,7 @@ data class OrderResponse(
         brokerMetrics = brokerMetrics?.toDomain(),
         netProfit = netProfit,
         routeAverageFare = routeAverageFare,
+        reportedByMe = reportedByMe,
     )
 }
 

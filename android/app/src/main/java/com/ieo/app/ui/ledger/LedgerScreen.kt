@@ -130,7 +130,7 @@ private fun EntriesTab(state: LedgerUiState, actions: LedgerActions) {
             Row {
                 Metric("운임·대기비", summary.revenue, TextStrong)
                 Metric("경비", summary.expense, TextStrong)
-                Metric("순수익", summary.netProfit, IeoStatus.colors.done)
+                Metric("실수익", summary.netProfit, IeoStatus.colors.done)
             }
             state.receivable?.let { owed ->
                 Spacer(Modifier.height(16.dp))

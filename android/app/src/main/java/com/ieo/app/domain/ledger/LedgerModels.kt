@@ -4,7 +4,7 @@ import com.ieo.app.domain.trip.StopType
 import java.time.LocalDate
 import java.time.temporal.ChronoUnit
 
-/** 하루 요약 (서버 /api/ledger/daily). 순수익 = 운임 + 대기비 − 경비 */
+/** 하루 요약 (서버 /api/ledger/daily). 실수익 = 운임 + 대기비 − 경비 */
 data class DailySummary(
     val date: LocalDate,
     val tripCount: Int,

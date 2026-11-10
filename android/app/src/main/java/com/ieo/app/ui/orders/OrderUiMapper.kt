@@ -6,6 +6,7 @@ import com.ieo.app.domain.order.Order
 import com.ieo.app.domain.order.OrderProfit
 import com.ieo.app.ui.common.DayTimeFormatter
 import com.ieo.app.ui.common.formatWon
+import com.ieo.app.ui.component.Keyword
 import java.time.Instant
 
 /** 목록 한 줄 */
@@ -46,6 +47,8 @@ data class OrderDetail(
     val lines: List<Pair<String, String>>,
     /** 확정을 기다리는 내 요청이 있으면 "배차 요청" 대신 "요청 철회" */
     val requested: Boolean,
+    /** 이미 신고했으면 신고 버튼을 닫는다 */
+    val reported: Boolean = false,
 )
 
 /** 확정을 기다리는 내 요청 (화면 위 띠) */
@@ -102,12 +105,15 @@ class OrderUiMapper(private val labels: DayTimeFormatter) {
             profitLine(order, profit),
             profit?.tollFare?.let { "예상 통행료" to formatWon(it) },
             profit?.let { "기름값" to formatWon(it.fuelCost) },
-            profit?.let { "상차지까지" to "${(it.emptyMeters + 500) / 1000}km" },
+            profit?.let { "상차지까지" to "${(it.emptyMeters + 500) / 1000}km" }
+                // 실제 경로를 받기 전에는 목록과 같은 어림 거리
+                ?: order.distanceMeters?.let { "상차지까지" to Keyword.distanceText(it) },
             order.routeAverageFare?.let { "노선 평균 운임" to "${formatWon(roundedToManwon(it))} (Ieo에서 끝난 운행 기준)" },
             "주선사" to brokerOf(order),
             order.brokerMetrics?.let { "주선사 기록" to metricsSummary(it) },
         ),
         requested = order.isRequestedByMe,
+        reported = order.reportedByMe,
     )
 
     /** 서류 심사 전이면 주선사를 가린다 */

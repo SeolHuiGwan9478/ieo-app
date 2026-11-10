@@ -28,7 +28,7 @@ data class HomeSnapshot(
     val wait: WaitRecord? = null,
     /** 진행 중인 운행이 상하차지에 있을 때 그곳의 정보 카드. 못 받았으면 null */
     val site: SiteCard? = null,
-    /** 오늘 운행 수와 순수익 */
+    /** 오늘 운행 수와 실수익 */
     val today: DailySummary? = null,
     val receivables: Receivables? = null,
     /** 모집 중 오더 */

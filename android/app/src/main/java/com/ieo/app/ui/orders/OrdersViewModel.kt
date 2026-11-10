@@ -275,6 +275,8 @@ class OrdersViewModel(
         val order = selected() ?: return
         runAction {
             orderRepository.report(order.id, type).orShow() ?: return@runAction
+            // 신고는 오더마다 한 번이라 신고 버튼을 닫는다
+            orders = orders.map { if (it.id == order.id) it.copy(reportedByMe = true) else it }
             show(REPORTED_MESSAGE)
             close()
         }

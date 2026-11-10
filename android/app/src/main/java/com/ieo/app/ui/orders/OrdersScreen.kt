@@ -401,7 +401,7 @@ private fun DetailSheet(detail: OrderDetail, reporting: Boolean, busy: Boolean, 
         Spacer(Modifier.height(20.dp))
     }
     Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-        IeoTonalButton(text = "신고", onClick = actions::startReport, modifier = Modifier.weight(1f))
+        IeoTonalButton(text = if (detail.reported) "신고함" else "신고", onClick = actions::startReport, modifier = Modifier.weight(1f), enabled = !detail.reported)
         IeoTonalButton(text = "닫기", onClick = actions::close, modifier = Modifier.weight(1f))
         if (detail.requested) {
             IeoSecondaryButton(text = "요청 철회", onClick = actions::withdraw, modifier = Modifier.weight(2f))
