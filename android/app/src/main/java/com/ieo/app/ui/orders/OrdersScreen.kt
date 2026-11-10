@@ -1,5 +1,11 @@
 package com.ieo.app.ui.orders
 
+import com.ieo.app.ui.theme.Orange50
+import com.ieo.app.ui.theme.Orange600
+import androidx.compose.foundation.layout.size
+import androidx.compose.material3.Icon
+import androidx.compose.material.icons.outlined.VerifiedUser
+import androidx.compose.material.icons.Icons
 import android.os.SystemClock
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -73,6 +79,7 @@ fun OrdersScreen(state: OrdersUiState, actions: OrdersActions, isDriving: Boolea
                     FilterChip(filter.label, selected = state.filter == filter, onClick = { actions.selectFilter(filter) })
                 }
             }
+            if (!state.verified) UnverifiedNotice()
             state.pending?.let { PendingStrip(it, onWithdraw = actions::withdraw, onExpired = actions::refresh) }
             OrderList(state, onOrderClick = actions::open)
         }
@@ -167,6 +174,22 @@ private fun OrderList(state: OrdersUiState, onOrderClick: (Long) -> Unit) {
                 amountNote = row.netProfit,
                 onClick = { onOrderClick(row.id) },
             )
+        }
+    }
+}
+
+/** 서류 승인 전: 왜 주소·주선사가 가려졌고 어디서 풀 수 있는지 (휴대폰 홈 서류 카드와 같은 역할) */
+@Composable
+private fun UnverifiedNotice() {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier.fillMaxWidth().background(Orange50, RoundedCornerShape(16.dp)).padding(horizontal = 20.dp, vertical = 16.dp),
+    ) {
+        Icon(Icons.Outlined.VerifiedUser, contentDescription = null, tint = Orange600, modifier = Modifier.size(36.dp))
+        Spacer(Modifier.width(14.dp))
+        Column {
+            Text("서류 승인 전이라 주소와 주선사를 가렸어요", fontSize = 24.sp, fontWeight = FontWeight.Bold, color = Orange700)
+            Text("휴대폰 앱 내 정보 > 서류에서 4가지를 올리면 배차를 요청할 수 있어요", fontSize = 24.sp, color = TextSub)
         }
     }
 }

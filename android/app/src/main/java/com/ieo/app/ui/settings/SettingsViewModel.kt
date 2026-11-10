@@ -1,5 +1,6 @@
 package com.ieo.app.ui.settings
 
+import com.ieo.app.domain.account.DriverStanding
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
@@ -45,6 +46,8 @@ data class SettingsUiState(
     val isLoading: Boolean = false,
     val isBusy: Boolean = false,
     val message: String? = null,
+    /** 서류 인증과 이행 기록. 못 받으면 null */
+    val standing: DriverStanding? = null,
 )
 
 interface SettingsActions {
@@ -135,12 +138,14 @@ class SettingsViewModel(
         val profile = viewModelScope.async { accountRepository.me() }
         val vehicles = viewModelScope.async { vehicleRepository.vehicles() }
         val recommendation = viewModelScope.async { recommendationRepository.preference() }
+        val standing = viewModelScope.async { accountRepository.standing() }
         profile.await().orShow()?.let { me -> _state.update { it.copy(profile = me) } }
         vehicles.await().orShow()?.let { list ->
             _state.update { it.copy(vehicles = list.sortedByDescending(Vehicle::isDefault)) }
         }
         // 추천 설정을 못 받아도 다른 칸은 보여 준다. 메시지를 두 번 띄우지 않게 조용히 넘긴다
         (recommendation.await() as? ApiResult.Success)?.data?.let { pref -> _state.update { it.copy(recommendation = pref) } }
+        standing.await()?.let { value -> _state.update { it.copy(standing = value) } }
         _state.update { it.copy(isLoading = false) }
     }
 

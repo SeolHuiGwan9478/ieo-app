@@ -1,5 +1,6 @@
 package com.ieo.app.data.account
 
+import com.ieo.app.domain.account.DriverStanding
 import com.ieo.app.core.network.ApiCaller
 import com.ieo.app.core.network.ApiResult
 import com.ieo.app.core.network.mapResponse
@@ -20,4 +21,16 @@ class DefaultAccountRepository(
         (caller.call { api.consents() } as? ApiResult.Success)?.data?.any { it.type == "VOICE" && it.agreed } ?: false
 
     override suspend fun endCarSession(): ApiResult<Unit> = caller.callNoContent { api.endCarSession() }
+
+    override suspend fun standing(): DriverStanding? {
+        val record = (caller.call { api.record() } as? ApiResult.Success)?.data ?: return null
+        val progress = (caller.call { api.documents() } as? ApiResult.Success)?.data
+        return DriverStanding(
+            verified = record.verified,
+            approvedRequired = progress?.approvedRequired ?: if (record.verified) 4 else 0,
+            requiredTotal = progress?.requiredTotal ?: 4,
+            completedTripCount = record.completedTripCount,
+            lateCancelCount = record.lateCancelCount,
+        )
+    }
 }

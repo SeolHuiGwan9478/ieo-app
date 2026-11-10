@@ -1,5 +1,13 @@
 package com.ieo.app.ui.settings
 
+import com.ieo.app.ui.theme.Orange600
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.size
+import androidx.compose.material3.Icon
+import androidx.compose.material.icons.filled.Verified
+import androidx.compose.material.icons.Icons
+import androidx.compose.foundation.shape.RoundedCornerShape
+import com.ieo.app.domain.account.DriverStanding
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -59,7 +67,7 @@ fun SettingsScreen(state: SettingsUiState, actions: SettingsActions, linksSectio
                 .padding(ScreenPadding)
                 .widthIn(max = 880.dp),
         ) {
-            ProfileSection(state.profile, onEdit = { actions.openForm(SettingsForm.EditName(state.profile?.name.orEmpty())) })
+            ProfileSection(state.profile, state.standing, onEdit = { actions.openForm(SettingsForm.EditName(state.profile?.name.orEmpty())) })
             VehicleSection(state.vehicles, isLoading = state.isLoading, onEdit = { actions.openForm(SettingsForm.EditVehicle(it)) })
             RecommendationSection(state.recommendation, onEdit = { actions.openForm(SettingsForm.EditRecommendation(it)) })
             linksSection()
@@ -88,11 +96,19 @@ fun SettingsScreen(state: SettingsUiState, actions: SettingsActions, linksSectio
 }
 
 @Composable
-private fun ProfileSection(profile: Profile?, onEdit: () -> Unit) {
+private fun ProfileSection(profile: Profile?, standing: DriverStanding?, onEdit: () -> Unit) {
     WhiteSection {
         SectionTitle(title = "내 정보")
+        // 휴대폰 앱과 같은 인증 마크
+        if (standing?.verified == true) {
+            Box(Modifier.padding(start = 8.dp, bottom = 8.dp)) { VerifiedBadge() }
+        }
         DetailLine("이름", profile?.name ?: "-")
         DetailLine("휴대폰", profile?.phone?.let(::maskPhone) ?: "-")
+        standing?.let {
+            DetailLine("서류", documentsLabel(it))
+            DetailLine("내 기록", "완료 운행 ${it.completedTripCount}건 · 직전 취소 ${it.lateCancelCount}건")
+        }
         Spacer(Modifier.height(12.dp))
         IeoTonalButton(text = "이름 변경", onClick = onEdit)
     }
@@ -141,6 +157,24 @@ private fun RecommendationSection(preference: RecommendationPreference?, onEdit:
         }
         Spacer(Modifier.height(12.dp))
         IeoTonalButton(text = "수정", onClick = { onEdit(preference) })
+    }
+}
+
+/** 서류 칸: 다 승인됐으면 "인증됨", 아니면 몇 장 승인됐고 어디서 올리는지 */
+internal fun documentsLabel(standing: DriverStanding): String =
+    if (standing.verified) "인증됨 · 배차를 요청할 수 있어요"
+    else "승인 ${standing.approvedRequired}/${standing.requiredTotal} · 휴대폰 앱 내 정보 > 서류에서 올려요"
+
+/** 이름 옆 "인증 차주" 표시. 휴대폰 앱과 같은 주황 마크 */
+@Composable
+internal fun VerifiedBadge() {
+    Row(
+        Modifier.background(Orange50, RoundedCornerShape(50)).padding(start = 10.dp, end = 14.dp, top = 6.dp, bottom = 6.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Icon(Icons.Filled.Verified, contentDescription = null, tint = Orange600, modifier = Modifier.size(28.dp))
+        Spacer(Modifier.width(6.dp))
+        Text("인증 차주", fontSize = 24.sp, fontWeight = FontWeight.Bold, color = Orange700)
     }
 }
 
