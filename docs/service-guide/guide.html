@@ -1,0 +1,175 @@
+<title>이에오 서비스 설명서</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<!-- 서비스 설명서 원본. 화면에서는 A4 가로 종이를 차례로 보여 주고, 다 고친 뒤 make-pdf.sh로 PDF를 뽑는다.
+     페이지(section.page)를 기능 순서대로 이어 붙인다. 글자·여백은 cqw(종이 폭 기준)로 써서 화면과 PDF가 같게 보인다 -->
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&display=swap">
+<style>
+:root {
+  --orange: #FF6C37;   /* 시작 화면 바탕 (design/README.md Orange500) */
+  --paper: #FFFFFF;
+  --desk: #D9DBDE;     /* 화면에서 종이 뒤 바탕 */
+  --ink: #191F28;
+  --ink-mid: #4E5968;
+  --ink-sub: #8B95A1;
+  --line: #E5E8EB;
+  --orange-text: #C2410C;
+  --font: "Noto Sans KR", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+  color-scheme: light;
+}
+@page { size: A4 landscape; margin: 0; }
+* { box-sizing: border-box; }
+body {
+  margin: 0; background: var(--desk); color: var(--ink); font-family: var(--font);
+  -webkit-print-color-adjust: exact; print-color-adjust: exact;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 24px;
+}
+.pages { display: flex; flex-direction: column; align-items: center; gap: 24px; }
+.page {
+  width: 100%; max-width: 1123px; aspect-ratio: 297 / 210; container-type: inline-size;
+  position: relative; overflow: hidden; background: var(--paper); box-shadow: 0 2px 10px rgba(0, 0, 0, .18);
+}
+@media print {
+  body { background: none; padding: 0; }
+  .pages { display: block; }
+  .page { width: 297mm; max-width: none; height: 210mm; box-shadow: none; break-after: page; }
+  .page:last-child { break-after: auto; }
+}
+
+/* 표지: 앱 시작 화면(SplashScreen)과 같은 주황 바탕, 흰 로고, 문구 */
+.cover { background: var(--orange); display: flex; flex-direction: column; align-items: center; justify-content: center; }
+.cover img { width: 26cqw; height: auto; display: block; }
+.cover p { margin: 3.7cqw 0 0; color: rgba(255, 255, 255, .9); font-size: 2.25cqw; font-weight: 500; letter-spacing: .06em; }
+
+/* 본문 페이지 공통: 위에 단락 이름, 아래에 작은 로고와 쪽 이름 */
+.sheet { padding: 5.2cqw 6cqw 4.4cqw; display: flex; flex-direction: column; gap: 2.4cqw; }
+.eyebrow { font-size: 1.15cqw; font-weight: 700; letter-spacing: .12em; color: var(--orange-text); }
+.sheet h2 { margin: 0; font-size: 3.1cqw; line-height: 1.25; font-weight: 700; }
+.lead { margin: 0; font-size: 1.45cqw; line-height: 1.7; color: var(--ink-mid); max-width: 62cqw; }
+.foot { position: absolute; left: 6cqw; right: 6cqw; bottom: 2.6cqw; display: flex; justify-content: space-between; align-items: center;
+  font-size: 1cqw; color: var(--ink-sub); }
+.foot img { width: 3.2cqw; display: block; }
+
+/* 목차 */
+.toc { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 3cqw; margin-top: 1cqw; }
+.toc h3 { margin: 0 0 1.2cqw; font-size: 1.5cqw; font-weight: 700; padding-bottom: .9cqw; border-bottom: .15cqw solid var(--ink); }
+.toc ol { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: .75cqw; counter-reset: n; }
+.toc li { counter-increment: n; display: flex; gap: 1.1cqw; font-size: 1.35cqw; line-height: 1.5; }
+.toc li::before { content: counter(n, decimal-leading-zero); font-variant-numeric: tabular-nums; color: var(--ink-sub); min-width: 2cqw; }
+.toc .later { color: var(--ink-sub); }
+.draft { position: absolute; top: 5.2cqw; right: 6cqw; font-size: 1.05cqw; color: var(--ink-sub); border: .1cqw solid var(--line); padding: .35cqw .9cqw; border-radius: .4cqw; }
+
+/* 브랜드 색 */
+.colors { display: grid; grid-template-columns: 1.15fr 1fr 1.25fr; gap: 3.2cqw; flex: 1; min-height: 0; }
+.colors h3 { margin: 0 0 1.1cqw; font-size: 1.3cqw; font-weight: 700; }
+.hero-swatch { background: #FF6C37; border-radius: .6cqw; padding: 1.6cqw; display: flex; flex-direction: column; justify-content: space-between; height: 13cqw; color: #fff; }
+.hero-swatch img { width: 9cqw; }
+.hero-swatch b { font-size: 1.25cqw; font-weight: 700; }
+.hero-swatch span { font-size: 1cqw; opacity: .9; }
+.chips { display: flex; flex-direction: column; margin-top: 1cqw; }
+.chip { display: grid; grid-template-columns: 3.2cqw 1fr auto; align-items: center; gap: 1.1cqw; padding: .7cqw 0; border-bottom: .1cqw solid var(--line); font-size: 1.1cqw; }
+.chip i { display: block; height: 2.2cqw; border-radius: .35cqw; box-shadow: inset 0 0 0 .1cqw rgba(0,0,0,.08); }
+.chip b { font-weight: 500; }
+.chip small { display: block; font-size: .95cqw; color: var(--ink-sub); }
+.chip code { font-family: ui-monospace, Menlo, monospace; font-size: .95cqw; color: var(--ink-mid); }
+.status { display: grid; grid-template-columns: auto 1fr; gap: .9cqw 1.3cqw; align-items: center; font-size: 1.1cqw; }
+.tag { justify-self: start; font-size: 1.05cqw; font-weight: 700; padding: .3cqw .8cqw; border-radius: .35cqw; white-space: nowrap; }
+.status small { color: var(--ink-sub); font-size: .95cqw; display: block; }
+.rules { margin: 0; padding: 0; list-style: none; display: grid; grid-template-columns: repeat(4, 1fr); gap: 2cqw; border-top: .15cqw solid var(--ink); padding-top: 1.4cqw; }
+.rules li { font-size: 1.1cqw; line-height: 1.6; color: var(--ink-mid); }
+.rules b { display: block; color: var(--ink); font-size: 1.2cqw; margin-bottom: .3cqw; }
+</style>
+
+<div class="pages">
+
+  <section class="page cover" aria-label="표지">
+    <img src="assets/ieo_wordmark_white.svg" alt="ieo">
+    <p>끝나는 곳에서, 다음이 이어집니다</p>
+  </section>
+
+
+  <section class="page sheet" aria-label="목차">
+    <span class="draft">초안 · 확인하며 바뀌어요</span>
+    <div class="eyebrow">CONTENTS</div>
+    <h2>목차</h2>
+    <div class="toc">
+      <div>
+        <h3>브랜드</h3>
+        <ol>
+          <li>브랜드 색</li>
+        </ol>
+      </div>
+      <div>
+        <h3>차량 앱</h3>
+        <ol>
+          <li>로그인</li>
+          <li>차량 연결과 내 차량 정보</li>
+          <li>홈과 운행 시작</li>
+          <li>운행 중 화면</li>
+          <li>대기 기록과 대기 증빙</li>
+          <li>전자 인수증</li>
+          <li>다음 배차 추천</li>
+          <li>오더 찾기와 실수익</li>
+          <li>장부</li>
+          <li>다른 앱 배차 등록</li>
+          <li>단골 주선사</li>
+          <li>설정</li>
+        </ol>
+      </div>
+      <div>
+        <h3>휴대폰 앱</h3>
+        <ol>
+          <li class="later">차량 앱 확인 뒤에 채워요</li>
+        </ol>
+      </div>
+    </div>
+    <div class="foot"><img src="assets/ieo_wordmark_orange.svg" alt="ieo"><span>목차</span></div>
+  </section>
+
+  <section class="page sheet" aria-label="브랜드 색">
+    <div class="eyebrow">BRAND · 01</div>
+    <h2>주황은 이에오, 신호등은 운행 상황</h2>
+    <p class="lead">로고와 가장 중요한 버튼에는 주황을 쓰고, 운행 상황을 알릴 때만 신호등 색을 써요. 운전 중에 한눈에 봐도 "누르는 곳"과 "지금 상태"가 섞이지 않게 하려는 거예요.</p>
+    <div class="colors">
+      <div>
+        <h3>브랜드색</h3>
+        <div class="hero-swatch">
+          <img src="assets/ieo_wordmark_white.svg" alt="ieo">
+          <div><b>Orange 500 · #FF6C37</b><br><span>로고, 앱 아이콘, 시작 화면</span></div>
+        </div>
+        <div class="chips">
+          <div class="chip"><i style="background:#F25A22"></i><div><b>Orange 600</b><small>주요 버튼 바탕</small></div><code>#F25A22</code></div>
+          <div class="chip"><i style="background:#C2410C"></i><div><b>Orange 700</b><small>흰 바탕 위 주황 글자</small></div><code>#C2410C</code></div>
+          <div class="chip"><i style="background:#FFF3EE"></i><div><b>Orange 50</b><small>선택된 메뉴 바탕</small></div><code>#FFF3EE</code></div>
+        </div>
+      </div>
+      <div>
+        <h3>바탕과 글자</h3>
+        <div class="chips" style="margin-top:0">
+          <div class="chip"><i style="background:#FFFFFF"></i><div><b>White</b><small>바탕, 묶음</small></div><code>#FFFFFF</code></div>
+          <div class="chip"><i style="background:#F2F4F6"></i><div><b>Canvas Gray</b><small>화면 바탕, 보조 버튼</small></div><code>#F2F4F6</code></div>
+          <div class="chip"><i style="background:#191F28"></i><div><b>Text Strong</b><small>제목, 금액</small></div><code>#191F28</code></div>
+          <div class="chip"><i style="background:#4E5968"></i><div><b>Text Mid</b><small>보조 글자</small></div><code>#4E5968</code></div>
+          <div class="chip"><i style="background:#8B95A1"></i><div><b>Text Sub</b><small>설명 글자</small></div><code>#8B95A1</code></div>
+        </div>
+      </div>
+      <div>
+        <h3>상태색 (신호등)</h3>
+        <div class="status">
+          <span class="tag" style="background:#E8EFFD;color:#1D4ED8">운행 중</span><div>파랑 <code style="font-size:.95cqw">#1D4ED8</code><small>주행, 도착 예정 시각, 다음 배차 안내</small></div>
+          <span class="tag" style="background:#FEF9C3;color:#A16207">대기 중</span><div>노랑 <code style="font-size:.95cqw">#A16207</code><small>대기 타이머, 청구할 수 있는 대기비</small></div>
+          <span class="tag" style="background:#E6F4EA;color:#15803D">하차 완료</span><div>초록 <code style="font-size:.95cqw">#15803D</code><small>완료, 실수익, 받은 돈</small></div>
+          <span class="tag" style="background:#FDECEC;color:#B91C1C">못 받은 돈</span><div>빨강 <code style="font-size:.95cqw">#B91C1C</code><small>휴게 필요, 미수금, 지급 지연</small></div>
+        </div>
+      </div>
+    </div>
+    <ul class="rules">
+      <li><b>주황은 한 화면에 하나</b>가장 중요한 동작 하나와 로고에만 써요.</li>
+      <li><b>상태색은 두 가지까지</b>한 화면에 신호등 색이 많으면 아무것도 눈에 띄지 않아요.</li>
+      <li><b>색만으로 말하지 않기</b>"대기 중"처럼 글자를 함께 써서 색약 기사님도 알아봐요.</li>
+      <li><b>대기는 노랑</b>호박색은 주황과 헷갈려서 노랑으로 바꿨어요.</li>
+    </ul>
+    <div class="foot"><img src="assets/ieo_wordmark_orange.svg" alt="ieo"><span>브랜드 색</span></div>
+  </section>
+
+</div>
