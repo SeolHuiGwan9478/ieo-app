@@ -174,6 +174,7 @@ body {
           <li>차량 연결과 내 차량 정보</li>
           <li>홈과 운행 시작</li>
           <li>운행 중 화면</li>
+          <li>휴게 안내와 화물차 라운지</li>
           <li>대기 기록과 대기 증빙</li>
           <li>전자 인수증</li>
           <li>배차 추천</li>
@@ -195,6 +196,7 @@ body {
           <li>오더 상세와 실수익</li>
           <li>배차 요청에서 확정까지</li>
           <li>배차 추천 설정</li>
+          <li>내 배차와 직접 등록</li>
           <li class="later">나머지는 차량 앱 확인 뒤에 채워요</li>
         </ol>
       </div>
@@ -523,6 +525,67 @@ body {
       </div>
     </div>
     <div class="foot"><img src="assets/ieo_wordmark_orange.svg" alt="ieo"><span>배차 추천 · 설정</span></div>
+  </section>
+
+  <section class="page sheet" aria-label="운행 시작">
+    <div class="eyebrow">TRIP · 01</div>
+    <div class="twocol">
+      <div class="text-col">
+        <h2>배차가 잡히면<br>[안내 시작]만 누르면 돼요</h2>
+        <p class="lead">주선사가 확정한 배차는 내 배차에 저절로 들어와요. 차에서 그 배차를 누르고 [안내 시작]을 누르면 출발로 기록되고, 차량 내비가 상차지로 길을 잡아요.</p>
+        <ul class="facts">
+          <li><b>운행이 생기는 두 길</b><br>이에오 오더 마켓에서 주선사가 확정하면 자동으로 생겨요. 전화나 다른 앱으로 받은 일은 휴대폰 [배차 직접 등록]에서 상차지, 시각, 하차지, 운임 4단계로 넣어요. 차에서도 세워 둔 상태에서 등록할 수 있어요.</li>
+          <li><b>길 안내는 차량 내비가</b><br>이에오는 목적지만 넘기고 남은 거리·시간을 받아 써요. 화면은 내비와 반씩 나눠 쓰는 것이 기본이에요.</li>
+          <li><b>상차를 마치고 떠나면</b><br>하차지로 안내가 바뀌고 음성으로 알려 줘요. 도착과 대기는 다음 장(대기)에서 다뤄요.</li>
+        </ul>
+      </div>
+      <div class="shots" style="--h: 36cqw; --cap: 16cqw">
+        <figure class="shot"><img src="assets/m_TR_list.jpg" alt="휴대폰 내 배차"><figcaption>휴대폰 내 배차. 진행 중, 예정, 지난 운행.</figcaption></figure>
+        <figure class="shot"><img src="assets/m_TR_reg_place.jpg" alt="휴대폰 배차 직접 등록 첫 단계"><figcaption>직접 등록 1/4. 지금 여기와 다녀온 곳을 바로 고를 수 있어요.</figcaption></figure>
+        <figure class="shot car"><img src="assets/c_trip_guidance.jpg" alt="차량 안내 시작 확인 창"><figcaption>차에서 배차를 누르면 뜨는 확인 창.</figcaption></figure>
+      </div>
+    </div>
+    <div class="foot"><img src="assets/ieo_wordmark_orange.svg" alt="ieo"><span>운행 · 시작</span></div>
+  </section>
+
+  <section class="page sheet" aria-label="운행 중 화면">
+    <div class="eyebrow">TRIP · 02</div>
+    <div class="twocol">
+      <div class="text-col">
+        <h2>달리는 동안은<br>도착 시각과 남은 길만</h2>
+        <p class="lead">도착 예정 시각, 남은 거리·시간, 진행률은 차량 내비에서 받아요. 달리는 동안에는 누를 일이 없도록 화면을 비워 두고, 알릴 것은 음성으로 말해요.</p>
+        <ul class="facts">
+          <li><b>위치는 5분마다</b><br>운행 중에만 서버로 보내요. 통신이 끊기면 차에 쌓아 두었다가 이어지면 한꺼번에 보내요. 운행마다 마지막 위치 한 줄만 두고, 운행이 끝나면 지워요.</li>
+          <li><b>주선사에게 도착 예정 문자</b><br>처음 도착 시각을 알았을 때, 진행률 50%, 도착 30분 전, 그리고 15분 넘게 바뀌었을 때(30분에 한 번까지) 보내요. 기사님이 주선사 공유에 동의했을 때만 가요. 도착했다는 문자는 보내지 않아요. 주선사는 콘솔에서 봐요.</li>
+          <li><b>달리는 동안 숨기는 것</b><br>오더 목록과 배차 추천 창은 띄우지 않아요. 세우면(P·주차 브레이크) 다시 보여요.</li>
+        </ul>
+      </div>
+      <div class="shots" style="--h: 50cqw; --cap: 24cqw">
+        <figure class="shot car"><img src="assets/c_trip_driving.jpg" alt="차량 운행 중 화면"><figcaption>하차지로 가는 중. 아래 줄은 지금 운행의 노선과 운임이에요.</figcaption></figure>
+      </div>
+    </div>
+    <div class="foot"><img src="assets/ieo_wordmark_orange.svg" alt="ieo"><span>운행 · 운행 중</span></div>
+  </section>
+
+  <section class="page sheet" aria-label="휴게 안내">
+    <div class="eyebrow">TRIP · 03</div>
+    <div class="twocol">
+      <div class="text-col">
+        <h2>2시간이 되기 전에<br>쉴 곳을 알려 줘요</h2>
+        <p class="lead">화물차는 2시간 연속 운전하면 15분 이상 쉬어야 해요(화물자동차 운수사업법 시행규칙 제22조). 1시간 45분에 미리 알리면서 가는 길에 있는 화물차 라운지를 함께 말해요.</p>
+        <ul class="facts">
+          <li><b>언제</b> 1시간 45분, 2시간에 한 번씩. 정체로 계속 달리면 2시간 45분, 3시간에도 알려요(연장운행은 1시간까지, 뒤에 30분 휴게). 잠깐 선 시간은 운전에 넣고, 15분(2시간을 넘겼으면 30분) 세워 두면 다시 재요.</li>
+          <li><b>어디를</b> TMAP 화물차 경로 위, 가는 방향 오른쪽에 있는 휴게소만 골라요. 15분이면 약 20km라 20km 안 라운지, 없으면 졸음쉼터, 그것도 없으면 다음 라운지를 말해요.</li>
+          <li><b>화물차 라운지</b> 수면실·샤워실·세탁실이 모두 있는 휴게소 60곳이에요. 한국도로공사와 공공데이터를 매주 받아 둬요.</li>
+          <li><b>경유지로</b> 세워 두면 가는 길 라운지 3곳이 보이고, 눌러 고른 곳을 내비 경유지로 넣어요.</li>
+        </ul>
+      </div>
+      <div class="shots" style="--h: 50cqw; --cap: 24cqw">
+        <figure class="shot car"><img src="assets/c_rest_soon.jpg" alt="1시간 45분 휴게 안내"><figcaption>1시간 45분. "18km 앞 성주휴게소에 수면실과 샤워실이 있어요."</figcaption></figure>
+        <figure class="shot car"><img src="assets/c_rest_parked.jpg" alt="세워 두었을 때 라운지 목록"><figcaption>세워 두었을 때. 눌러 고르고 경유지로 넣어요.</figcaption></figure>
+      </div>
+    </div>
+    <div class="foot"><img src="assets/ieo_wordmark_orange.svg" alt="ieo"><span>운행 · 휴게 안내</span></div>
   </section>
 
   <section class="page sheet" aria-label="외부 API와 데이터 출처">
