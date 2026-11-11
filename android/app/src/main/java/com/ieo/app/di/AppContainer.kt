@@ -17,9 +17,9 @@ import com.ieo.app.data.delivery.DeliveryProofApi
 import com.ieo.app.data.expense.DefaultExpenseRepository
 import com.ieo.app.data.expense.ExpenseApi
 import com.ieo.app.data.ledger.DefaultLedgerRepository
+import com.ieo.app.data.ledger.LedgerApi
 import com.ieo.app.data.link.DefaultDriverLinkRepository
 import com.ieo.app.data.link.DriverLinkApi
-import com.ieo.app.data.ledger.LedgerApi
 import com.ieo.app.data.navi.NaviGuide
 import com.ieo.app.data.notification.PrefsLastNotificationStore
 import com.ieo.app.data.notification.SseNotificationRepository
@@ -27,6 +27,8 @@ import com.ieo.app.data.order.DefaultOrderRepository
 import com.ieo.app.data.order.OrderApi
 import com.ieo.app.data.recommendation.DefaultRecommendationRepository
 import com.ieo.app.data.recommendation.RecommendationApi
+import com.ieo.app.data.restarea.DefaultRestAreaRepository
+import com.ieo.app.data.restarea.RestAreaApi
 import com.ieo.app.data.site.DefaultSiteRepository
 import com.ieo.app.data.site.SiteApi
 import com.ieo.app.data.trip.DefaultTripRepository
@@ -38,9 +40,10 @@ import com.ieo.app.data.vehicle.PleosCarIdentity
 import com.ieo.app.data.vehicle.VehicleApi
 import com.ieo.app.data.voice.PleosSpeechRecognizer
 import com.ieo.app.data.voice.ServerAnswerClassifier
-import com.ieo.app.data.voice.VoiceApi
 import com.ieo.app.data.voice.TtsAnnouncer
+import com.ieo.app.data.voice.VoiceApi
 import com.ieo.app.data.wait.DefaultWaitRepository
+import com.ieo.app.data.wait.PrefsPendingWaitStore
 import com.ieo.app.data.wait.WaitApi
 import com.ieo.app.domain.account.AccountRepository
 import com.ieo.app.domain.auth.AuthRepository
@@ -53,6 +56,7 @@ import com.ieo.app.domain.navi.Navigator
 import com.ieo.app.domain.notification.NotificationListener
 import com.ieo.app.domain.order.OrderRepository
 import com.ieo.app.domain.recommendation.RecommendationRepository
+import com.ieo.app.domain.restarea.RestAreaRepository
 import com.ieo.app.domain.site.SiteRepository
 import com.ieo.app.domain.trip.LocationTracker
 import com.ieo.app.domain.trip.TripLocationReporter
@@ -60,13 +64,12 @@ import com.ieo.app.domain.trip.TripRepository
 import com.ieo.app.domain.vehicle.CarIdentity
 import com.ieo.app.domain.vehicle.VehicleRepository
 import com.ieo.app.domain.vehicle.VehicleSensors
-import com.ieo.app.domain.voice.AnswerClassifier
 import com.ieo.app.domain.voice.Announcer
+import com.ieo.app.domain.voice.AnswerClassifier
 import com.ieo.app.domain.voice.ConsentAwareSpeechRecognizer
 import com.ieo.app.domain.voice.SpeechRecognizer
 import com.ieo.app.domain.wait.PendingWaitStore
 import com.ieo.app.domain.wait.WaitRepository
-import com.ieo.app.data.wait.PrefsPendingWaitStore
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -84,6 +87,7 @@ interface AppContainer {
     val ledgerRepository: LedgerRepository
     val orderRepository: OrderRepository
     val recommendationRepository: RecommendationRepository
+    val restAreaRepository: RestAreaRepository
     val expenseRepository: ExpenseRepository
     val siteRepository: SiteRepository
     val deliveryProofRepository: DeliveryProofRepository
@@ -141,6 +145,9 @@ class DefaultAppContainer(context: Context) : AppContainer {
         DefaultOrderRepository(network.authenticated.create(OrderApi::class.java), network.caller)
     }
 
+    override val restAreaRepository: RestAreaRepository by lazy {
+        DefaultRestAreaRepository(network.authenticated.create(RestAreaApi::class.java), network.caller)
+    }
     override val recommendationRepository: RecommendationRepository by lazy {
         DefaultRecommendationRepository(network.authenticated.create(RecommendationApi::class.java), network.caller)
     }

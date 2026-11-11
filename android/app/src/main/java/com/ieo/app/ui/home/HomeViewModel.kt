@@ -17,6 +17,10 @@ import com.ieo.app.domain.notification.AppNotification
 import com.ieo.app.domain.notification.NotificationType
 import com.ieo.app.domain.order.OrderRepository
 import com.ieo.app.domain.recommendation.RecommendationRepository
+import com.ieo.app.domain.restarea.RestAdvisor
+import com.ieo.app.domain.restarea.RestAreaRepository
+import com.ieo.app.domain.restarea.RestStop
+import com.ieo.app.domain.restarea.RouteRestStopsAt
 import com.ieo.app.domain.site.SiteRepository
 import com.ieo.app.domain.trip.LocationTracker
 import com.ieo.app.domain.trip.RestCheck
@@ -30,8 +34,8 @@ import com.ieo.app.domain.trip.TripStop
 import com.ieo.app.domain.vehicle.Gear
 import com.ieo.app.domain.vehicle.GeoPoint
 import com.ieo.app.domain.vehicle.VehicleSensors
-import com.ieo.app.domain.voice.AnswerClassifier
 import com.ieo.app.domain.voice.Announcer
+import com.ieo.app.domain.voice.AnswerClassifier
 import com.ieo.app.domain.voice.NoAnswerClassifier
 import com.ieo.app.domain.voice.NoSpeechRecognizer
 import com.ieo.app.domain.voice.SpeechRecognizer
@@ -49,15 +53,16 @@ import com.ieo.app.domain.wait.PendingWaitStore
 import com.ieo.app.domain.wait.WaitMark
 import com.ieo.app.domain.wait.WaitOutbox
 import com.ieo.app.domain.wait.WaitProofLink
-import com.ieo.app.domain.wait.WaitSource
 import com.ieo.app.domain.wait.WaitRecord
 import com.ieo.app.domain.wait.WaitRepository
-import java.time.Clock
-import java.time.Duration
-import java.time.Instant
+import com.ieo.app.domain.wait.WaitSource
+import com.ieo.app.ui.common.josa
 import com.ieo.app.ui.component.BannerKind
 import com.ieo.app.ui.component.IeoBanner
 import com.ieo.app.ui.component.NOTIFICATION_VISIBLE_MS
+import java.time.Clock
+import java.time.Duration
+import java.time.Instant
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
 import kotlinx.coroutines.delay
@@ -77,6 +82,7 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withTimeoutOrNull
 
 /** 화면 위에 잠깐 띄우는 것들 */
 data class HomeStatus(
@@ -147,6 +153,9 @@ interface HomeActions {
     /** 연 추천 오더에 배차를 요청한다. 요청에 "추천에서 눌렀음"(isRecommendation)이 남는다 */
     fun requestPick()
 
+    /** 세워 두었을 때 경로 위 휴게소를 내비 경유지로 넣는다 (TRIP-032) */
+    fun addRestStopWaypoint(stop: RestStop)
+
     fun refresh()
 }
 
@@ -172,6 +181,8 @@ class HomeViewModel(
     private val announcer: Announcer,
     private val locationTracker: LocationTracker,
     private val recommendationRepository: RecommendationRepository,
+    /** 경로 위 휴게소·졸음쉼터 (TRIP-032) */
+    private val restAreaRepository: RestAreaRepository = RestAreaRepository.None,
     /** 서버 알림 (09 알림). 앱 전체의 [com.ieo.app.domain.notification.NotificationListener]가 받는다 */
     private val notifications: Flow<AppNotification> = emptyFlow(),
     private val recognizer: SpeechRecognizer = NoSpeechRecognizer,
@@ -213,9 +224,13 @@ class HomeViewModel(
     private val restCheck = MutableStateFlow<RestCheck?>(null)
     private val restTimer = RestTimer()
 
+    /** 받아 둔 경로 위 쉴 곳 (TRIP-032). 운행 중이 아니면 null */
+    private val routeStops = MutableStateFlow<RouteRestStopsAt?>(null)
+    private var routeStopsTriedAt: Instant? = null
+
     val state: StateFlow<HomeState> =
-        combine(snapshot, navigator.progress, arrivalView, departureCheck, restCheck) { snapshot, navi, arrival, departure, rest ->
-            stateFactory.create(snapshot, navi, arrival.check, departure, arrival.nearStop, arrival.parked, rest)
+        combine(snapshot, navigator.progress, arrivalView, departureCheck, combine(restCheck, routeStops, ::Pair)) { snapshot, navi, arrival, departure, (rest, stops) ->
+            stateFactory.create(snapshot, navi, arrival.check, departure, arrival.nearStop, arrival.parked, rest, stops)
         }
         .stateIn(viewModelScope, SharingStarted.Eagerly, stateFactory.create(HomeSnapshot(), null))
 
@@ -259,6 +274,7 @@ class HomeViewModel(
         recommendWhenParked()
         tellNotifications()
         tellWhenRestIsDue()
+        keepRouteStopsFresh()
     }
 
     override fun refresh() {
@@ -808,11 +824,71 @@ class HomeViewModel(
                     told = null
                 } else if (told == null || level > told) {
                     told = level
-                    announcer.say(HomeAnnouncements.rest(level))
+                    tellRest(level)
                 }
                 delay(REST_CHECK_MILLIS)
             }
         }
+    }
+
+    /**
+     * 휴게 안내 (TRIP-031, 032): 지금 위치에서 경로 위 쉴 곳을 다시 받아 함께 말한다.
+     * 8초 안에 못 받으면 받아 둔 것으로, 그것도 없으면 장소 없이 말한다. 말하는 때는 늦추지 않는다
+     */
+    private fun tellRest(level: RestLevel) {
+        viewModelScope.launch {
+            val fresh = withTimeoutOrNull(REST_STOPS_WAIT_MILLIS) { loadRouteStops() }
+            val stops = (fresh ?: routeStops.value)?.current(navigator.progress.value?.remainMeters).orEmpty()
+            announcer.say(HomeAnnouncements.rest(level, RestAdvisor.advise(level, stops)))
+        }
+    }
+
+    /** 운행 중인 차의 경로 위 쉴 곳을 받는다. 운행 중이 아니거나 위치를 모르거나 경로를 못 받으면 null */
+    private suspend fun loadRouteStops(): RouteRestStopsAt? {
+        val trip = snapshot.value.current?.takeIf { it.status.isDriving } ?: return null
+        val here = sensors.location.value ?: return null
+        routeStopsTriedAt = clock.instant()
+        val remain = navigator.progress.value?.remainMeters
+        val result = (restAreaRepository.onRoute(trip.id, here) as? ApiResult.Success)?.data ?: return null
+        if (!result.routed) return null
+        return RouteRestStopsAt(trip.id, result.stops, result.attribution, clock.instant(), remain).also { routeStops.value = it }
+    }
+
+    /**
+     * 운행 화면의 "다음 화물차 라운지"와 세워 두었을 때 목록을 위해 경로 위 쉴 곳을 받아 둔다.
+     * 남은 거리는 내비 남은 거리로 고치므로 자주 받지 않는다: 처음, 30분마다, 라운지가 다 지나갔을 때, 차를 세웠을 때.
+     * 못 받았으면 10분 뒤에 다시 해 본다 (TMAP 결과는 저장하지 않고, 부르는 수를 줄인다)
+     */
+    private fun keepRouteStopsFresh() {
+        viewModelScope.launch {
+            var wasParked = false
+            while (true) {
+                val trip = snapshot.value.current?.takeIf { it.status.isDriving }
+                val parkedNow = sensors.motion.value?.isParked == true
+                if (trip == null) {
+                    routeStops.value = null
+                } else {
+                    val now = clock.instant()
+                    val held = routeStops.value?.takeIf { it.tripId == trip.id }
+                    val stale = held == null || held.fetchedAt.plus(ROUTE_STOPS_MAX_AGE).isBefore(now) ||
+                        held.current(navigator.progress.value?.remainMeters).none { it.isLounge }
+                    val justParked = parkedNow && !wasParked
+                    val mayRetry = routeStopsTriedAt?.plus(ROUTE_STOPS_RETRY)?.isBefore(now) ?: true
+                    if (justParked || (stale && mayRetry)) loadRouteStops()
+                }
+                wasParked = parkedNow
+                delay(ROUTE_STOPS_CHECK_MILLIS)
+            }
+        }
+    }
+
+    /** 세워 두었을 때 휴게소를 내비 경유지로 넣는다 (TRIP-032). 달리는 동안에는 누르지 못한다 */
+    override fun addRestStopWaypoint(stop: RestStop) {
+        if (sensors.motion.value?.isParked != true) return
+        val added = navigator.addWaypoint(
+            Destination(name = stop.name, address = stop.direction?.let { "$it 방향" }.orEmpty(), latitude = stop.latitude, longitude = stop.longitude),
+        )
+        show(if (added) "${josa(stop.name, "을", "를")} 경유지로 넣었어요" else "경유지를 넣지 못했어요")
     }
 
     private fun fenceOf(stop: TripStop) = GeoFence(GeoPoint(stop.latitude, stop.longitude), stop.geofenceRadiusMeters)
@@ -890,6 +966,10 @@ class HomeViewModel(
         private const val ETA_SHARED_CHECK_MILLIS = 60_000L
         private const val SENSOR_CHECK_MILLIS = 1_000L
         private const val REST_CHECK_MILLIS = 10_000L
+        private const val REST_STOPS_WAIT_MILLIS = 8_000L
+        private const val ROUTE_STOPS_CHECK_MILLIS = 15_000L
+        private val ROUTE_STOPS_MAX_AGE: Duration = Duration.ofMinutes(30)
+        private val ROUTE_STOPS_RETRY: Duration = Duration.ofMinutes(10)
 
         /** 상하차지 정보 카드를 읽어 주고 "대기 시작" 버튼을 보여 주는 거리 (SITE-006, WAIT-008) */
         private const val APPROACH_ANNOUNCE_METERS = 3_000.0
@@ -917,6 +997,7 @@ class HomeViewModel(
                     announcer = container.announcer,
                     locationTracker = container.locationTracker,
                     recommendationRepository = container.recommendationRepository,
+                    restAreaRepository = container.restAreaRepository,
                     notifications = container.notifications.received,
                     recognizer = container.speechRecognizer,
                     answerClassifier = container.answerClassifier,

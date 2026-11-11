@@ -18,6 +18,9 @@ interface Navigator {
     fun refresh()
 
     fun stopGuidance()
+
+    /** 안내 중인 경로에 첫 번째 경유지로 넣는다 (휴게소, TRIP-032). 내비가 없거나 실패하면 false */
+    fun addWaypoint(place: Destination): Boolean = false
 }
 
 data class Destination(

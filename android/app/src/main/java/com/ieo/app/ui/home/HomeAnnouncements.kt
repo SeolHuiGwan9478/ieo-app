@@ -2,6 +2,8 @@ package com.ieo.app.ui.home
 
 import com.ieo.app.domain.notification.AppNotification
 import com.ieo.app.domain.notification.NotificationType
+import com.ieo.app.domain.restarea.RestAdvice
+import com.ieo.app.domain.restarea.RestStop
 import com.ieo.app.domain.site.HeightWarning
 import com.ieo.app.domain.site.SiteCard
 import com.ieo.app.domain.trip.RestLevel
@@ -103,15 +105,44 @@ object HomeAnnouncements {
     fun deliverySigned(signerName: String?): Announcement =
         trip("${signerName?.let { "${it}님이 " } ?: ""}인수증에 서명했어요. 운행을 마쳤어요.")
 
-    /** 쉬어야 할 때 (TRIP-031). 1시간 45분에 한 번, 2시간에 한 번 */
-    fun rest(level: RestLevel): Announcement = Announcement(
-        when (level) {
-            RestLevel.SOON -> "1시간 45분째 운전 중이에요. 15분 안에 휴게소나 졸음쉼터에서 쉬어 가세요."
-            RestLevel.NOW -> "2시간 넘게 쉬지 않고 운전했어요. 가까운 곳에 세우고 15분 이상 쉬어 가세요."
-        },
-        AnnouncementPriority.WARNING,
-        REST_KEY,
-    )
+    /**
+     * 쉬어야 할 때 (TRIP-031). 단계마다 한 번. [advice]가 있으면 경로 위 쉴 곳을 함께 말한다 (TRIP-032).
+     * 예: "1시간 45분째 운전 중이에요. 18km 앞 성주휴게소에 수면실과 샤워실이 있어요. 15분 안에 쉬어 가세요."
+     */
+    fun rest(level: RestLevel, advice: RestAdvice? = null): Announcement {
+        val head = when (level) {
+            RestLevel.SOON -> "1시간 45분째 운전 중이에요."
+            RestLevel.NOW -> "2시간 넘게 쉬지 않고 운전했어요."
+            RestLevel.EXTENDED_SOON -> "곧 3시간이에요."
+            RestLevel.EXTENDED_NOW -> "3시간 넘게 운전했어요."
+        }
+        val tail = when (level) {
+            RestLevel.SOON -> "15분 안에 쉬어 가세요."
+            RestLevel.NOW -> "15분 이상 쉬어 가세요."
+            RestLevel.EXTENDED_SOON -> "15분 안에 30분 이상 쉬어 가세요."
+            RestLevel.EXTENDED_NOW -> "바로 30분 이상 쉬어 가세요."
+        }
+        val text = when (advice) {
+            null -> when (level) {
+                RestLevel.SOON -> "$head 15분 안에 휴게소나 졸음쉼터에서 쉬어 가세요."
+                RestLevel.NOW -> "$head 가까운 곳에 세우고 15분 이상 쉬어 가세요."
+                else -> "$head 가까운 곳에 세우고 $tail"
+            }
+            is RestAdvice.Lounge -> "$head ${km(advice.stop)} 앞 ${josa(advice.stop.name, "에", "에")} ${facilityLine(advice.stop)} $tail"
+            is RestAdvice.Shelter -> "$head ${km(advice.stop)} 앞 ${josa(advice.stop.name, "이", "가")} 있어요. $tail" +
+                (advice.nextLounge?.let { " 다음 화물차 라운지는 ${km(it)} 앞이에요." } ?: "")
+            is RestAdvice.NextLounge -> "$head $tail 다음 화물차 라운지는 ${km(advice.stop)} 앞 ${josa(advice.stop.name, "이에요", "예요")}."
+        }
+        return Announcement(text, AnnouncementPriority.WARNING, REST_KEY)
+    }
+
+    /** "수면실과 샤워실이 있어요." 라운지면 늘 둘 다 있다 */
+    private fun facilityLine(stop: RestStop): String {
+        val said = listOf("수면실", "샤워실").filter { it in stop.facilities }
+        return if (said.isEmpty()) "화물차 라운지가 있어요." else "${said.joinToString("과 ")}이 있어요."
+    }
+
+    private fun km(stop: RestStop) = "${(stop.aheadMeters + 500) / 1000}km"
 
     const val REST_KEY = "rest"
 

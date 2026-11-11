@@ -2,12 +2,14 @@ package com.ieo.app.data.navi
 
 import ai.pleos.playground.navi.constants.NaviErrorCode
 import ai.pleos.playground.navi.constants.NavigationStatus
+import ai.pleos.playground.navi.constants.WaypointIndex
 import ai.pleos.playground.navi.data.BookmarkInfo
 import ai.pleos.playground.navi.data.CurrentLocationInfo
 import ai.pleos.playground.navi.data.DestinationArrivedInfo
 import ai.pleos.playground.navi.data.DestinationInfo
 import ai.pleos.playground.navi.data.DrivingInfo
 import ai.pleos.playground.navi.data.RecentDestinationInfo
+import ai.pleos.playground.navi.data.RequestWaypointInfo
 import ai.pleos.playground.navi.data.RouteInfo
 import ai.pleos.playground.navi.data.RouteStartInfo
 import ai.pleos.playground.navi.helper.NaviHelper
@@ -183,6 +185,21 @@ class NaviGuide(context: Context) : Navigator, NaviPlaceSource {
     /** 이름이 비어 있으면 주소를 이름으로 쓴다 (서버는 상하차지 이름을 꼭 받는다) */
     private fun place(name: String?, address: String?, lat: Double, lng: Double, kind: NaviPlace.Kind) =
         NaviPlace(name = name?.takeIf { it.isNotBlank() } ?: address.orEmpty(), address = address.orEmpty(), latitude = lat, longitude = lng, kind = kind)
+
+    override fun addWaypoint(place: Destination): Boolean = runCatching {
+        helper.addWaypoint(
+            RequestWaypointInfo(
+                latitude = place.latitude,
+                longitude = place.longitude,
+                poiName = place.name,
+                waypointIndex = WaypointIndex.FIRST,
+                poiId = "",
+                address = place.address,
+                poiSubId = "",
+                poiProvider = "",
+            ),
+        )
+    }.onFailure { Log.w(TAG, "경유지 추가 실패", it) }.isSuccess
 
     override fun refresh() {
         runCatching { helper.getDestinationInfo() }

@@ -3,6 +3,7 @@ package com.ieo.app.ui.home
 import com.ieo.app.domain.order.BrokerMetrics
 import com.ieo.app.domain.order.CargoCategory
 import com.ieo.app.domain.site.HeightWarning
+import com.ieo.app.domain.restarea.RestStop
 import com.ieo.app.domain.trip.RestCheck
 import com.ieo.app.domain.wait.WaitPolicy
 
@@ -67,7 +68,16 @@ sealed interface HomeState {
         val picks: List<NextOrderCard> = emptyList(),
         /** 쉬어야 할 때가 되었으면 연속 운전 시간과 단계 (TRIP-031). 아니면 null */
         val rest: RestCheck? = null,
+        /** 경로 위 쉴 곳, 경로 거리순 (TRIP-032). 지금 위치 기준으로 고친 거리 */
+        val restStops: List<RestStop> = emptyList(),
+        /** 휴게 안내 중 말한 곳. 카드에 강조해 보여 준다 */
+        val restFocus: RestStop? = null,
+        /** 휴게소를 보여 줄 때 함께 적는 출처 */
+        val restAttribution: String? = null,
     ) : HomeState {
+        /** 다음 화물차 라운지 */
+        val nextLounge: RestStop? get() = restStops.firstOrNull { it.isLounge }
+
         /** "대기 시작" 버튼을 보여 주나: 상하차지 가까이 왔거나, 길 안내가 꺼졌을 때 */
         val showsStartWait: Boolean get() = nearStop || !naviActive
     }

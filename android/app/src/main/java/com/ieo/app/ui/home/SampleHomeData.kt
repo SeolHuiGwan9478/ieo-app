@@ -2,6 +2,8 @@ package com.ieo.app.ui.home
 
 import android.os.SystemClock
 import com.ieo.app.domain.order.BrokerMetrics
+import com.ieo.app.domain.restarea.RestStop
+import com.ieo.app.domain.restarea.RestStopKind
 import com.ieo.app.domain.wait.WaitPolicy
 
 /**
@@ -50,6 +52,16 @@ object SampleHomeData {
         isPickup = false,
         picks = picks,
     )
+
+    /** 경로 위 쉴 곳 (TRIP-032) */
+    val restStops = listOf(
+        RestStop(RestStopKind.LOUNGE, "성주휴게소", "창원", 18_000, listOf("수유실", "수면실", "샤워실", "세탁실", "쉼터"), "054-931-6100", 35.92, 128.27),
+        RestStop(RestStopKind.DROWSY_SHELTER, "창녕졸음쉼터", null, 29_000, emptyList(), null, 35.55, 128.45),
+        RestStop(RestStopKind.LOUNGE, "남성주참외휴게소", "창원", 37_000, listOf("수유실", "수면실", "샤워실", "세탁실"), null, 35.86, 128.34),
+        RestStop(RestStopKind.LOUNGE, "영산휴게소", "창원", 92_000, listOf("수유실", "수면실", "샤워실", "세탁실"), null, 35.45, 128.52),
+    )
+
+    const val REST_ATTRIBUTION = "휴게소 정보: 공공데이터포털 전국휴게소정보표준데이터, 한국도로공사 고속도로 공공데이터 포털"
 
     fun driving() = HomeState.Driving(
         trip = myTrips[0].toSummary(),

@@ -50,6 +50,30 @@ class RestTimerTest {
     }
 
     @Test
+    fun 두_시간을_넘기면_2시간_45분과_3시간에_연장운행을_알린다() {
+        timer.check(at(0), moving)
+        assertEquals(RestLevel.NOW, timer.check(at(164), moving)!!.level)
+        assertEquals(RestLevel.EXTENDED_SOON, timer.check(at(165), moving)!!.level)
+        assertEquals(RestLevel.EXTENDED_NOW, timer.check(at(180), moving)!!.level)
+    }
+
+    @Test
+    fun 두_시간을_넘긴_뒤에는_30분을_쉬어야_다시_잰다() {
+        timer.check(at(0), moving)
+        timer.check(at(130), stopped)
+        timer.check(at(150), stopped)
+        assertEquals(RestLevel.NOW, timer.check(at(151), stopped)!!.level)
+        assertNull(timer.check(at(160), stopped))
+    }
+
+    @Test
+    fun 두_시간_전에_섰으면_15분이면_된다() {
+        timer.check(at(0), moving)
+        timer.check(at(100), stopped)
+        assertNull(timer.check(at(115), stopped))
+    }
+
+    @Test
     fun 신호가_끊겨도_세던_것을_이어_간다() {
         timer.check(at(0), moving)
         assertEquals(RestLevel.NOW, timer.check(at(130), null)!!.level)

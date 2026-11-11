@@ -188,8 +188,17 @@ private object Scenes {
         "home_waiting" to { HomeScreen(SampleHomeData.waiting()) },
         "home_unloading" to { HomeScreen(SampleHomeData.unloading()) },
         "home_driving" to { HomeScreen(SampleHomeData.driving()) },
-        "home_rest_soon" to { HomeScreen(SampleHomeData.driving().copy(rest = RestCheck(Duration.ofMinutes(110), RestLevel.SOON))) },
+        "home_rest_next" to { HomeScreen(SampleHomeData.driving().copy(restStops = SampleHomeData.restStops, restAttribution = SampleHomeData.REST_ATTRIBUTION)) },
+        "home_rest_soon" to {
+            HomeScreen(SampleHomeData.driving().copy(rest = RestCheck(Duration.ofMinutes(106), RestLevel.SOON), restStops = SampleHomeData.restStops, restFocus = SampleHomeData.restStops[0]))
+        },
         "home_rest_now" to { HomeScreen(SampleHomeData.driving().copy(rest = RestCheck(Duration.ofMinutes(125), RestLevel.NOW))) },
+        "home_rest_extended" to {
+            HomeScreen(SampleHomeData.driving().copy(rest = RestCheck(Duration.ofMinutes(170), RestLevel.EXTENDED_SOON), restStops = SampleHomeData.restStops, restFocus = SampleHomeData.restStops[1]))
+        },
+        "home_rest_parked" to {
+            HomeScreen(SampleHomeData.driving().copy(parked = true, restStops = SampleHomeData.restStops, restAttribution = SampleHomeData.REST_ATTRIBUTION))
+        },
         "sheet_guidance" to { Box(Modifier.fillMaxSize()) { StartGuidanceSheet(trip, {}, {}) } },
         "sheet_wait_proof" to { Box(Modifier.fillMaxSize()) { WaitProofSheet(WaitProofLink("https://ieo.example/w/abc123", Instant.parse("2026-11-12T09:00:00Z")), {}) } },
         "sheet_wait_proof_send" to { Box(Modifier.fillMaxSize()) { WaitProofSheet(WaitProofLink("https://ieo.example/w/abc123", Instant.parse("2026-11-12T09:00:00Z"), canSend = true), {}) } },

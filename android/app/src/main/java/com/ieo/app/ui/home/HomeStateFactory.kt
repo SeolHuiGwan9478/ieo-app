@@ -6,6 +6,8 @@ import com.ieo.app.domain.ledger.Receivables
 import com.ieo.app.domain.navi.NaviProgress
 import com.ieo.app.domain.recommendation.NextOrder
 import com.ieo.app.domain.site.SiteCard
+import com.ieo.app.domain.restarea.RestAdvisor
+import com.ieo.app.domain.restarea.RouteRestStopsAt
 import com.ieo.app.domain.trip.RestCheck
 import com.ieo.app.domain.trip.StopType
 import com.ieo.app.domain.trip.Trip
@@ -61,13 +63,15 @@ class HomeStateFactory(
         parked: Boolean = false,
         /** 연속 운전 시간 (TRIP-030). 쉬어야 할 때만 운행 화면에 보여 준다 */
         rest: RestCheck? = null,
+        /** 받아 둔 경로 위 쉴 곳 (TRIP-032) */
+        restStops: RouteRestStopsAt? = null,
     ): HomeState {
         val picks = snapshot.nextOrders.map(::nextOrderCard)
         val trip = snapshot.current ?: return idle(snapshot, picks)
         val stop = trip.currentStop ?: return idle(snapshot, picks)
         val wait = snapshot.wait?.takeIf { it.stopType == stop }
         // 상하차지에 있는데 대기 기록을 못 받았으면 주행 화면의 "대기 시작"으로 다시 받게 한다 (도착은 여러 번 불러도 같다)
-        if (!trip.status.isAtStop || wait == null) return driving(trip, stop, navi, arrival, nearStop, parked, picks, rest)
+        if (!trip.status.isAtStop || wait == null) return driving(trip, stop, navi, arrival, nearStop, parked, picks, rest, restStops)
         val site = snapshot.site?.takeIf { it.id == trip.stop(stop).siteId }
         return waiting(trip, stop, wait, site, departure, picks)
     }
@@ -88,7 +92,10 @@ class HomeStateFactory(
         parked: Boolean,
         picks: List<NextOrderCard>,
         rest: RestCheck?,
+        restStops: RouteRestStopsAt?,
     ): HomeState.Driving {
+        val stops = restStops?.takeIf { it.tripId == trip.id }?.current(navi?.remainMeters).orEmpty()
+        val alert = rest?.takeIf { it.level != null }
         val remainSeconds = navi?.remainSeconds
         return HomeState.Driving(
             trip = tripMapper.map(trip).toSummary(),
@@ -104,7 +111,10 @@ class HomeStateFactory(
             nearStop = nearStop,
             parked = parked,
             picks = picks,
-            rest = rest?.takeIf { it.level != null },
+            rest = alert,
+            restStops = stops,
+            restFocus = alert?.level?.let { RestAdvisor.advise(it, stops)?.stop },
+            restAttribution = restStops?.attribution?.takeIf { stops.isNotEmpty() },
         )
     }
 

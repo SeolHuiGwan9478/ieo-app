@@ -146,6 +146,7 @@ fun MainScreen(
                         onArrive = homeViewModel::arrive,
                         onResumeGuidance = homeViewModel::resumeGuidance,
                         onPickClick = { homeViewModel.openPick(it.orderId) },
+                        onAddRestStopWaypoint = homeViewModel::addRestStopWaypoint,
                     )
                     // 주행 중에는 오더 목록을 보여 주지 않는다 (DSP-012)
                     Destination.ORDERS -> OrdersRoute(isDriving = liveState is HomeState.Driving, onMessage = messages::show)

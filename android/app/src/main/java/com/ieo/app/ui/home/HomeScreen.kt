@@ -56,7 +56,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.ieo.app.R
 import com.ieo.app.domain.site.HeightWarning
-import com.ieo.app.domain.trip.RestLevel
+import com.ieo.app.domain.restarea.RestStop
 import com.ieo.app.domain.wait.WaitPolicy
 import com.ieo.app.ui.common.formatDuration
 import com.ieo.app.ui.common.formatFare
@@ -112,6 +112,7 @@ fun HomeScreen(
     onArrive: () -> Unit = {},
     onResumeGuidance: () -> Unit = {},
     onPickClick: (NextOrderCard) -> Unit = {},
+    onAddRestStopWaypoint: (RestStop) -> Unit = {},
 ) {
     // 내비 옆 반 화면(좁은 창)이 기본 사용 형태다. 앱 영역 전체를 쓸 때만 두 칸으로 펼친다
     BoxWithConstraints(modifier = Modifier.fillMaxSize().background(CanvasGray)) {
@@ -119,7 +120,7 @@ fun HomeScreen(
         when (state) {
             is HomeState.Idle -> IdleHome(state, compact, onTripClick, onPickClick, onUnpaidClick, onRegisterTrip)
             is HomeState.Waiting -> WaitingHome(state, compact, WaitActions(onStartWork, onDepart, onSendWaitProof, onRequestDeliveryProof, onPickClick))
-            is HomeState.Driving -> DrivingHome(state, onArrive, onResumeGuidance, onPickClick)
+            is HomeState.Driving -> DrivingHome(state, onArrive, onResumeGuidance, onPickClick, onAddRestStopWaypoint)
         }
     }
 }
@@ -463,7 +464,13 @@ private fun heightNote(warning: HeightWarning) = when (warning) {
  * 상하차지 3km 안에서는 "대기 시작" 버튼을 보여 준다 (WAIT-008). 버튼은 세워 두었을 때(기어 P 또는 주차 브레이크)만 눌린다.
  */
 @Composable
-private fun DrivingHome(state: HomeState.Driving, onArrive: () -> Unit, onResumeGuidance: () -> Unit, onPickClick: (NextOrderCard) -> Unit) {
+private fun DrivingHome(
+    state: HomeState.Driving,
+    onArrive: () -> Unit,
+    onResumeGuidance: () -> Unit,
+    onPickClick: (NextOrderCard) -> Unit,
+    onAddRestStopWaypoint: (RestStop) -> Unit,
+) {
     val status = IeoStatus.colors
     Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize().padding(ScreenPadding)) {
         Column(
@@ -509,15 +516,11 @@ private fun DrivingHome(state: HomeState.Driving, onArrive: () -> Unit, onResume
                     )
                 }
                 state.rest?.let { rest ->
-                    val now = rest.level == RestLevel.NOW
                     Spacer(Modifier.height(20.dp))
-                    Text(
-                        "${formatMinutesKorean(rest.drivingFor.toMinutes())}째 운전 중 · ${if (now) "지금 쉬어 가세요" else "15분 안에 쉬어 가세요"}",
-                        fontSize = 24.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = if (now) status.warning else status.waiting,
-                    )
+                    RestLine(rest)
                 }
+                // 세워 두었으면 아래에 누를 수 있는 목록을 보여 주므로 카드는 달릴 때만
+                if (!state.parked) RestStopCard(state)
                 if (state.etaShared) {
                     Spacer(Modifier.height(20.dp))
                     Row(verticalAlignment = Alignment.CenterVertically) {
@@ -527,6 +530,8 @@ private fun DrivingHome(state: HomeState.Driving, onArrive: () -> Unit, onResume
                     }
                 }
             }
+            // 세워 두었을 때만 누를 수 있는 휴게소 목록. 운행 정보보다 먼저 보이게 둔다
+            if (state.parked) RestStopList(state, onAddRestStopWaypoint)
             WhiteSection {
                 Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp)) {
                     Column(modifier = Modifier.weight(1f)) {
