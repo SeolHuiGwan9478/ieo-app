@@ -17,6 +17,8 @@ data class DailySummary(
  */
 data class LedgerEntry(
     val id: Long,
+    /** 운행이 끝나 생긴 줄이면 그 운행. 대기 증빙을 만들 때 쓴다. 직접 넣은 줄이면 null */
+    val tripId: Long? = null,
     val auto: Boolean,
     val workDate: LocalDate,
     /** "평택 포승 → 대구 성서" */

@@ -1,5 +1,6 @@
 package com.ieo.app.testing
 
+import com.ieo.app.core.network.ApiError
 import com.ieo.app.core.network.ApiResult
 import com.ieo.app.domain.ledger.DailySummary
 import com.ieo.app.domain.ledger.LedgerEntry
@@ -26,6 +27,7 @@ import com.ieo.app.domain.trip.StopType
 import com.ieo.app.domain.trip.Trip
 import com.ieo.app.domain.trip.TripRepository
 import com.ieo.app.domain.trip.TripStatus
+import com.ieo.app.domain.wait.WaitMark
 import com.ieo.app.domain.wait.WaitRecord
 import com.ieo.app.domain.delivery.DeliveryProof
 import com.ieo.app.domain.delivery.DeliveryProofRepository
@@ -143,8 +145,16 @@ class FakeTripServer(var trip: Trip) :
     /** 자동 도착이 보낸 시각 */
     val arrivedAt = mutableListOf<Instant?>()
 
-    override suspend fun arrive(tripId: Long, stop: StopType, at: Instant?): ApiResult<WaitRecord> {
+    /** 통신이 끊긴 것처럼 대기 요청에 Network 실패를 돌려준다 */
+    var offline = false
+
+    /** 대기 요청마다 함께 보낸 위치와 방법 (WAIT-025) */
+    val marks = mutableListOf<WaitMark>()
+
+    override suspend fun arrive(tripId: Long, stop: StopType, at: Instant?, mark: WaitMark): ApiResult<WaitRecord> {
+        if (offline) return ApiResult.Failure(ApiError.Network)
         calls += "arrive $stop"
+        marks += mark
         arrivedAt += at
         trip = trip.copy(status = if (stop == StopType.PICKUP) TripStatus.AT_PICKUP else TripStatus.AT_DROPOFF)
         return ApiResult.Success(records.getOrPut(stop) { TripFixtures.wait(stop) })
@@ -177,16 +187,18 @@ class FakeTripServer(var trip: Trip) :
         return ApiResult.Success(TripFixtures.site(siteId))
     }
 
-    override suspend fun sendProof(tripId: Long, stop: StopType): ApiResult<WaitProofLink> =
-        createProof(tripId, stop)
+    override suspend fun sendProof(tripId: Long): ApiResult<WaitProofLink> =
+        createProof(tripId)
 
-    override suspend fun createProof(tripId: Long, stop: StopType): ApiResult<WaitProofLink> {
-        calls += "proof $stop"
-        return ApiResult.Success(WaitProofLink("http://localhost/api/public/wait-proofs/token-$stop", TripFixtures.NOW.plusSeconds(86_400)))
+    override suspend fun createProof(tripId: Long): ApiResult<WaitProofLink> {
+        calls += "proof $tripId"
+        return ApiResult.Success(WaitProofLink("http://localhost/api/public/wait-proofs/token-$tripId", TripFixtures.NOW.plusSeconds(86_400)))
     }
 
-    override suspend fun startWork(tripId: Long, stop: StopType): ApiResult<WaitRecord> {
+    override suspend fun startWork(tripId: Long, stop: StopType, at: Instant?, mark: WaitMark): ApiResult<WaitRecord> {
+        if (offline) return ApiResult.Failure(ApiError.Network)
         calls += "work $stop"
+        marks += mark
         val record = records.getValue(stop).copy(status = WaitStatus.WORKING, workStartedAt = TripFixtures.NOW)
         records[stop] = record
         return ApiResult.Success(record)
@@ -194,8 +206,10 @@ class FakeTripServer(var trip: Trip) :
 
     val departedAt = mutableListOf<Instant?>()
 
-    override suspend fun depart(tripId: Long, stop: StopType, at: Instant?): ApiResult<WaitRecord> {
+    override suspend fun depart(tripId: Long, stop: StopType, at: Instant?, mark: WaitMark): ApiResult<WaitRecord> {
+        if (offline) return ApiResult.Failure(ApiError.Network)
         calls += "depart $stop"
+        marks += mark
         departedAt += at
         trip = trip.copy(status = if (stop == StopType.PICKUP) TripStatus.IN_TRANSIT else TripStatus.COMPLETED)
         val record = records.getValue(stop).copy(status = WaitStatus.DONE, departedAt = at ?: TripFixtures.NOW)

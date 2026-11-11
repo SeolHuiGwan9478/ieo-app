@@ -38,7 +38,7 @@ fun BoxScope.WaitProofSheet(
             Column(modifier = Modifier.weight(1f)) {
                 SheetTitle("대기 증빙을\n휴대폰으로 받으세요")
                 Spacer(Modifier.height(16.dp))
-                Text("QR을 찍어 링크를 열고 주선사에게 보내 주세요.\n도착·작업 시작 시각과 대기 시간이 담겨 있어요.", fontSize = 24.sp, lineHeight = 34.sp, color = TextSub)
+                Text("QR을 찍어 링크를 열고 주선사에게 보내 주세요.\n상차지·하차지에서 확인하거나 누른 시각과 대기 시간이 담겨 있어요.", fontSize = 24.sp, lineHeight = 34.sp, color = TextSub)
                 Spacer(Modifier.height(12.dp))
                 Text("${labels.dayTime(shown.expiresAt)}까지 열려요", fontSize = 24.sp, color = TextSub)
                 Spacer(Modifier.height(8.dp))

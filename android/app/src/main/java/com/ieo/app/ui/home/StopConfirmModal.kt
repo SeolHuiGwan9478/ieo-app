@@ -41,23 +41,23 @@ import kotlinx.coroutines.delay
 private val ModalShape = RoundedCornerShape(28.dp)
 
 /**
- * 도착 확인 창 (WAIT-007). 음성으로 묻는 것과 같은 말을 보여 주고, 말로도 버튼으로도 대답할 수 있다.
+ * 도착·떠남 확인 창 (WAIT-007, 005). 음성으로 묻는 것과 같은 말을 보여 주고, 말로도 버튼으로도 대답할 수 있다.
  * 버튼은 세워 두었을 때(기어 P 또는 주차 브레이크)만 눌린다. 달리는 중이면 말로 대답하라고 알려 준다.
  * 시간 표시는 수락 창과 같은 [CountdownHeader]를 쓴다.
  * 시간은 ViewModel이 재고(15초 뒤 창을 닫는다), 여기서는 남은 초만 보여 준다.
  * 추가 창은 Pleos 독에 아이콘을 하나 더 만들므로 화면 안에 직접 그린다 (NextOrderOfferModal과 같은 이유)
  */
 @Composable
-fun BoxScope.ArrivalConfirmModal(
-    question: ArrivalQuestion?,
+fun BoxScope.StopConfirmModal(
+    question: StopQuestion?,
     parked: Boolean,
     busy: Boolean,
     onConfirm: () -> Unit,
     onDecline: () -> Unit,
 ) {
     if (question == null) return
-    var secondsLeft by remember(question.stopName, question.startLabel) { mutableIntStateOf(HomeViewModel.ARRIVAL_CONFIRM_SECONDS) }
-    LaunchedEffect(question.stopName, question.startLabel, question.asked) {
+    var secondsLeft by remember(question.kind, question.stopName, question.timeLabel) { mutableIntStateOf(HomeViewModel.ARRIVAL_CONFIRM_SECONDS) }
+    LaunchedEffect(question.kind, question.stopName, question.timeLabel, question.asked) {
         if (!question.asked) return@LaunchedEffect
         while (secondsLeft > 0) {
             delay(1_000)
@@ -80,11 +80,11 @@ fun BoxScope.ArrivalConfirmModal(
                 .background(CardSurface, ModalShape)
                 .padding(32.dp),
         ) {
-            CountdownHeader("도착 확인", secondsLeft, HomeViewModel.ARRIVAL_CONFIRM_SECONDS)
+            CountdownHeader(question.title, secondsLeft, HomeViewModel.ARRIVAL_CONFIRM_SECONDS)
             Spacer(Modifier.height(24.dp))
-            Text("${question.stopName}에 도착하셨어요?", fontSize = 36.sp, lineHeight = 44.sp, fontWeight = FontWeight.Bold, color = TextStrong)
+            Text(question.question, fontSize = 36.sp, lineHeight = 44.sp, fontWeight = FontWeight.Bold, color = TextStrong)
             Spacer(Modifier.height(8.dp))
-            Text("${question.startLabel}부터 대기로 기록할게요", fontSize = 24.sp, lineHeight = 32.sp, color = TextSub)
+            Text(question.detail, fontSize = 24.sp, lineHeight = 32.sp, color = TextSub)
             // 대답은 자유롭게 말해도 서버가 알아듣는다 (UX-025). 버튼이 잠긴 까닭만 알려 준다
             if (!parked) {
                 Spacer(Modifier.height(16.dp))
@@ -93,7 +93,7 @@ fun BoxScope.ArrivalConfirmModal(
             Spacer(Modifier.height(28.dp))
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 IeoTonalButton(text = "아직이에요", onClick = { if (!busy) onDecline() }, enabled = parked, modifier = Modifier.weight(1f))
-                IeoPrimaryButton(text = "도착 맞아요", onClick = { if (!busy) onConfirm() }, enabled = parked, modifier = Modifier.weight(1f))
+                IeoPrimaryButton(text = question.confirmLabel, onClick = { if (!busy) onConfirm() }, enabled = parked, modifier = Modifier.weight(1f))
             }
         }
     }
@@ -101,11 +101,11 @@ fun BoxScope.ArrivalConfirmModal(
 
 @Preview(widthDp = 960, heightDp = 720)
 @Composable
-private fun ArrivalConfirmModalPreview() {
+private fun StopConfirmModalPreview() {
     IeoTheme {
         Box(modifier = Modifier.fillMaxSize()) {
-            ArrivalConfirmModal(
-                question = ArrivalQuestion(stopName = "대구 성서 하차지", startLabel = "14:00", asked = true),
+            StopConfirmModal(
+                question = StopQuestion(StopQuestionKind.ARRIVE, stopName = "대구 성서 하차지", isPickup = false, timeLabel = "14:00", asked = true),
                 parked = false,
                 busy = false,
                 onConfirm = {},

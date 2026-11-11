@@ -34,13 +34,11 @@ interface WaitApi {
         @Body body: WaitTimeRequest = WaitTimeRequest(),
     ): Response<WaitRecordResponse>
 
-    /** 이미 만든 링크가 있으면 같은 링크 */
-    @POST("api/trips/{tripId}/stops/{stopType}/wait/proof/send")
-    suspend fun sendProof(@Path("tripId") tripId: Long, @Path("stopType") stopType: String): Response<WaitProofLinkResponse>
+    /** 운행의 대기 증빙 링크 (상차지·하차지 함께). 이미 만든 링크가 있으면 같은 링크 */
+    @POST("api/trips/{tripId}/wait-proof")
+    suspend fun createProof(@Path("tripId") tripId: Long): Response<WaitProofLinkResponse>
 
-    @POST("api/trips/{tripId}/stops/{stopType}/wait/proof")
-    suspend fun createProof(
-        @Path("tripId") tripId: Long,
-        @Path("stopType") stopType: String,
-    ): Response<WaitProofLinkResponse>
+    /** 이미 보냈으면 다시 보내지 않는다 */
+    @POST("api/trips/{tripId}/wait-proof/send")
+    suspend fun sendProof(@Path("tripId") tripId: Long): Response<WaitProofLinkResponse>
 }

@@ -34,8 +34,10 @@ import com.ieo.app.ui.carlink.VehicleChoice
 import com.ieo.app.ui.home.DeliveryProofSheet
 import com.ieo.app.ui.home.HomeScreen
 import com.ieo.app.ui.home.NextOrderOfferModal
-import com.ieo.app.ui.home.ArrivalConfirmModal
-import com.ieo.app.ui.home.ArrivalQuestion
+import com.ieo.app.ui.home.StopConfirmModal
+import com.ieo.app.ui.home.StopQuestion
+import com.ieo.app.ui.home.StopQuestionKind
+import com.ieo.app.ui.home.FinishTripSheet
 import com.ieo.app.ui.home.SampleHomeData
 import com.ieo.app.ui.home.StartGuidanceSheet
 import com.ieo.app.ui.home.WaitProofSheet
@@ -193,13 +195,20 @@ private object Scenes {
         "modal_arrival" to {
             Box(Modifier.fillMaxSize()) {
                 HomeScreen(SampleHomeData.driving().copy(nearStop = true, parked = true, recommendation = null))
-                ArrivalConfirmModal(ArrivalQuestion("대구 성서 하차지", "14:00", asked = true), parked = true, busy = false, onConfirm = {}, onDecline = {})
+                StopConfirmModal(StopQuestion(StopQuestionKind.ARRIVE, "대구 성서 하차지", false, "14:00", asked = true), parked = true, busy = false, onConfirm = {}, onDecline = {})
             }
         },
+        "modal_departure" to {
+            Box(Modifier.fillMaxSize()) {
+                HomeScreen(SampleHomeData.unloading())
+                StopConfirmModal(StopQuestion(StopQuestionKind.DEPART, "대구 성서 하차지", false, "16:20", asked = true), parked = false, busy = false, onConfirm = {}, onDecline = {})
+            }
+        },
+        "sheet_finish_trip" to { Box(Modifier.fillMaxSize()) { HomeScreen(SampleHomeData.unloading()); FinishTripSheet(visible = true, busy = false, onFinish = {}, onDismiss = {}) } },
         "modal_arrival_driving" to {
             Box(Modifier.fillMaxSize()) {
                 HomeScreen(SampleHomeData.driving().copy(nearStop = true, parked = false, recommendation = null))
-                ArrivalConfirmModal(ArrivalQuestion("대구 성서 하차지", "14:00", asked = true), parked = false, busy = false, onConfirm = {}, onDecline = {})
+                StopConfirmModal(StopQuestion(StopQuestionKind.ARRIVE, "대구 성서 하차지", false, "14:00", asked = true), parked = false, busy = false, onConfirm = {}, onDecline = {})
             }
         },
         "sheet_register" to { Box(Modifier.fillMaxSize()) { RegisterTripSheet(true, RegisterTripUiState(), noop<RegisterTripActions>(), {}) } },

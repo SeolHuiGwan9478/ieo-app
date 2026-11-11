@@ -35,6 +35,8 @@ data class ReceivablesResponse(
 @Serializable
 data class LedgerEntryResponse(
     val id: Long,
+    /** 운행이 끝나 생긴 줄이면 그 운행. 직접 넣은 줄이면 null */
+    val tripId: Long? = null,
     val auto: Boolean = false,
     val workDate: String,
     val description: String,
@@ -50,6 +52,7 @@ data class LedgerEntryResponse(
 ) {
     fun toDomain() = LedgerEntry(
         id = id,
+        tripId = tripId,
         auto = auto,
         workDate = LocalDate.parse(workDate),
         description = description,

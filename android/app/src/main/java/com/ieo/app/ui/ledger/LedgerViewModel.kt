@@ -25,6 +25,8 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import com.ieo.app.domain.wait.WaitProofLink
+import com.ieo.app.domain.wait.WaitRepository
 
 enum class LedgerTab(val label: String) {
     ENTRIES("장부"),
@@ -58,6 +60,8 @@ data class LedgerUiState(
     val isLoading: Boolean = false,
     val isBusy: Boolean = false,
     val message: String? = null,
+    /** 운행 기록에서 만든 대기 증빙 링크 창. 닫으면 null */
+    val proof: WaitProofLink? = null,
 )
 
 interface LedgerActions {
@@ -72,6 +76,9 @@ interface LedgerActions {
     fun addExpense(category: ExpenseCategory, amount: Long, memo: String?)
     fun addTrip(description: String, fare: Long, paymentType: PaymentType, brokerName: String?)
     fun editFare(fare: Long, paymentType: PaymentType)
+
+    /** 고른 운행의 대기 증빙 링크를 만들어 보여 준다. 운행 완료 때 만들지 않았어도 여기서 만든다 (WAIT-020) */
+    fun makeWaitProof()
     fun refresh()
 }
 
@@ -82,6 +89,7 @@ interface LedgerActions {
 class LedgerViewModel(
     private val ledgerRepository: LedgerRepository,
     private val expenseRepository: ExpenseRepository,
+    private val waitRepository: WaitRepository? = null,
     clock: Clock = Clock.system(DayTimeFormatter.KOREA),
 ) : ViewModel(), LedgerActions {
 
@@ -176,6 +184,24 @@ class LedgerViewModel(
 
     fun messageShown() = _state.update { it.copy(message = null) }
 
+    /** 증빙 링크를 만든 운행. 주선사에게 보낼 때 쓴다 */
+    private var proofTripId: Long? = null
+
+    override fun makeWaitProof() = runAction {
+        val tripId = selected()?.tripId ?: return@runAction
+        val link = waitRepository?.createProof(tripId)?.orShow() ?: return@runAction
+        proofTripId = tripId
+        _state.update { it.copy(detail = null, proof = link) }
+    }
+
+    fun sendWaitProof() = runAction {
+        val tripId = proofTripId ?: return@runAction
+        val link = waitRepository?.sendProof(tripId)?.orShow() ?: return@runAction
+        _state.update { it.copy(proof = link) }
+    }
+
+    fun proofShown() = _state.update { it.copy(proof = null) }
+
     private fun moveMonth(target: YearMonth) {
         month = target
         selectedId = null
@@ -255,7 +281,7 @@ class LedgerViewModel(
         val Factory: ViewModelProvider.Factory = viewModelFactory {
             initializer {
                 val container = appContainer()
-                LedgerViewModel(container.ledgerRepository, container.expenseRepository)
+                LedgerViewModel(container.ledgerRepository, container.expenseRepository, container.waitRepository)
             }
         }
     }

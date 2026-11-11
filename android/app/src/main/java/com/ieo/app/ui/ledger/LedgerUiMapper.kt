@@ -50,6 +50,8 @@ data class EntryDetail(
     /** 운임 고치기의 처음 값 */
     val fare: Long,
     val paymentType: PaymentType,
+    /** 운행이 끝나 생긴 줄이라 대기 증빙을 만들 수 있다 (WAIT-020) */
+    val canMakeWaitProof: Boolean = false,
 )
 
 data class WaitFeeRow(val id: Long, val label: String, val amount: String, val paid: Boolean)
@@ -103,6 +105,7 @@ class LedgerUiMapper(private val labels: DayTimeFormatter) {
 
     fun detail(entry: LedgerEntry) = EntryDetail(
         id = entry.id,
+        canMakeWaitProof = entry.tripId != null,
         title = "${entry.description} · ${formatWon(entry.fare)}",
         lines = listOfNotNull(
             "운행일" to labels.date(entry.workDate),

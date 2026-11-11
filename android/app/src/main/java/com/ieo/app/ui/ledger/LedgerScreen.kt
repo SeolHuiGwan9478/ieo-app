@@ -260,6 +260,10 @@ private fun ColumnScope.EntrySheet(detail: EntryDetail, actions: LedgerActions) 
             )
         }
     }
+    if (detail.canMakeWaitProof) {
+        Spacer(Modifier.height(16.dp))
+        IeoSecondaryButton(text = "대기 증빙 만들기", onClick = actions::makeWaitProof, modifier = Modifier.fillMaxWidth())
+    }
     Spacer(Modifier.height(32.dp))
     Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
         IeoTonalButton(
@@ -309,5 +313,6 @@ private object PreviewLedgerActions : LedgerActions {
     override fun addExpense(category: ExpenseCategory, amount: Long, memo: String?) = Unit
     override fun addTrip(description: String, fare: Long, paymentType: PaymentType, brokerName: String?) = Unit
     override fun editFare(fare: Long, paymentType: PaymentType) = Unit
+    override fun makeWaitProof() = Unit
     override fun refresh() = Unit
 }

@@ -71,14 +71,45 @@ sealed interface HomeState {
     }
 }
 
-/** 도착을 감지하고 차주에게 묻는 창 (WAIT-007) */
-data class ArrivalQuestion(
+enum class StopQuestionKind {
+    /** 도착을 감지했다 (WAIT-007) */
+    ARRIVE,
+
+    /** 떠남을 감지했다 (WAIT-005) */
+    DEPART,
+}
+
+/** 도착이나 떠남을 감지하고 차주에게 묻는 창 */
+data class StopQuestion(
+    val kind: StopQuestionKind,
     val stopName: String,
-    /** 확인하면 대기를 세기 시작하는 시각 "14:00" (감지한 때) */
-    val startLabel: String,
+    val isPickup: Boolean,
+    /** 확인하면 기록할 시각 "14:00" (감지한 때) */
+    val timeLabel: String,
     /** 묻는 말을 마쳤다. 이때부터 시간을 잰다 */
     val asked: Boolean = false,
-)
+) {
+    val title: String
+        get() = when (kind) {
+            StopQuestionKind.ARRIVE -> "도착 확인"
+            StopQuestionKind.DEPART -> if (isPickup) "상차 끝 확인" else "하차 끝 확인"
+        }
+
+    val question: String
+        get() = when (kind) {
+            StopQuestionKind.ARRIVE -> "${stopName}에 도착하셨어요?"
+            StopQuestionKind.DEPART -> if (isPickup) "${stopName}에서 상차 끝내고 출발할까요?" else "${stopName}에서 하차 끝내고 운행을 마칠까요?"
+        }
+
+    val detail: String
+        get() = when (kind) {
+            StopQuestionKind.ARRIVE -> "${timeLabel}부터 대기로 기록할게요"
+            StopQuestionKind.DEPART -> "${timeLabel}에 떠난 것으로 기록할게요"
+        }
+
+    val confirmLabel: String
+        get() = if (kind == StopQuestionKind.ARRIVE) "도착 맞아요" else "끝났어요"
+}
 
 data class TodaySummary(val tripCount: Int, val netProfit: Long)
 

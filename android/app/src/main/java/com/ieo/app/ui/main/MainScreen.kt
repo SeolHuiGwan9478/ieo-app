@@ -5,7 +5,8 @@ import com.ieo.app.ui.component.ListeningPill
 import com.ieo.app.ui.component.MessageBanners
 import com.ieo.app.ui.component.ShowMessage
 import com.ieo.app.ui.home.NextOrderOfferModal
-import com.ieo.app.ui.home.ArrivalConfirmModal
+import com.ieo.app.ui.home.StopConfirmModal
+import com.ieo.app.ui.home.FinishTripSheet
 import com.ieo.app.ui.home.DeliveryProofSheet
 import com.ieo.app.ui.home.StartGuidanceSheet
 import com.ieo.app.ui.home.WaitProofSheet
@@ -185,12 +186,18 @@ fun MainScreen(
             onSkip = homeViewModel::skipNextOrder,
             onTimeout = homeViewModel::nextOrderTimedOut,
         )
-        ArrivalConfirmModal(
-            question = status.arrivalQuestion.takeIf { demo == DemoState.LIVE },
-            parked = (liveState as? HomeState.Driving)?.parked == true,
+        FinishTripSheet(
+            visible = status.finishing,
             busy = status.isBusy,
-            onConfirm = homeViewModel::confirmArrival,
-            onDecline = homeViewModel::declineArrival,
+            onFinish = homeViewModel::finishTrip,
+            onDismiss = homeViewModel::cancelFinish,
+        )
+        StopConfirmModal(
+            question = status.stopQuestion.takeIf { demo == DemoState.LIVE },
+            parked = homeViewModel.parked.collectAsStateWithLifecycle().value,
+            busy = status.isBusy,
+            onConfirm = homeViewModel::confirmStopQuestion,
+            onDecline = homeViewModel::declineStopQuestion,
         )
         ListeningPill(
             visible = status.listening,

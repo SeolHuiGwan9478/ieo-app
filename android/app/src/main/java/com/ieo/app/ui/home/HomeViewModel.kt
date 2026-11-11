@@ -5,6 +5,7 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
+import com.ieo.app.core.network.ApiError
 import com.ieo.app.core.network.ApiResult
 import com.ieo.app.di.appContainer
 import com.ieo.app.domain.delivery.DeliveryProof
@@ -46,7 +47,13 @@ import com.ieo.app.domain.wait.ArrivalDetector
 import com.ieo.app.domain.wait.DepartureCheck
 import com.ieo.app.domain.wait.DepartureDetector
 import com.ieo.app.domain.wait.GeoFence
+import com.ieo.app.domain.wait.MemoryPendingWaitStore
+import com.ieo.app.domain.wait.PendingWait
+import com.ieo.app.domain.wait.PendingWaitStore
+import com.ieo.app.domain.wait.WaitMark
+import com.ieo.app.domain.wait.WaitOutbox
 import com.ieo.app.domain.wait.WaitProofLink
+import com.ieo.app.domain.wait.WaitSource
 import com.ieo.app.domain.wait.WaitRecord
 import com.ieo.app.domain.wait.WaitRepository
 import java.time.Clock
@@ -91,8 +98,10 @@ data class HomeStatus(
     val proof: WaitProofLink? = null,
     /** 인수증 QR 창. 닫으면 null ([HomeViewModel.closeDeliveryProof]) */
     val deliveryProof: DeliveryProof? = null,
-    /** 도착 확인 창 (WAIT-007). 대답하거나 시간이 지나면 null */
-    val arrivalQuestion: ArrivalQuestion? = null,
+    /** 도착·떠남 확인 창 (WAIT-007, 005). 대답하거나 시간이 지나면 null */
+    val stopQuestion: StopQuestion? = null,
+    /** "운행 완료"를 누르고 대기 증빙을 만들지 고르는 창 (WAIT-020) */
+    val finishing: Boolean = false,
 )
 
 /** 홈 화면이 ViewModel에 보내는 동작 */
@@ -103,16 +112,22 @@ interface HomeActions {
     /** "대기 시작": 확인 없이 지금부터 대기를 시작한다 (WAIT-008). 도착 확인 창이 떠 있으면 그 확인과 같다 */
     fun arrive()
 
-    /** 도착 확인 창의 "도착 맞아요": 감지한 때부터 대기를 시작한다 (WAIT-007) */
-    fun confirmArrival()
+    /** 도착·떠남 확인 창의 "맞아요": 감지한 때로 대기를 시작하거나 끝낸다 (WAIT-007, 005) */
+    fun confirmStopQuestion()
 
-    /** 도착 확인 창의 "아직이에요": 창을 닫고, 같은 정차 중에는 다시 묻지 않는다 */
-    fun declineArrival()
+    /** 확인 창의 "아직이에요": 창을 닫고, 같은 정차 중에는 다시 묻지 않는다 */
+    fun declineStopQuestion()
+
+    /** "운행 완료" 창에서 완료. [makeProof]면 이 운행의 대기 증빙을 만들어 보여 준다 */
+    fun finishTrip(makeProof: Boolean)
+
+    /** "운행 완료" 창을 닫는다 */
+    fun cancelFinish()
 
     /** "상차 시작" · "하차 시작" */
     fun startWork()
 
-    /** 떠남. 상차지면 하차지로 길 안내, 하차지면 운행 완료 */
+    /** "상차 끝, 출발"은 바로 떠나고, "운행 완료"는 대기 증빙을 고르는 창을 연다 */
     fun depart()
 
     /** 내비 안내가 꺼졌을 때 다시 켜기 */
@@ -166,6 +181,8 @@ class HomeViewModel(
     private val recognizer: SpeechRecognizer = NoSpeechRecognizer,
     /** 단어 목록으로 못 알아들은 예/아니오 대답을 서버에서 판별한다 (UX-025) */
     private val answerClassifier: AnswerClassifier = NoAnswerClassifier,
+    /** 통신이 끊겨 보내지 못한 대기 요청. 앱이 꺼져도 남는다 */
+    pendingWaits: PendingWaitStore = MemoryPendingWaitStore(),
     private val clock: Clock = Clock.systemUTC(),
     private val stateFactory: HomeStateFactory = HomeStateFactory(),
 ) : ViewModel(), HomeActions {
@@ -176,9 +193,15 @@ class HomeViewModel(
     private val arrivalView = MutableStateFlow(ArrivalView())
     private val arrivalDetector = ArrivalDetector()
 
-    /** 묻고 있는 도착. 대답하면 null */
-    private var pendingArrival: PendingArrival? = null
-    private var arrivalJob: Job? = null
+    /** 통신이 끊긴 동안의 대기 시작·작업 시작·떠남을 쌓아 두었다가 다시 보낸다 */
+    private val outbox = WaitOutbox(waitRepository, pendingWaits)
+
+    /** 묻고 있는 도착·떠남. 대답하면 null */
+    private var pendingQuestion: PendingQuestion? = null
+    private var questionJob: Job? = null
+
+    /** 떠남을 물었는데 아니라고 했다. 반경 안으로 다시 들어오기 전에는 묻지 않는다 */
+    private var departureOnHold = false
 
     /** 이미 물은 정차에서는 다시 묻지 않는다. 차가 움직이거나 반경을 벗어나면 풀린다 */
     private var holdUntilMoved = false
@@ -227,11 +250,15 @@ class HomeViewModel(
         recognizer = listeningRecognizer,
         speak = { announcer.speak(HomeAnnouncements.nextOrderLine(it)) },
     )
-    private val arrivalDialog = YesNoDialog(
+    private val stopDialog = YesNoDialog(
         recognizer = listeningRecognizer,
         classifier = answerClassifier,
         speak = { announcer.speak(HomeAnnouncements.arrivalLine(it)) },
     )
+
+    /** 세워 두었다 (기어 P 또는 주차 브레이크). 확인 창의 버튼은 이때만 눌린다. 떠남 확인은 대기 화면에서도 뜨므로 차 신호를 바로 쓴다 */
+    val parked: StateFlow<Boolean> = sensors.motion.map { it?.isParked == true }
+        .stateIn(viewModelScope, SharingStarted.Eagerly, false)
 
     /** 지금 띄울 수락 창. 정차 중이고 QR 창이 닫혀 있을 때만 있고, 차가 움직이면 바로 null이 된다. 그 후보는 다음에 멈추면 다시 나온다 */
     val nextOffer: StateFlow<NextOrderCard?> =
@@ -240,7 +267,7 @@ class HomeViewModel(
             snapshot.map { it.current?.status }.distinctUntilChanged(),
             sensors.motion,
             // 수하인이 QR로 서명하는 동안, 도착을 묻는 동안에는 창도 음성도 끼어들지 않는다
-            _status.map { it.proof != null || it.deliveryProof != null || it.arrivalQuestion != null }.distinctUntilChanged(),
+            _status.map { it.proof != null || it.deliveryProof != null || it.stopQuestion != null || it.finishing }.distinctUntilChanged(),
         ) { next, status, motion, sheetOpen ->
             next?.takeUnless { sheetOpen }?.takeIf { canOffer(status, motion) }?.let(stateFactory::nextOrderCard)
         }.distinctUntilChanged().stateIn(viewModelScope, SharingStarted.Eagerly, null)
@@ -250,6 +277,7 @@ class HomeViewModel(
             load()
             resumeGuidanceAfterRestart()
         }
+        retryPendingWaits()
         askWhenNaviArrives()
         askWhenStoppedAtStop()
         departWhenLeavingStop()
@@ -277,60 +305,106 @@ class HomeViewModel(
     }
 
     override fun arrive() {
-        if (pendingArrival != null) return confirmArrival()
-        arriveAt(at = null)
+        if (pendingQuestion?.kind == StopQuestionKind.ARRIVE) return confirmStopQuestion()
+        arriveAt(at = null, source = WaitSource.BUTTON)
     }
 
-    override fun confirmArrival() {
-        arrivalJob?.cancel()
-        answerArrival(yes = true)
+    override fun confirmStopQuestion() {
+        questionJob?.cancel()
+        answerStopQuestion(yes = true, source = WaitSource.CONFIRM_TOUCH)
     }
 
-    override fun declineArrival() {
-        arrivalJob?.cancel()
-        answerArrival(yes = false)
+    override fun declineStopQuestion() {
+        questionJob?.cancel()
+        answerStopQuestion(yes = false, source = WaitSource.CONFIRM_TOUCH)
     }
 
     /**
-     * 도착을 묻는다 (WAIT-007): 창을 띄우고 말한 뒤 15초 동안 대답을 듣는다.
+     * 도착(WAIT-007)이나 떠남(WAIT-005)을 묻는다: 창을 띄우고 말한 뒤 15초 동안 대답을 듣는다.
      * 단어 목록으로 못 알아들은 말은 서버에서 판별한다 (UX-025). 대답이 없으면 창을 닫는다
      */
-    private fun askArrival(trip: Trip, stop: StopType, at: Instant) {
-        if (pendingArrival != null) return
-        pendingArrival = PendingArrival(trip.id, stop, at)
+    private fun askStopQuestion(kind: StopQuestionKind, trip: Trip, stop: StopType, at: Instant) {
+        if (pendingQuestion != null) return
+        pendingQuestion = PendingQuestion(kind, trip.id, stop, at)
         val name = trip.stop(stop).name
-        _status.update { it.copy(arrivalQuestion = ArrivalQuestion(name, stateFactory.time(at))) }
-        // 다음 배차를 말하던 중이면 멈추고 도착부터 묻는다
+        val isPickup = stop == StopType.PICKUP
+        _status.update { it.copy(stopQuestion = StopQuestion(kind, name, isPickup, stateFactory.time(at))) }
+        // 다음 배차를 말하던 중이면 멈추고 이것부터 묻는다
         voiceJob?.cancel()
-        arrivalJob = viewModelScope.launch {
-            val question = HomeAnnouncements.arrivalQuestion(name, at)
+        questionJob = viewModelScope.launch {
+            val question = when (kind) {
+                StopQuestionKind.ARRIVE -> HomeAnnouncements.arrivalQuestion(name, at)
+                StopQuestionKind.DEPART -> HomeAnnouncements.departureQuestion(name, isPickup)
+            }
             announcer.speak(question)
-            _status.update { status -> status.copy(arrivalQuestion = status.arrivalQuestion?.copy(asked = true)) }
-            when (arrivalDialog.listen(question.text, ARRIVAL_CONFIRM_SECONDS * 1_000L)) {
-                YesNo.YES -> answerArrival(yes = true)
+            _status.update { status -> status.copy(stopQuestion = status.stopQuestion?.copy(asked = true)) }
+            when (stopDialog.listen(question.text, ARRIVAL_CONFIRM_SECONDS * 1_000L)) {
+                YesNo.YES -> answerStopQuestion(yes = true, source = WaitSource.CONFIRM_VOICE)
                 YesNo.NO -> {
-                    announcer.say(HomeAnnouncements.arrivalDeclined())
-                    answerArrival(yes = false)
+                    announcer.say(
+                        if (kind == StopQuestionKind.ARRIVE) HomeAnnouncements.arrivalDeclined() else HomeAnnouncements.departureDeclined(isPickup),
+                    )
+                    answerStopQuestion(yes = false, source = WaitSource.CONFIRM_VOICE)
                 }
-                else -> answerArrival(yes = false)
+                else -> answerStopQuestion(yes = false, source = WaitSource.CONFIRM_VOICE)
             }
         }
     }
 
-    /** 창을 닫고, 맞다고 했으면 감지한 때부터 대기를 시작한다 */
-    private fun answerArrival(yes: Boolean) {
-        val pending = pendingArrival ?: return
-        pendingArrival = null
+    /** 창을 닫고, 맞다고 했으면 감지한 때로 대기를 시작하거나 끝낸다 */
+    private fun answerStopQuestion(yes: Boolean, source: WaitSource) {
+        val pending = pendingQuestion ?: return
+        pendingQuestion = null
         announcer.cancel(HomeAnnouncements.ARRIVAL_KEY)
-        _status.update { it.copy(arrivalQuestion = null) }
-        if (yes) arriveAt(pending.at)
+        _status.update { it.copy(stopQuestion = null) }
+        when (pending.kind) {
+            StopQuestionKind.ARRIVE -> if (yes) arriveAt(pending.at, source)
+            StopQuestionKind.DEPART -> if (yes) departAt(pending.at, source) else departureOnHold = true
+        }
     }
 
+    /**
+     * 서버에 닿지 못했으면 차에 쌓아 두고 true. 시각은 지금(또는 감지한 때)으로 정해 두어, 나중에 보내도 그때로 남는다.
+     * 쌓아 둔 것은 [retryPendingWaits]가 다시 보낸다
+     */
+    private fun queueIfOffline(result: ApiResult<*>, action: PendingWait.Action, trip: Trip, stop: StopType, at: Instant?, source: WaitSource): Boolean {
+        if ((result as? ApiResult.Failure)?.error !is ApiError.Network) return false
+        outbox.add(PendingWait(action, trip.id, stop, at ?: clock.instant(), sensors.location.value, source))
+        show(WAIT_QUEUED_MESSAGE)
+        return true
+    }
+
+    /** 쌓아 둔 대기 요청을 앱을 켤 때와 몇 초마다 다시 보낸다. 보냈으면 화면을 새로 받는다 */
+    private fun retryPendingWaits() {
+        viewModelScope.launch {
+            while (true) {
+                if (!outbox.isEmpty) {
+                    val result = outbox.flush()
+                    result.refused.firstOrNull()?.let(::show)
+                    if (result.sent > 0) {
+                        show(WAIT_SENT_MESSAGE)
+                        load()
+                    }
+                }
+                delay(OUTBOX_RETRY_MILLIS)
+            }
+        }
+    }
+
+    /** 기사님이 확인하거나 누른 순간의 위치와 방법 (WAIT-025) */
+    private fun markOf(source: WaitSource) = WaitMark(sensors.location.value, source)
+
     /** [at]: 도착 확인이면 감지한 때. "대기 시작" 버튼이면 null(서버가 받은 때) */
-    private fun arriveAt(at: Instant?) = runAction {
+    private fun arriveAt(at: Instant?, source: WaitSource) = runAction {
         val trip = snapshot.value.current?.takeIf { it.status.isDriving } ?: return@runAction
         val stop = trip.currentStop ?: return@runAction
-        val record = waitRepository.arrive(trip.id, stop, at).orShow() ?: return@runAction
+        val result = waitRepository.arrive(trip.id, stop, at, markOf(source))
+        if (queueIfOffline(result, PendingWait.Action.ARRIVE, trip, stop, at, source)) {
+            // 보낼 때까지 같은 정차에서 다시 묻지 않는다
+            holdUntilMoved = true
+            return@runAction
+        }
+        val record = result.orShow() ?: return@runAction
         announcer.say(HomeAnnouncements.arrived(trip.stop(stop).name, record.policy))
         navigator.stopGuidance()
         reloadCurrent(record)
@@ -338,19 +412,53 @@ class HomeViewModel(
 
     override fun startWork() = runAction {
         val (trip, stop) = currentAtStop() ?: return@runAction
-        val record = waitRepository.startWork(trip.id, stop).orShow() ?: return@runAction
+        val result = waitRepository.startWork(trip.id, stop, mark = markOf(WaitSource.BUTTON))
+        if (queueIfOffline(result, PendingWait.Action.START_WORK, trip, stop, null, WaitSource.BUTTON)) return@runAction
+        val record = result.orShow() ?: return@runAction
         snapshot.update { it.copy(wait = record) }
     }
 
-    override fun depart() = departAt(at = null)
+    override fun depart() {
+        val (_, stop) = currentAtStop() ?: return
+        if (pendingQuestion?.kind == StopQuestionKind.DEPART) return confirmStopQuestion()
+        when (stop) {
+            StopType.PICKUP -> departAt(at = null, source = WaitSource.BUTTON)
+            StopType.DROPOFF -> _status.update { it.copy(finishing = true) }
+        }
+    }
 
-    /** [at]: 자동 떠남이면 반경을 벗어나거나 달리기 시작한 때. 버튼이면 null(서버가 받은 때) */
-    private fun departAt(at: Instant?) = runAction {
-        val (trip, stop) = currentAtStop() ?: return@runAction
+    override fun cancelFinish() = _status.update { it.copy(finishing = false) }
+
+    override fun finishTrip(makeProof: Boolean) {
+        _status.update { it.copy(finishing = false) }
+        runAction {
+            val tripId = currentAtStop()?.first?.id ?: return@runAction
+            if (!departNow(at = null, source = WaitSource.BUTTON)) return@runAction
+            if (makeProof) {
+                // 운행은 이미 끝났다. 증빙을 못 만들었으면 장부에서 다시 만들 수 있다
+                waitRepository.createProof(tripId).orShow()?.let { link ->
+                    proofTripId = tripId
+                    _status.update { it.copy(proof = link) }
+                }
+            }
+        }
+    }
+
+    /** [at]: 떠남 확인이면 반경을 벗어나거나 달리기 시작한 때. 버튼이면 null(서버가 받은 때) */
+    private fun departAt(at: Instant?, source: WaitSource) = runAction { departNow(at, source) }
+
+    /** 떠난다. 상차지면 하차지로 안내하고, 하차지면 운행이 끝난다. 성공하면 true */
+    private suspend fun departNow(at: Instant?, source: WaitSource): Boolean {
+        val (trip, stop) = currentAtStop() ?: return false
         // 서버는 진입 ≤ 작업 시작 ≤ 떠남 순서만 받는다. 떠나기 시작한 뒤에 "상차 시작"을 눌렀으면 그때로 맞춘다
         val record = snapshot.value.wait?.takeIf { it.stopType == stop }
         val departedAt = at?.let { maxOf(it, record?.workStartedAt ?: record?.arrivedAt ?: it) }
-        waitRepository.depart(trip.id, stop, departedAt).orShow() ?: return@runAction
+        val result = waitRepository.depart(trip.id, stop, departedAt, markOf(source))
+        if (queueIfOffline(result, PendingWait.Action.DEPART, trip, stop, departedAt, source)) {
+            departureOnHold = true
+            return false
+        }
+        result.orShow() ?: return false
         when (stop) {
             StopType.PICKUP -> {
                 announcer.say(HomeAnnouncements.leftPickup(trip.pickup.name, trip.dropoff.name))
@@ -365,6 +473,7 @@ class HomeViewModel(
                 load()
             }
         }
+        return true
     }
 
     override fun resumeGuidance() {
@@ -372,15 +481,20 @@ class HomeViewModel(
         trip.currentStop?.let { guideTo(trip.stop(it)) }
     }
 
+    /** 보여 주고 있는 증빙 링크의 운행 */
+    private var proofTripId: Long? = null
+
     override fun sendWaitProof() = runAction {
-        val (trip, stop) = currentAtStop() ?: return@runAction
-        val link = waitRepository.createProof(trip.id, stop).orShow() ?: return@runAction
+        val (trip, _) = currentAtStop() ?: return@runAction
+        val link = waitRepository.createProof(trip.id).orShow() ?: return@runAction
+        proofTripId = trip.id
         _status.update { it.copy(proof = link) }
     }
 
     override fun sendProofToBroker() = runAction {
-        val (trip, stop) = currentAtStop() ?: return@runAction
-        val link = waitRepository.sendProof(trip.id, stop).orShow() ?: return@runAction
+        // 운행이 끝난 뒤(운행 완료 때 만든 증빙)에도 보낼 수 있게 링크의 운행으로 보낸다
+        val tripId = proofTripId ?: currentAtStop()?.first?.id ?: return@runAction
+        val link = waitRepository.sendProof(tripId).orShow() ?: return@runAction
         _status.update { it.copy(proof = link) }
     }
 
@@ -658,7 +772,7 @@ class HomeViewModel(
             navigator.progress.filter { it?.arrived == true }.collect {
                 val trip = snapshot.value.current?.takeIf { it.status.isDriving } ?: return@collect
                 val stop = trip.currentStop ?: return@collect
-                if (naviArrivalAsked.add(trip.id to stop)) askArrival(trip, stop, clock.instant())
+                if (naviArrivalAsked.add(trip.id to stop)) askStopQuestion(StopQuestionKind.ARRIVE, trip, stop, clock.instant())
             }
         }
     }
@@ -682,7 +796,7 @@ class HomeViewModel(
                 if (trip == null || stop == null) {
                     fenceOf = null
                     // 묻는 사이 운행이 바뀌었으면(취소, 다른 화면에서 도착 등) 창을 닫는다
-                    if (pendingArrival != null) declineArrival()
+                    if (pendingQuestion?.kind == StopQuestionKind.ARRIVE) declineStopQuestion()
                     arrivalView.value = ArrivalView(parked = parked)
                     continue
                 }
@@ -697,7 +811,7 @@ class HomeViewModel(
                 if (holdUntilMoved && ((motion != null && !motion.isParked) || (here != null && !fence.contains(here)))) {
                     holdUntilMoved = false
                 }
-                val check = if (holdUntilMoved || pendingArrival != null) {
+                val check = if (holdUntilMoved || pendingQuestion != null) {
                     arrivalDetector.reset()
                     ArrivalCheck.NotYet
                 } else {
@@ -708,15 +822,16 @@ class HomeViewModel(
                 if (check is ArrivalCheck.Arrived) {
                     arrivalDetector.reset()
                     holdUntilMoved = true
-                    askArrival(trip, stop, check.at)
+                    askStopQuestion(StopQuestionKind.ARRIVE, trip, stop, check.at)
                 }
             }
         }
     }
 
     /**
-     * 자동 떠남 (WAIT-005): 1초마다 지금 있는 상하차지를 떠났는지 본다.
-     * 떠났으면 반경을 벗어나거나 달리기 시작한 시각으로 알린다. 상차지면 하차지로 안내하고, 하차지면 운행이 끝난다.
+     * 떠남 감지 (WAIT-005): 1초마다 지금 있는 상하차지를 떠났는지 본다.
+     * 떠났으면 반경을 벗어나거나 달리기 시작한 시각으로 묻는다: "하차 끝내고 운행을 마칠까요?"
+     * 아니라고 하거나 대답이 없으면 반경 안으로 다시 들어오기 전에는 묻지 않는다 (그동안은 버튼으로 끝낸다).
      */
     private fun departWhenLeavingStop() {
         viewModelScope.launch {
@@ -726,19 +841,30 @@ class HomeViewModel(
                 val atStop = currentAtStop()?.takeIf { (_, stop) -> snapshot.value.wait?.stopType == stop }
                 if (atStop == null) {
                     stayingAt = null
+                    departureOnHold = false
+                    if (pendingQuestion?.kind == StopQuestionKind.DEPART) declineStopQuestion()
                     departureCheck.value = DepartureCheck.Staying
                     continue
                 }
                 val (trip, stop) = atStop
+                val fence = fenceOf(trip.stop(stop))
                 if (stayingAt != trip.id to stop) {
                     stayingAt = trip.id to stop
                     departureDetector.reset()
+                    departureOnHold = false
                 }
-                val check = departureDetector.check(clock.instant(), fenceOf(trip.stop(stop)), sensors.location.value, sensors.motion.value)
+                val here = sensors.location.value
+                if (departureOnHold && here != null && fence.contains(here)) departureOnHold = false
+                if (departureOnHold || pendingQuestion != null) {
+                    departureDetector.reset()
+                    departureCheck.value = DepartureCheck.Staying
+                    continue
+                }
+                val check = departureDetector.check(clock.instant(), fence, here, sensors.motion.value)
                 departureCheck.value = check
                 if (check is DepartureCheck.Departed && !_status.value.isBusy) {
                     departureDetector.reset()
-                    departAt(check.at)
+                    askStopQuestion(StopQuestionKind.DEPART, trip, stop, check.at)
                 }
             }
         }
@@ -883,6 +1009,11 @@ class HomeViewModel(
 
     companion object {
         const val TRIP_COMPLETED_MESSAGE = "운행을 마쳤어요. 장부에 기록했어요"
+        const val WAIT_QUEUED_MESSAGE = "통신이 끊겼어요. 연결되면 누른 시각으로 기록할게요"
+        const val WAIT_SENT_MESSAGE = "통신이 끊긴 동안의 기록을 보냈어요"
+
+        /** 쌓아 둔 대기 요청을 다시 보내 보는 간격 */
+        private const val OUTBOX_RETRY_MILLIS = 15_000L
         const val NAVI_FAILED_MESSAGE = "차량 내비에 연결하지 못했습니다"
         const val NEXT_ORDER_REQUESTED_MESSAGE = "배차 요청을 보냈어요. 주선사가 확정하면 내 배차에 들어와요"
         const val DELIVERY_SIGNED_MESSAGE = "인수증 서명을 받았어요. 운행을 마쳤어요"
@@ -937,6 +1068,7 @@ class HomeViewModel(
                     notifications = container.notifications.received,
                     recognizer = container.speechRecognizer,
                     answerClassifier = container.answerClassifier,
+                    pendingWaits = container.pendingWaits,
                 )
             }
         }
@@ -952,5 +1084,5 @@ private data class ArrivalView(
     val parked: Boolean = false,
 )
 
-/** 묻고 있는 도착. [at]은 감지한 때 */
-private data class PendingArrival(val tripId: Long, val stop: StopType, val at: Instant)
+/** 묻고 있는 도착·떠남. [at]은 감지한 때 */
+private data class PendingQuestion(val kind: StopQuestionKind, val tripId: Long, val stop: StopType, val at: Instant)

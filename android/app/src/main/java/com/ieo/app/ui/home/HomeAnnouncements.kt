@@ -67,7 +67,18 @@ object HomeAnnouncements {
     /** "아직"이라고 했을 때. 다시 묻지 않으니 직접 시작하는 법을 알려 준다 (WAIT-008) */
     fun arrivalDeclined(): Announcement = trip("알겠어요. 도착하면 대기 시작을 눌러 주세요.")
 
-    /** 도착 확인의 이름. 창이 닫히면 묻던 말을 멈춘다 */
+    /** 떠남을 감지하고 묻는다 (WAIT-005) */
+    fun departureQuestion(stopName: String, isPickup: Boolean): Announcement = Announcement(
+        if (isPickup) "${stopName}에서 상차 끝내고 출발할까요?" else "${stopName}에서 하차 끝내고 운행을 마칠까요?",
+        AnnouncementPriority.TRIP,
+        ARRIVAL_KEY,
+    )
+
+    /** 떠남을 "아직"이라고 했을 때. 다시 묻지 않으니 버튼으로 끝내는 법을 알려 준다 */
+    fun departureDeclined(isPickup: Boolean): Announcement =
+        trip(if (isPickup) "알겠어요. 끝나면 상차 끝, 출발을 눌러 주세요." else "알겠어요. 끝나면 운행 완료를 눌러 주세요.")
+
+    /** 도착·떠남 확인의 이름. 창이 닫히면 묻던 말을 멈춘다 */
     const val ARRIVAL_KEY = "arrival"
 
     /** 14:05 → "오후 2시 5분", 09:00 → "오전 9시" */

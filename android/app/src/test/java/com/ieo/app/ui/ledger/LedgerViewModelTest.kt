@@ -38,7 +38,7 @@ class LedgerViewModelTest {
         ),
         expenses = mutableListOf(Expense(1, LocalDate.of(2026, 11, 3), ExpenseCategory.FUEL, 150_000, null)),
     )
-    private val viewModel = LedgerViewModel(books, books, Clock.fixed(NOW, ZoneOffset.UTC))
+    private val viewModel = LedgerViewModel(books, books, clock = Clock.fixed(NOW, ZoneOffset.UTC))
 
     @Test
     fun `이번 달 장부와 경비로 요약을 계산하고 날짜별로 묶는다`() = runTest(main.dispatcher) {

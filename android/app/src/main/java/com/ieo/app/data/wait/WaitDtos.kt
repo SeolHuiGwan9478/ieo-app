@@ -12,7 +12,13 @@ import kotlinx.serialization.Serializable
 
 /** 시각을 비우면 서버가 받은 시각으로 남긴다 */
 @Serializable
-data class WaitTimeRequest(val at: String? = null)
+data class WaitTimeRequest(
+    val at: String? = null,
+    val latitude: Double? = null,
+    val longitude: Double? = null,
+    /** CONFIRM_TOUCH, CONFIRM_VOICE, BUTTON */
+    val source: String? = null,
+)
 
 /** path는 서버 주소 뒤에 붙이는 공개 링크 (/api/public/wait-proofs/{token}) */
 @Serializable
