@@ -16,12 +16,6 @@ import com.ieo.app.domain.navi.Navigator
 import com.ieo.app.domain.notification.AppNotification
 import com.ieo.app.domain.notification.NotificationType
 import com.ieo.app.domain.order.OrderRepository
-import com.ieo.app.domain.recommendation.NextOrder
-import com.ieo.app.domain.recommendation.NextOrderAdvisor
-import com.ieo.app.domain.recommendation.NextOrderOffers
-import com.ieo.app.domain.recommendation.NextOrderVoiceDialog
-import com.ieo.app.domain.recommendation.VoiceAnswer
-import com.ieo.app.domain.recommendation.RecommendationAnswer
 import com.ieo.app.domain.recommendation.RecommendationRepository
 import com.ieo.app.domain.site.SiteRepository
 import com.ieo.app.domain.trip.LocationTracker
@@ -32,7 +26,6 @@ import com.ieo.app.domain.trip.TripStatus
 import com.ieo.app.domain.trip.TripStop
 import com.ieo.app.domain.vehicle.Gear
 import com.ieo.app.domain.vehicle.GeoPoint
-import com.ieo.app.domain.vehicle.VehicleMotion
 import com.ieo.app.domain.vehicle.VehicleSensors
 import com.ieo.app.domain.voice.AnswerClassifier
 import com.ieo.app.domain.voice.Announcer
@@ -90,8 +83,6 @@ data class HomeStatus(
     val message: String? = null,
     /** 서버 알림 배너. 맨 앞 것부터 하나씩 보여 준다 ([HomeViewModel.bannerDone]) */
     val banners: List<IeoBanner> = emptyList(),
-    /** 수락 창에서 묻는 말을 마친 후보. 앞선 안내(도착 등)에 밀려도 15초를 온전히 주려고 이때부터 시간을 잰다 */
-    val offerAsked: Long? = null,
     /** 차주 대답을 듣는 중 (마이크가 열려 있다) */
     val listening: Boolean = false,
     /** 대기 증빙 링크 창. 닫으면 null ([HomeViewModel.proofShown]) */
@@ -102,6 +93,8 @@ data class HomeStatus(
     val stopQuestion: StopQuestion? = null,
     /** "운행 완료"를 누르고 대기 증빙을 만들지 고르는 창 (WAIT-020) */
     val finishing: Boolean = false,
+    /** 가운데 창에 띄운 추천 오더 (03 배차 추천). 15초가 지나거나 넘기면 다음 추천, 닫으면 null */
+    val pick: NextOrderCard? = null,
 )
 
 /** 홈 화면이 ViewModel에 보내는 동작 */
@@ -140,17 +133,16 @@ interface HomeActions {
     /** 하차지에서 "인수증 받기": QR을 보여 주고 수하인 서명을 기다린다 (POD-003) */
     fun requestDeliveryProof()
 
-    /** 하차지 추천 카드에서 확인까지 마친 "수락": 그 오더에 배차 요청을 보낸다 (REC-022, 023) */
-    fun acceptNextOrder(orderId: Long)
+    /** 추천 카드를 눌러 그 오더를 가운데 창에 연다 (03 배차 추천) */
+    fun openPick(orderId: Long)
 
-    /** 수락 창에서 "넘기기": 거절로 적는다. 3번이면 이 운행에서는 더 안내하지 않는다 (REC-024) */
-    fun skipNextOrder(orderId: Long)
+    fun closePick()
 
-    /** 수락 창의 시간이 끝났다: 거절로 치지 않고 다음 후보로 넘어간다 */
-    fun nextOrderTimedOut(orderId: Long)
+    /** 창의 "넘기기"나 15초가 지남: 세웠을 때 자동으로 띄운 것이면 다음 추천을, 카드로 연 것이면 닫는다. 기록하지 않는다 */
+    fun nextPick()
 
-    /** 추천 카드를 눌러 그 후보의 수락 창을 연다 */
-    fun openNextOrder(orderId: Long)
+    /** 연 추천 오더에 배차를 요청한다. 요청에 "추천에서 눌렀음"(isRecommendation)이 남는다 */
+    fun requestPick()
 
     fun refresh()
 }
@@ -163,6 +155,7 @@ interface HomeActions {
  * 차주가 맞다고 하면 감지한 때부터 대기를 시작한다 (WAIT-007). "대기 시작" 버튼은 묻지 않고 바로 시작한다 (WAIT-008).
  * 떠남은 반경을 벗어나거나 시속 20km 이상으로 1분 달린 때(WAIT-005), 또는 "출발"·"운행 완료" 버튼.
  * 상하차지 3km 전, 도착, 대기비 시작, 떠남, 인수증 서명은 음성으로도 알린다 (문장은 [HomeAnnouncements]).
+ * 배차 추천: 차를 세우면 세운 자리 근처에서 실수익 높은 3건을 받아 보여 준다 (03 배차 추천).
  */
 class HomeViewModel(
     private val tripRepository: TripRepository,
@@ -213,27 +206,14 @@ class HomeViewModel(
     private val departureCheck = MutableStateFlow<DepartureCheck>(DepartureCheck.Staying)
     private val departureDetector = DepartureDetector()
 
-    /** 운송 중 다음 배차 추천: 50%에서 찾고 67%에서 음성으로 안내한다 (REC-001) */
-    private val nextOrderAdvisor = NextOrderAdvisor(recommendationRepository) { trip, next ->
-        announcedOffers += next.order.id
-        talkWhileDriving(trip, next)
-    }
-
     val state: StateFlow<HomeState> =
-        combine(snapshot, navigator.progress, arrivalView, departureCheck, nextOrderAdvisor.current) { snapshot, navi, arrival, departure, next ->
-            stateFactory.create(snapshot, navi, arrival.check, departure, next, arrival.nearStop, arrival.parked)
+        combine(snapshot, navigator.progress, arrivalView, departureCheck) { snapshot, navi, arrival, departure ->
+            stateFactory.create(snapshot, navi, arrival.check, departure, arrival.nearStop, arrival.parked)
         }
         .stateIn(viewModelScope, SharingStarted.Eagerly, stateFactory.create(HomeSnapshot(), null))
 
     private val _status = MutableStateFlow(HomeStatus())
     val status: StateFlow<HomeStatus> = _status.asStateFlow()
-
-    /** 수락 창에 띄울 차례인 후보 */
-    private val offers = NextOrderOffers()
-    private val announcedOffers = mutableSetOf<Long>()
-
-    /** 다음 배차를 두고 차주와 말을 주고받는 일. 한 번에 하나 */
-    private var voiceJob: Job? = null
 
     /** 듣는 동안 화면에 "듣는 중"을 띄운다 */
     private val listeningRecognizer = object : SpeechRecognizer {
@@ -246,10 +226,6 @@ class HomeViewModel(
             }
         }
     }
-    private val voiceDialog = NextOrderVoiceDialog(
-        recognizer = listeningRecognizer,
-        speak = { announcer.speak(HomeAnnouncements.nextOrderLine(it)) },
-    )
     private val stopDialog = YesNoDialog(
         recognizer = listeningRecognizer,
         classifier = answerClassifier,
@@ -259,18 +235,6 @@ class HomeViewModel(
     /** 세워 두었다 (기어 P 또는 주차 브레이크). 확인 창의 버튼은 이때만 눌린다. 떠남 확인은 대기 화면에서도 뜨므로 차 신호를 바로 쓴다 */
     val parked: StateFlow<Boolean> = sensors.motion.map { it?.isParked == true }
         .stateIn(viewModelScope, SharingStarted.Eagerly, false)
-
-    /** 지금 띄울 수락 창. 정차 중이고 QR 창이 닫혀 있을 때만 있고, 차가 움직이면 바로 null이 된다. 그 후보는 다음에 멈추면 다시 나온다 */
-    val nextOffer: StateFlow<NextOrderCard?> =
-        combine(
-            offers.current,
-            snapshot.map { it.current?.status }.distinctUntilChanged(),
-            sensors.motion,
-            // 수하인이 QR로 서명하는 동안, 도착을 묻는 동안에는 창도 음성도 끼어들지 않는다
-            _status.map { it.proof != null || it.deliveryProof != null || it.stopQuestion != null || it.finishing }.distinctUntilChanged(),
-        ) { next, status, motion, sheetOpen ->
-            next?.takeUnless { sheetOpen }?.takeIf { canOffer(status, motion) }?.let(stateFactory::nextOrderCard)
-        }.distinctUntilChanged().stateIn(viewModelScope, SharingStarted.Eagerly, null)
 
     init {
         viewModelScope.launch {
@@ -283,13 +247,9 @@ class HomeViewModel(
         departWhenLeavingStop()
         announceChargeableStart()
         keepNaviProgressFresh()
-        keepNearbyOrdersFresh()
         reportLocationWhileOnTrip()
         watchEtaShared()
-        recommendNextOrder()
-        recommendAtDropoff()
-        keepOffersFresh()
-        tellNewOffers()
+        recommendWhenParked()
         tellNotifications()
     }
 
@@ -328,9 +288,9 @@ class HomeViewModel(
         pendingQuestion = PendingQuestion(kind, trip.id, stop, at)
         val name = trip.stop(stop).name
         val isPickup = stop == StopType.PICKUP
+        // 도착·떠남 확인이 추천 창보다 먼저다
+        closePick()
         _status.update { it.copy(stopQuestion = StopQuestion(kind, name, isPickup, stateFactory.time(at))) }
-        // 다음 배차를 말하던 중이면 멈추고 이것부터 묻는다
-        voiceJob?.cancel()
         questionJob = viewModelScope.launch {
             val question = when (kind) {
                 StopQuestionKind.ARRIVE -> HomeAnnouncements.arrivalQuestion(name, at)
@@ -537,135 +497,63 @@ class HomeViewModel(
         load()
     }
 
-    override fun acceptNextOrder(orderId: Long) = runAction {
-        val trip = offerTrip() ?: return@runAction
-        // 성공이어도 돌려받는 배차 요청은 null일 수 있다. 실패만 막는다
-        val result = recommendationRepository.answer(trip.id, orderId, RecommendationAnswer.ACCEPTED)
-        if (result is ApiResult.Failure) {
-            // 그 사이 마감된 오더일 수 있다. 다음 후보로 넘어간다
-            show(result.error.message)
-            offers.finish(orderId)
-            reloadOffers()
-            return@runAction
-        }
-        // 이 순서여야 한다: 카드를 먼저 지우면 그 사이 다음 후보가 잠깐 잡혀 안내까지 나간다
-        offers.accepted(orderId)
-        snapshot.update { it.copy(nextOrders = it.nextOrders.filterNot { next -> next.order.id == orderId }) }
+    /** 세웠을 때 1등부터 차례로 띄우는 중이다. 카드를 눌러 연 것이면 false */
+    private var pickChain = false
+
+    override fun openPick(orderId: Long) {
+        pickChain = false
+        showPick(orderId)
+    }
+
+    private fun showPick(orderId: Long) {
+        val next = snapshot.value.nextOrders.firstOrNull { it.order.id == orderId } ?: return
+        _status.update { it.copy(pick = stateFactory.nextOrderCard(next)) }
+    }
+
+    override fun closePick() {
+        pickChain = false
+        _status.update { it.copy(pick = null) }
+    }
+
+    override fun nextPick() {
+        val current = _status.value.pick ?: return
+        val list = snapshot.value.nextOrders
+        val following = list.getOrNull(list.indexOfFirst { it.order.id == current.orderId } + 1)
+        if (pickChain && following != null) showPick(following.order.id) else closePick()
+    }
+
+    override fun requestPick() = runAction {
+        val pick = _status.value.pick ?: return@runAction
+        orderRepository.request(pick.orderId, isRecommendation = true).orShow() ?: return@runAction
+        closePick()
+        snapshot.update { it.copy(nextOrders = it.nextOrders.filterNot { next -> next.order.id == pick.orderId }) }
         show(NEXT_ORDER_REQUESTED_MESSAGE)
     }
 
-    override fun skipNextOrder(orderId: Long) = runAction {
-        val trip = offerTrip() ?: return@runAction
-        // 성공이어도 돌려받는 값은 null이다. 실패만 막는다
-        val result = recommendationRepository.answer(trip.id, orderId, RecommendationAnswer.REJECTED)
-        if (result is ApiResult.Failure) {
-            show(result.error.message)
-            return@runAction
-        }
-        offers.finish(orderId)
-        reloadOffers()
-    }
-
-    override fun nextOrderTimedOut(orderId: Long) {
-        offers.finish(orderId)
-        if (offers.current.value == null) viewModelScope.launch { reloadOffers() }
-    }
-
-    override fun openNextOrder(orderId: Long) = offers.open(orderId)
-
-    private fun offerTrip() = snapshot.value.current?.takeIf { it.status in OFFER_STATUSES }
-
-    /** 후보를 다시 받는다. 거절이 빠지고, 운송 중이면 아직 안내하지 않은 다음 후보가 온다. 3번 거절이면 비어서 온다 (REC-024) */
-    private suspend fun reloadOffers() {
-        val trip = offerTrip() ?: return
-        val items = (recommendationRepository.recommend(trip.id) as? ApiResult.Success)?.data?.items ?: return
-        snapshot.update { it.copy(nextOrders = items) }
-        // 바로 이어서 다음 후보를 말할 수 있게 지켜보는 쪽을 기다리지 않고 올린다
-        publishOffers(trip, items, nextOrderAdvisor.current.value)
-    }
-
-    /** 하차지에서는 받아 둔 후보를, 운송 중에는 안내한 1등과 이어 받은 후보를 수락 창 차례에 올린다 */
-    private fun keepOffersFresh() {
-        viewModelScope.launch {
-            combine(snapshot.map { it.current to it.nextOrders }.distinctUntilChanged(), nextOrderAdvisor.current) { (trip, items), first ->
-                Triple(trip, items, first)
-            }.collect { (trip, items, first) -> publishOffers(trip, items, first) }
-        }
-    }
-
-    private fun publishOffers(trip: Trip?, items: List<NextOrder>, first: NextOrder?) = when (trip?.status) {
-        TripStatus.AT_DROPOFF -> offers.update(trip.id, items)
-        TripStatus.IN_TRANSIT -> offers.update(trip.id, (listOfNotNull(first) + items).distinctBy { it.order.id })
-        else -> offers.update(null, emptyList())
-    }
-
     /**
-     * 수락 창이 처음 뜨면 짧게 묻고 서버에 적은 뒤 대답을 듣는다. 운송 중 67%에 이미 말한 후보는 다시 말하지 않고 듣기만 한다.
-     * 창이 닫히면(수락, 넘기기, 차가 움직임) 말하던 것을 멈추고 마이크를 닫는다
+     * 배차 추천 (03): 차를 세우면(기어 P 또는 주차 브레이크) 세운 자리 근처에서 실수익 높은 3건을 받는다.
+     * 가운데 창에 1등부터 15초씩 차례로 띄우고, 홈에는 카드로 남긴다. 도착·떠남을 묻는 중이면 창은 띄우지 않는다.
+     * 세운 순간 한 번만 받고, 움직이면 지운다. 운행 상태와 상관없이 같다. 보여 준 것·넘긴 것은 기록하지 않는다
      */
-    private fun tellNewOffers() {
+    private fun recommendWhenParked() {
         viewModelScope.launch {
-            nextOffer.map { it?.orderId }.distinctUntilChanged().collect { orderId ->
-                voiceJob?.cancel()
-                if (orderId == null) {
-                    announcer.cancel(HomeAnnouncements.NEXT_ORDER_KEY)
-                    return@collect
+            parked.collectLatest { isParked ->
+                if (!isParked) {
+                    snapshot.update { it.copy(nextOrders = emptyList()) }
+                    closePick()
+                    return@collectLatest
                 }
-                val trip = offerTrip() ?: return@collect
-                val next = offers.current.value?.takeIf { it.order.id == orderId } ?: return@collect
-                val firstTime = announcedOffers.add(orderId)
-                if (firstTime) recommendationRepository.answer(trip.id, orderId, answer = null)
-                voiceJob = launch {
-                    val question = HomeAnnouncements.nextOrderOffer(next)
-                    if (firstTime) announcer.speak(question)
-                    _status.update { it.copy(offerAsked = orderId) }
-                    when (ask(next, question.text, confirmed = true)) {
-                        VoiceAnswer.ACCEPT -> acceptNextOrder(orderId)
-                        VoiceAnswer.NEXT -> skipNextOrder(orderId)
-                        VoiceAnswer.NONE -> Unit
-                    }
+                val here = sensors.location.filterNotNull().first()
+                val items = (recommendationRepository.recommend(here) as? ApiResult.Success)?.data ?: return@collectLatest
+                snapshot.update { it.copy(nextOrders = items) }
+                val first = items.firstOrNull() ?: return@collectLatest
+                if (_status.value.stopQuestion == null && !_status.value.finishing) {
+                    pickChain = true
+                    showPick(first.order.id)
                 }
             }
         }
     }
-
-    /**
-     * 운송 중 안내를 말하고 대답을 듣는다 (REC-020). 손을 쓰지 않아도 되는 유일한 경로다.
-     * 차를 세우면 수락 창 쪽이 이어받는다([tellNewOffers]). "다음"이면 다음 후보를 이어서 말한다
-     */
-    private fun talkWhileDriving(trip: Trip, first: NextOrder) {
-        voiceJob?.cancel()
-        voiceJob = viewModelScope.launch {
-            var next: NextOrder? = first
-            while (next != null) {
-                val text = HomeAnnouncements.nextOrder(trip.dropoff.name, next, stateFactory.pickupTime(next))
-                announcer.speak(text)
-                when (ask(next, text.text, confirmed = false)) {
-                    VoiceAnswer.ACCEPT -> {
-                        acceptNextOrder(next.order.id)
-                        return@launch
-                    }
-                    VoiceAnswer.NONE -> return@launch
-                    VoiceAnswer.NEXT -> {
-                        recommendationRepository.answer(trip.id, next.order.id, RecommendationAnswer.NEXT)
-                        offers.finish(next.order.id)
-                        reloadOffers()
-                        next = offers.current.value
-                        next?.let { announcedOffers += it.order.id }
-                    }
-                }
-            }
-        }
-    }
-
-    private suspend fun ask(next: NextOrder, repeatText: String, confirmed: Boolean): VoiceAnswer = voiceDialog.ask(
-        repeatText = repeatText,
-        detailText = HomeAnnouncements.nextOrderDetail(next, stateFactory.nextOrderCard(next).pickupDay, stateFactory.pickupTime(next)).text,
-        confirmText = HomeAnnouncements.nextOrderConfirm(next).text,
-        confirmed = confirmed,
-        // 수락 창은 시간이 다 될 때까지 듣는다. 창이 닫히면 voiceJob이 취소되어 듣기도 멈춘다
-        listenMillis = if (confirmed) OFFER_SECONDS * 1_000L else NextOrderVoiceDialog.LISTEN_MILLIS,
-    )
 
     fun messageShown() = _status.update { it.copy(message = null) }
 
@@ -685,10 +573,7 @@ class HomeViewModel(
             notifications.collect { notification ->
                 announcer.say(HomeAnnouncements.notification(notification))
                 _status.update { it.copy(banners = it.banners + bannerOf(notification)) }
-                val confirmed = notification.type == NotificationType.DISPATCH_CONFIRMED
-                if (confirmed) load()
-                // 수락한 요청이 마감·만료됐으면 다음 후보로 이어 간다 (REC-023)
-                if (offers.answered(notification.orderId, confirmed)) reloadOffers()
+                if (notification.type == NotificationType.DISPATCH_CONFIRMED) load()
             }
         }
     }
@@ -696,7 +581,7 @@ class HomeViewModel(
     fun proofShown() = _status.update { it.copy(proof = null) }
 
     /**
-     * 홈에 필요한 것을 한꺼번에 받는다: 내 배차, 진행 중인 운행, 오늘 요약, 미수금, 모집 중 오더.
+     * 홈에 필요한 것을 한꺼번에 받는다: 내 배차, 진행 중인 운행, 오늘 요약, 미수금.
      * 하나가 실패해도 나머지는 보여 준다.
      */
     private suspend fun load() {
@@ -704,12 +589,9 @@ class HomeViewModel(
         val current = viewModelScope.async { tripRepository.currentTrip() }
         val today = viewModelScope.async { ledgerRepository.today() }
         val receivables = viewModelScope.async { ledgerRepository.receivables() }
-        val near = sensors.location.value
-        val orders = viewModelScope.async { orderRepository.openOrders(limit = HOME_ORDER_COUNT, near = near) }
         upcoming.await().orShow()?.let { trips -> snapshot.update { it.copy(upcoming = upcomingOf(trips)) } }
         today.await().orShow()?.let { summary -> snapshot.update { it.copy(today = summary) } }
         receivables.await().orShow()?.let { owed -> snapshot.update { it.copy(receivables = owed) } }
-        orders.await().orShow()?.let { list -> snapshot.update { it.copy(orders = list, ordersNear = near) } }
         val trip = current.await().orShow() ?: run {
             snapshot.update { it.copy(current = null, wait = null, site = null) }
             return
@@ -905,55 +787,11 @@ class HomeViewModel(
 
     private fun fenceOf(stop: TripStop) = GeoFence(GeoPoint(stop.latitude, stop.longitude), stop.geofenceRadiusMeters)
 
-    /**
-     * 운행 전 화면의 근처 오더를 차 위치에 맞춘다: 처음 위치가 들어올 때, 그리고 찾은 곳에서 5km 넘게 움직였을 때 다시 찾는다.
-     * 운행 중에는 오더를 보여 주지 않으니 찾지 않는다 (운행이 끝나면 [load]가 지금 위치로 찾는다).
-     * 실패하면 조용히 넘어가고, 다시 5km 움직이면 또 찾는다. 통신이 끊긴 동안 몇 초마다 묻지 않게 하려는 것이다.
-     */
-    private fun keepNearbyOrdersFresh() {
-        viewModelScope.launch {
-            var lastTried: GeoPoint? = null
-            sensors.location.filterNotNull().collect { here ->
-                if (snapshot.value.current != null) return@collect
-                val from = snapshot.value.ordersNear ?: lastTried
-                if (from != null && from.distanceTo(here) < NEARBY_REFRESH_METERS) return@collect
-                lastTried = here
-                val list = (orderRepository.openOrders(limit = HOME_ORDER_COUNT, near = here) as? ApiResult.Success)?.data
-                    ?: return@collect
-                snapshot.update { it.copy(orders = list, ordersNear = here) }
-            }
-        }
-    }
-
     /** 내비가 주행 정보를 띄엄띄엄 보내서, 안내 중에만 10초마다 남은 거리·시간을 다시 묻는다 */
     /** 출발한 운행이 있는 동안 위치를 서버로 보낸다 (TRIP-013). 끝나거나 취소되면 멈춘다 */
     private fun reportLocationWhileOnTrip() {
         viewModelScope.launch {
             snapshot.map { it.current?.id }.distinctUntilChanged().collect(locationTracker::track)
-        }
-    }
-
-    /** 운송 중 진행률을 추천에 알려 준다. 찾기·안내는 [NextOrderAdvisor]가 정한다 */
-    private fun recommendNextOrder() {
-        viewModelScope.launch {
-            combine(snapshot.map { it.current }.distinctUntilChanged(), navigator.progress.map { it?.fraction }) { trip, fraction ->
-                trip to fraction
-            }.distinctUntilChanged().collect { (trip, fraction) -> nextOrderAdvisor.onProgress(trip, fraction) }
-        }
-    }
-
-    /**
-     * 하차지에 도착하면 다음 배차 추천 5건을 받아 카드로 보여 준다 (REC-021). 운행·도착마다 한 번.
-     * 하차지를 떠나거나 운행이 끝나면 비운다. 못 받으면 카드 없이 대기 화면만 보여 준다
-     */
-    private fun recommendAtDropoff() {
-        viewModelScope.launch {
-            snapshot.map { trip -> trip.current?.takeIf { it.status == TripStatus.AT_DROPOFF }?.id }
-                .distinctUntilChanged()
-                .collectLatest { tripId ->
-                    val items = tripId?.let { (recommendationRepository.recommend(it) as? ApiResult.Success)?.data?.items }
-                    snapshot.update { it.copy(nextOrders = items.orEmpty()) }
-                }
         }
     }
 
@@ -1027,23 +865,6 @@ class HomeViewModel(
 
         /** 도착 확인 창이 기다리는 시간 (WAIT-007) */
         const val ARRIVAL_CONFIRM_SECONDS = 15
-
-        /** 근처 오더를 찾은 곳에서 이만큼 움직이면 다시 찾는다 */
-        private const val NEARBY_REFRESH_METERS = 5_000.0
-
-        /** 수락 창을 띄울 수 있는 운행 상태. 추천을 받는 상태와 같다 */
-        private val OFFER_STATUSES = setOf(TripStatus.IN_TRANSIT, TripStatus.AT_DROPOFF)
-
-        /**
-         * 수락 창을 띄워도 되는 정차인가. 운전 중에 터치를 요구하지 않는다 (REC-026, 10 음성·안전 UX).
-         * 하차지든 운송 중이든 세워 두었을 때(기어 P 또는 주차 브레이크)만. 신호 대기·발 브레이크는 언제 출발할지 몰라 정차로 보지 않는다.
-         * 차량 신호를 모르면 띄우지 않는다
-         */
-        fun canOffer(status: TripStatus?, motion: VehicleMotion?): Boolean =
-            status in OFFER_STATUSES && motion?.isParked == true
-
-        /** 홈에는 오더를 이만큼만. 나머지는 오더 탭에서 */
-        private const val HOME_ORDER_COUNT = 5
 
         /** 끝나지 않은 운행을 상차 시각이 이른 순으로. 시각이 없는 운행은 뒤로 */
         fun upcomingOf(trips: List<Trip>): List<Trip> = trips

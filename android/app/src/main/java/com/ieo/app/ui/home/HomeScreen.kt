@@ -92,7 +92,8 @@ private val WideLayoutMinWidth = 1000.dp
 
 /**
  * 홈 화면. 운행 상태마다 주인공이 하나다.
- * 운행 전은 내 배차와 근처 오더, 대기 중은 대기 타이머, 주행 중은 도착 예정 시각.
+ * 운행 전은 내 배차, 대기 중은 대기 타이머, 주행 중은 도착 예정 시각.
+ * 차를 세우면(P·주차 브레이크) 어느 화면이든 세운 곳 근처 추천 3건이 함께 보인다 (03 배차 추천).
  *
  * 연회색 바탕 위에 흰 묶음을 놓고, 핵심 숫자만 크고 굵게 쓴다. 구분선은 쓰지 않는다.
  * 시안: "Ieo 홈 목록 시안"의 A안 (2026-10-22)
@@ -101,7 +102,6 @@ private val WideLayoutMinWidth = 1000.dp
 fun HomeScreen(
     state: HomeState,
     onTripClick: (AssignedTrip) -> Unit = {},
-    onOrderClick: (OrderCard) -> Unit = {},
     onUnpaidClick: () -> Unit = {},
     onRegisterTrip: () -> Unit = {},
     onStartWork: () -> Unit = {},
@@ -110,15 +110,15 @@ fun HomeScreen(
     onRequestDeliveryProof: () -> Unit = {},
     onArrive: () -> Unit = {},
     onResumeGuidance: () -> Unit = {},
-    onNextOrderClick: (NextOrderCard) -> Unit = {},
+    onPickClick: (NextOrderCard) -> Unit = {},
 ) {
     // 내비 옆 반 화면(좁은 창)이 기본 사용 형태다. 앱 영역 전체를 쓸 때만 두 칸으로 펼친다
     BoxWithConstraints(modifier = Modifier.fillMaxSize().background(CanvasGray)) {
         val compact = maxWidth < WideLayoutMinWidth
         when (state) {
-            is HomeState.Idle -> IdleHome(state, compact, onTripClick, onOrderClick, onUnpaidClick, onRegisterTrip)
-            is HomeState.Waiting -> WaitingHome(state, compact, WaitActions(onStartWork, onDepart, onSendWaitProof, onRequestDeliveryProof, onNextOrderClick))
-            is HomeState.Driving -> DrivingHome(state, onArrive, onResumeGuidance)
+            is HomeState.Idle -> IdleHome(state, compact, onTripClick, onPickClick, onUnpaidClick, onRegisterTrip)
+            is HomeState.Waiting -> WaitingHome(state, compact, WaitActions(onStartWork, onDepart, onSendWaitProof, onRequestDeliveryProof, onPickClick))
+            is HomeState.Driving -> DrivingHome(state, onArrive, onResumeGuidance, onPickClick)
         }
     }
 }
@@ -130,7 +130,7 @@ private fun IdleHome(
     state: HomeState.Idle,
     compact: Boolean,
     onTripClick: (AssignedTrip) -> Unit,
-    onOrderClick: (OrderCard) -> Unit,
+    onPickClick: (NextOrderCard) -> Unit,
     onUnpaidClick: () -> Unit,
     onRegisterTrip: () -> Unit,
 ) {
@@ -142,7 +142,7 @@ private fun IdleHome(
             TodayHeadline(state)
             state.unpaid?.let { UnpaidRow(it, onUnpaidClick) }
             MyTrips(state.myTrips, onTripClick = onTripClick, onRegisterTrip = onRegisterTrip)
-            NearbyOrders(state, onOrderClick)
+            Picks(state.picks, onPickClick, emptyNote = true)
         }
     } else {
         Row(
@@ -158,7 +158,7 @@ private fun IdleHome(
                 MyTrips(state.myTrips, onTripClick = onTripClick, onRegisterTrip = onRegisterTrip)
             }
             Column(modifier = Modifier.weight(1f).fillMaxHeight().verticalScroll(rememberScrollState())) {
-                NearbyOrders(state, onOrderClick)
+                Picks(state.picks, onPickClick, emptyNote = true)
             }
         }
     }
@@ -239,41 +239,6 @@ private fun MyTrips(trips: List<AssignedTrip>, onTripClick: (AssignedTrip) -> Un
     }
 }
 
-@Composable
-private fun NearbyOrders(state: HomeState.Idle, onOrderClick: (OrderCard) -> Unit) {
-    WhiteSection {
-        SectionTitle(
-            title = if (state.nearby) "근처 오더" else "모집 중인 오더",
-            count = state.orders.size,
-            note = if (state.nearby) "지금 위치에서 50km 안, 내 차로 실을 수 있는 것만" else "내 차로 실을 수 있는 것만",
-        )
-        if (state.orders.isEmpty()) {
-            Text(
-                if (state.nearby) "근처에 모집 중인 오더가 없어요" else "지금 모집 중인 오더가 없어요",
-                fontSize = 24.sp,
-                color = TextSub,
-                modifier = Modifier.padding(horizontal = 12.dp, vertical = 16.dp),
-            )
-        }
-        state.orders.forEach { order ->
-            ListRow(
-                time = order.pickupTime,
-                day = order.pickupDay,
-                title = "${order.pickup} → ${order.dropoff}",
-                tags = listOfNotNull(
-                    Keyword.vehicle(order.vehicle),
-                    order.cargo?.let(Keyword::cargo),
-                    order.distanceMeters?.let(Keyword::distance),
-                    order.brokerMetrics?.let(Keyword::brokerPayment),
-                ),
-                amount = formatWon(order.fare),
-                amountNote = order.netProfit?.let { "실수익 약 ${formatWon(it)}" },
-                onClick = { onOrderClick(order) },
-            )
-        }
-    }
-}
-
 // ───────────────────────── 대기 중 ─────────────────────────
 
 /** 대기 화면의 버튼들 */
@@ -282,7 +247,7 @@ private class WaitActions(
     val onDepart: () -> Unit,
     val onSendWaitProof: () -> Unit,
     val onRequestDeliveryProof: () -> Unit,
-    val onNextOrderClick: (NextOrderCard) -> Unit,
+    val onPickClick: (NextOrderCard) -> Unit,
 )
 
 @Composable
@@ -304,7 +269,7 @@ private fun WaitingHome(state: HomeState.Waiting, compact: Boolean, actions: Wai
             modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(ScreenPadding),
         ) {
             WaitTimer(state, timerSeconds, chargeableMinutes, actions, compact = true)
-            WaitDetails(state, actions.onNextOrderClick)
+            WaitDetails(state, actions.onPickClick)
         }
     } else {
         Row(
@@ -314,7 +279,7 @@ private fun WaitingHome(state: HomeState.Waiting, compact: Boolean, actions: Wai
         ) {
             Box(modifier = Modifier.weight(0.55f)) { WaitTimer(state, timerSeconds, chargeableMinutes, actions, compact = false) }
             Box(modifier = Modifier.weight(0.45f).fillMaxHeight().verticalScroll(rememberScrollState())) {
-                WaitDetails(state, actions.onNextOrderClick)
+                WaitDetails(state, actions.onPickClick)
             }
         }
     }
@@ -392,9 +357,9 @@ private fun WaitFeeLine(policy: WaitPolicy?, chargeableMinutes: Long, waitEnded:
 }
 
 @Composable
-private fun WaitDetails(state: HomeState.Waiting, onNextOrderClick: (NextOrderCard) -> Unit) {
+private fun WaitDetails(state: HomeState.Waiting, onPickClick: (NextOrderCard) -> Unit) {
     Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-        if (state.nextOrders.isNotEmpty()) NextOrders(state.nextOrders, onNextOrderClick)
+        Picks(state.picks, onPickClick)
         WhiteSection {
             SectionTitle(title = "이번 운행")
             DetailLine("구간", state.trip.route)
@@ -405,11 +370,23 @@ private fun WaitDetails(state: HomeState.Waiting, onNextOrderClick: (NextOrderCa
     }
 }
 
-/** 하차지에서 이어서 할 배차 후보. 실수익 높은 순. 누르면 수락 확인 창 (REC-021, 022) */
+/**
+ * 배차 추천 (03): 차를 세운 곳 근처 오더 중 실수익 높은 3건. 누르면 오더를 열고 배차를 요청한다.
+ * 세워 두었을 때만 받으므로 비어 있으면 보이지 않는다. 운행 전 화면은 [emptyNote]로 무엇이 뜨는지 알려 준다
+ */
 @Composable
-private fun NextOrders(orders: List<NextOrderCard>, onClick: (NextOrderCard) -> Unit) {
+private fun Picks(orders: List<NextOrderCard>, onClick: (NextOrderCard) -> Unit, emptyNote: Boolean = false) {
+    if (orders.isEmpty() && !emptyNote) return
     WhiteSection {
-        SectionTitle(title = "다음 배차 추천", count = orders.size, note = "하차 끝나고 바로 실을 수 있는 것만, 실수익 높은 순")
+        SectionTitle(title = "근처 추천", count = orders.size, note = "세운 곳 근처, 실수익 높은 순")
+        if (orders.isEmpty()) {
+            Text(
+                "차를 세우면(P·주차 브레이크) 근처 오더 중 실수익 높은 3건을 보여 드려요",
+                fontSize = 24.sp,
+                color = TextSub,
+                modifier = Modifier.padding(horizontal = 12.dp, vertical = 16.dp),
+            )
+        }
         orders.forEach { order ->
             ListRow(
                 time = order.pickupTime,
@@ -485,7 +462,7 @@ private fun heightNote(warning: HeightWarning) = when (warning) {
  * 상하차지 3km 안에서는 "대기 시작" 버튼을 보여 준다 (WAIT-008). 버튼은 세워 두었을 때(기어 P 또는 주차 브레이크)만 눌린다.
  */
 @Composable
-private fun DrivingHome(state: HomeState.Driving, onArrive: () -> Unit, onResumeGuidance: () -> Unit) {
+private fun DrivingHome(state: HomeState.Driving, onArrive: () -> Unit, onResumeGuidance: () -> Unit, onPickClick: (NextOrderCard) -> Unit) {
     val status = IeoStatus.colors
     Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize().padding(ScreenPadding)) {
         Column(
@@ -552,20 +529,7 @@ private fun DrivingHome(state: HomeState.Driving, onArrive: () -> Unit, onResume
                     Text(formatFare(state.trip.fare), fontSize = 24.sp, fontWeight = FontWeight.ExtraBold, color = TextStrong, style = Tnum)
                 }
             }
-            state.recommendation?.let { rec ->
-                WhiteSection {
-                    SectionTitle(title = "다음 배차 추천")
-                    ListRow(
-                        time = rec.pickupTime,
-                        day = "상차",
-                        title = rec.route,
-                        subtitle = "차를 세우면(P·주차 브레이크) 수락할 수 있어요",
-                        amount = "실수익",
-                        amountNote = formatWon(rec.netProfit),
-                        onClick = {},
-                    )
-                }
-            }
+            Picks(state.picks, onPickClick)
             if (!state.naviActive) {
                 Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                     // 경로를 모르면 다시 안내가 먼저고, 안내를 마친 뒤라면 대기 시작이 먼저다
@@ -589,7 +553,7 @@ private fun DrivingHome(state: HomeState.Driving, onArrive: () -> Unit, onResume
                     textAlign = TextAlign.Center,
                 )
             }
-            if (state.naviActive && !state.nearStop && state.recommendation == null) {
+            if (state.naviActive && !state.nearStop && state.picks.isEmpty()) {
                 Text(
                     "안내를 끝내려면 내비에서 안내 종료를 눌러 주세요",
                     fontSize = 24.sp,

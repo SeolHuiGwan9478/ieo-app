@@ -1,6 +1,12 @@
 package com.ieo.app.ui.home
 
 import androidx.compose.foundation.background
+import com.ieo.app.ui.theme.Orange600
+import com.ieo.app.ui.theme.CanvasGray
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.LinearEasing
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
@@ -96,6 +102,30 @@ fun BoxScope.StopConfirmModal(
                 IeoPrimaryButton(text = question.confirmLabel, onClick = { if (!busy) onConfirm() }, enabled = parked, modifier = Modifier.weight(1f))
             }
         }
+    }
+}
+
+/** 창 위쪽의 제목과 남은 초, 줄어드는 막대. 시간을 재는 창(수락 창, 도착 확인 창)이 같은 모양을 쓴다 */
+@Composable
+fun CountdownHeader(title: String, secondsLeft: Int, totalSeconds: Int) {
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        Text(title, fontSize = 24.sp, color = TextSub, modifier = Modifier.weight(1f))
+        Text("${secondsLeft}초", fontSize = 32.sp, fontWeight = FontWeight.Bold, color = TextStrong)
+    }
+    Spacer(Modifier.height(12.dp))
+    TimeBar(secondsLeft, totalSeconds)
+}
+
+/** 남은 시간 막대. 1초씩 부드럽게 줄어든다 */
+@Composable
+private fun TimeBar(secondsLeft: Int, totalSeconds: Int) {
+    val fraction by animateFloatAsState(
+        targetValue = secondsLeft / totalSeconds.toFloat(),
+        animationSpec = tween(durationMillis = 1_000, easing = LinearEasing),
+        label = "offer-time",
+    )
+    Box(modifier = Modifier.fillMaxWidth().height(10.dp).background(CanvasGray, RoundedCornerShape(5.dp))) {
+        Box(modifier = Modifier.fillMaxWidth(fraction).fillMaxHeight().background(Orange600, RoundedCornerShape(5.dp)))
     }
 }
 

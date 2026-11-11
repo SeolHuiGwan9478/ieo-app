@@ -4,6 +4,7 @@ import com.ieo.app.domain.ledger.DailySummary
 import com.ieo.app.domain.ledger.Receivables
 import com.ieo.app.domain.navi.NaviProgress
 import com.ieo.app.domain.trip.StopType
+import com.ieo.app.domain.recommendation.NextOrder
 import com.ieo.app.domain.trip.TripStatus
 import com.ieo.app.testing.TripFixtures
 import com.ieo.app.testing.TripFixtures.NOW
@@ -31,19 +32,18 @@ class HomeStateFactoryTest {
     }
 
     @Test
-    fun `운행 전 화면에 오늘 요약, 가장 밀린 미수금, 모집 중 오더를 보여 준다`() {
+    fun `운행 전 화면에 오늘 요약, 가장 밀린 미수금, 세웠을 때 받은 추천을 보여 준다`() {
         val snapshot = HomeSnapshot(
             today = DailySummary(LocalDate.of(2026, 11, 3), tripCount = 2, netProfit = 610_000),
             receivables = Receivables(450_000, 450_000, 0, listOf(TripFixtures.entry(expectedPaymentDate = LocalDate.of(2026, 10, 31), overdue = true))),
-            orders = listOf(TripFixtures.order()),
+            nextOrders = listOf(NextOrder(TripFixtures.order(), 17_000, 7_771, 372_229, false)),
         )
 
         val state = factory.create(snapshot, navi = null) as HomeState.Idle
 
         assertEquals(TodaySummary(tripCount = 2, netProfit = 610_000), state.today)
         assertEquals(UnpaidAlert("○○물류", 450_000, overdueDays = 3), state.unpaid)
-        assertFalse(state.nearby)
-        assertEquals("칠곡 → 부산 강서", state.orders.single().let { "${it.pickup} → ${it.dropoff}" })
+        assertEquals("칠곡 → 부산 강서", state.picks.single().route)
     }
 
     @Test

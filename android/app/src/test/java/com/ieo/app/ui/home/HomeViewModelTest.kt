@@ -7,8 +7,6 @@ import com.ieo.app.domain.navi.NaviProgress
 import com.ieo.app.domain.notification.AppNotification
 import com.ieo.app.domain.notification.NotificationType
 import com.ieo.app.domain.recommendation.NextOrder
-import com.ieo.app.domain.recommendation.NextOrders
-import com.ieo.app.domain.recommendation.RecommendationAnswer
 import com.ieo.app.domain.trip.StopType
 import com.ieo.app.domain.trip.TripStatus
 import com.ieo.app.domain.vehicle.GeoPoint
@@ -305,261 +303,6 @@ class HomeViewModelTest {
     }
 
     @Test
-    fun `운송 중 67%를 지나면 다음 배차 추천을 말하고 주행 화면에 보여 준다`() = homeTest(TripStatus.IN_TRANSIT, prepare = {
-        server.nextOrders = ApiResult.Success(
-            NextOrders(
-                freeAt = NOW,
-                items = listOf(NextOrder(TripFixtures.order(), emptyMeters = 17_000, fuelCost = 7_771, netProfit = 372_229, longWait = true)),
-            ),
-        )
-    }) { vm ->
-        navigator.progress.value = NaviProgress("대구 성서", totalMeters = 300_000, remainMeters = 90_000, remainSeconds = 3_600)
-        runCurrent()
-
-        val driving = vm.state.value as HomeState.Driving
-        assertEquals(Recommendation("칠곡 → 부산 강서", "06:00", 372_229), driving.recommendation)
-        assertEquals(
-            "다음 배차 추천이에요. 대구 성서 하차 후 17분 거리, 칠곡 06:00 상차, 부산 강서행 5톤, 실수익 37만 원 건이 있어요. 대기가 길었던 곳이에요. 수락이나 다음이라고 말씀해 주세요.",
-            announcer.texts.last(),
-        )
-        assertEquals(listOf(Triple(1L, 11L, null as RecommendationAnswer?)), server.answers)
-    }
-
-    @Test
-    fun `하차지에 도착하면 추천 5건을 카드로 보여 주고 수락하면 배차 요청을 보낸다`() = homeTest(TripStatus.IN_TRANSIT, prepare = {
-        sensors.parkAt(dropoff)
-        server.nextOrders = ApiResult.Success(
-            NextOrders(
-                freeAt = NOW,
-                items = listOf(NextOrder(TripFixtures.order(), emptyMeters = 17_000, fuelCost = 7_771, netProfit = 372_229, longWait = true)),
-            ),
-        )
-    }) { vm ->
-        assertTrue(server.recommendRequests.isEmpty())
-        vm.arrive()
-        runCurrent()
-
-        val card = (vm.state.value as HomeState.Waiting).nextOrders.single()
-        assertEquals("칠곡 → 부산 강서", card.route)
-        assertEquals("06:00", card.pickupTime)
-        assertEquals(372_229L, card.netProfit)
-        assertEquals(listOf(1L), server.recommendRequests)
-
-        assertEquals(card.orderId, vm.nextOffer.value?.orderId)
-        assertEquals(listOf(Triple(1L, 11L, null as RecommendationAnswer?)), server.answers)
-
-        vm.acceptNextOrder(card.orderId)
-        runCurrent()
-
-        assertEquals(Triple(1L, 11L, RecommendationAnswer.ACCEPTED as RecommendationAnswer?), server.answers.last())
-        assertTrue((vm.state.value as HomeState.Waiting).nextOrders.isEmpty())
-        assertNull(vm.nextOffer.value)
-        assertEquals(HomeViewModel.NEXT_ORDER_REQUESTED_MESSAGE, vm.status.value.message)
-    }
-
-    private fun candidates(vararg ids: Long) = ApiResult.Success(
-        NextOrders(NOW, ids.map { NextOrder(TripFixtures.order(id = it), 17_000, 7_771, 372_229, false) }),
-    )
-
-    private fun confirmedOr(type: NotificationType, orderId: Long) = AppNotification(orderId + 100, type, "알림", 1, orderId, NOW)
-
-    @Test
-    fun `하차지에서 후보를 하나씩 띄우고 시간이 끝나면 거절 없이 다음으로 넘어간다`() = homeTest(TripStatus.IN_TRANSIT, prepare = {
-        sensors.parkAt(dropoff)
-        server.nextOrders = candidates(11, 12)
-    }) { vm ->
-        vm.arrive()
-        runCurrent()
-        assertEquals(11L, vm.nextOffer.value?.orderId)
-        assertEquals("칠곡에서 부산 강서행, 실수익 37만 원. 수락할까요?", announcer.texts.last())
-        assertEquals(AnnouncementPriority.RECOMMENDATION, announcer.said.last().priority)
-
-        vm.nextOrderTimedOut(11)
-        runCurrent()
-        assertEquals(12L, vm.nextOffer.value?.orderId)
-        assertTrue(server.answers.none { it.third == RecommendationAnswer.REJECTED })
-
-        vm.nextOrderTimedOut(12)
-        runCurrent()
-        assertNull(vm.nextOffer.value)
-        // 카드로는 남아 있어 눌러서 다시 열 수 있다
-        assertEquals(2, (vm.state.value as HomeState.Waiting).nextOrders.size)
-        vm.openNextOrder(11)
-        runCurrent()
-        assertEquals(11L, vm.nextOffer.value?.orderId)
-    }
-
-    @Test
-    fun `넘기면 거절로 적고 서버에서 후보를 다시 받는다`() = homeTest(TripStatus.IN_TRANSIT, prepare = {
-        sensors.parkAt(dropoff)
-        server.nextOrders = candidates(11, 12)
-    }) { vm ->
-        vm.arrive()
-        runCurrent()
-        server.nextOrders = candidates(12)
-        val before = server.recommendRequests.size
-
-        vm.skipNextOrder(11)
-        runCurrent()
-
-        assertTrue(Triple(1L, 11L, RecommendationAnswer.REJECTED as RecommendationAnswer?) in server.answers)
-        assertEquals(before + 1, server.recommendRequests.size)
-        assertEquals(12L, vm.nextOffer.value?.orderId)
-    }
-
-    @Test
-    fun `수락한 요청이 마감되면 다음 후보를 띄우고 확정되면 그친다`() = homeTest(TripStatus.IN_TRANSIT, prepare = {
-        sensors.parkAt(dropoff)
-        server.nextOrders = candidates(11, 12, 13)
-    }) { vm ->
-        vm.arrive()
-        runCurrent()
-        vm.acceptNextOrder(11)
-        runCurrent()
-        assertNull(vm.nextOffer.value)
-
-        notifications.emit(confirmedOr(NotificationType.DISPATCH_DECLINED, 11))
-        runCurrent()
-        server.nextOrders = candidates(12, 13)
-        assertEquals(12L, vm.nextOffer.value?.orderId)
-
-        vm.acceptNextOrder(12)
-        runCurrent()
-        notifications.emit(confirmedOr(NotificationType.DISPATCH_CONFIRMED, 12))
-        runCurrent()
-        assertNull(vm.nextOffer.value)
-    }
-
-    @Test
-    fun `인수증 QR 창이 열려 있으면 수락 창도 음성도 끼어들지 않고 닫으면 나온다`() = homeTest(TripStatus.IN_TRANSIT, prepare = {
-        sensors.parkAt(dropoff)
-        server.nextOrders = candidates(11, 12)
-    }) { vm ->
-        vm.arrive()
-        runCurrent()
-        vm.acceptNextOrder(11)
-        runCurrent()
-        vm.requestDeliveryProof()
-        runCurrent()
-        val spoken = announcer.texts.count { it.endsWith("수락할까요?") }
-
-        notifications.emit(confirmedOr(NotificationType.DISPATCH_DECLINED, 11))
-        runCurrent()
-        assertNull(vm.nextOffer.value)
-        assertEquals(spoken, announcer.texts.count { it.endsWith("수락할까요?") })
-        assertTrue(server.answers.none { it.second == 12L })
-
-        vm.closeDeliveryProof()
-        runCurrent()
-        assertEquals(12L, vm.nextOffer.value?.orderId)
-        assertEquals(spoken + 1, announcer.texts.count { it.endsWith("수락할까요?") })
-    }
-
-    @Test
-    fun `기어 P로 세워 둔 채 안내 시점이 와도 한 번만 말하고 한 번만 적는다`() = homeTest(TripStatus.IN_TRANSIT, prepare = {
-        server.nextOrders = candidates(11)
-    }) { vm ->
-        sensors.parkAt(GeoPoint(36.0, 128.0))
-        runCurrent()
-
-        navigator.progress.value = NaviProgress("대구 성서", totalMeters = 300_000, remainMeters = 90_000, remainSeconds = 3_600)
-        runCurrent()
-
-        assertEquals(11L, vm.nextOffer.value?.orderId)
-        assertEquals(1, announcer.said.count { it.key == HomeAnnouncements.NEXT_ORDER_KEY })
-        assertEquals(1, server.answers.count { it.second == 11L })
-    }
-
-    private fun driveTo67() {
-        sensors.drive(GeoPoint(36.0, 128.0))
-        navigator.progress.value = NaviProgress("대구 성서", totalMeters = 300_000, remainMeters = 90_000, remainSeconds = 3_600)
-    }
-
-    @Test
-    fun `주행 중 수락이라고 말하고 응이라고 하면 배차 요청을 보낸다`() = homeTest(TripStatus.IN_TRANSIT, prepare = {
-        server.nextOrders = candidates(11, 12)
-        heard += listOf("수락", "응")
-    }) { vm ->
-        driveTo67()
-        runCurrent()
-
-        assertEquals("칠곡 부산 강서행 수락할까요?", announcer.texts.last())
-        assertEquals(Triple(1L, 11L, RecommendationAnswer.ACCEPTED as RecommendationAnswer?), server.answers.last())
-        assertEquals(HomeViewModel.NEXT_ORDER_REQUESTED_MESSAGE, vm.status.value.message)
-        assertEquals(false, vm.status.value.listening)
-    }
-
-    @Test
-    fun `주행 중 수락 뒤 확인이 없으면 배차 요청을 보내지 않는다`() = homeTest(TripStatus.IN_TRANSIT, prepare = {
-        server.nextOrders = candidates(11)
-        heard += listOf("수락", null)
-    }) { _ ->
-        driveTo67()
-        runCurrent()
-
-        assertTrue(server.answers.none { it.third == RecommendationAnswer.ACCEPTED })
-    }
-
-    @Test
-    fun `주행 중 다음이라고 하면 다음 후보를 이어서 말한다`() = homeTest(TripStatus.IN_TRANSIT, prepare = {
-        server.nextOrders = candidates(11, 12)
-        heard += listOf("다음", null)
-    }) { _ ->
-        driveTo67()
-        runCurrent()
-
-        assertTrue(Triple(1L, 11L, RecommendationAnswer.NEXT as RecommendationAnswer?) in server.answers)
-        assertEquals(2, announcer.texts.count { it.startsWith("다음 배차 추천") })
-    }
-
-    @Test
-    fun `수락 창에서 다음이라고 하면 넘기고 응이라고 하면 바로 수락한다`() = homeTest(TripStatus.IN_TRANSIT, prepare = {
-        sensors.parkAt(dropoff)
-        server.nextOrders = candidates(11, 12)
-        heard += listOf("다음", "응")
-    }) { vm ->
-        vm.arrive()
-        runCurrent()
-
-        assertTrue(Triple(1L, 11L, RecommendationAnswer.REJECTED as RecommendationAnswer?) in server.answers)
-        assertEquals(Triple(1L, 12L, RecommendationAnswer.ACCEPTED as RecommendationAnswer?), server.answers.last())
-        assertNull(vm.nextOffer.value)
-    }
-
-    @Test
-    fun `운송 중에는 기어 P일 때만 띄우고 움직이면 닫았다가 멈추면 다시 띄운다`() = homeTest(TripStatus.IN_TRANSIT, prepare = {
-        server.nextOrders = candidates(11)
-    }) { vm ->
-        val here = GeoPoint(36.0, 128.0)
-        sensors.drive(here)
-        navigator.progress.value = NaviProgress("대구 성서", totalMeters = 300_000, remainMeters = 90_000, remainSeconds = 3_600)
-        runCurrent()
-        val spokenByAdvisor = announcer.texts.size
-        assertEquals(1, spokenByAdvisor)
-        assertNull(vm.nextOffer.value)
-
-        // 브레이크를 밟고 멈춘 신호 대기는 정차가 아니다
-        sensors.drive(here, speedKph = 0.0)
-        runCurrent()
-        assertNull(vm.nextOffer.value)
-
-        sensors.parkAt(here)
-        runCurrent()
-        assertEquals(11L, vm.nextOffer.value?.orderId)
-        assertEquals(spokenByAdvisor, announcer.texts.size)
-
-        sensors.drive(here)
-        runCurrent()
-        assertNull(vm.nextOffer.value)
-        // 움직이면 말하던 것도 멈춘다
-        assertEquals(listOf(HomeAnnouncements.NEXT_ORDER_KEY), announcer.cancelled.takeLast(1))
-
-        sensors.parkAt(here)
-        runCurrent()
-        assertEquals(11L, vm.nextOffer.value?.orderId)
-    }
-
-    @Test
     fun `배차 확정 알림이 오면 말하고 화면에 띄우고 홈을 새로 받는다`() = homeTest { vm ->
         assertEquals(listOf<Long?>(null), tracker.tracked)
         server.trip = server.trip.copy(status = TripStatus.TO_PICKUP)
@@ -657,50 +400,6 @@ class HomeViewModelTest {
 
         assertEquals(listOf("arrive PICKUP"), server.calls)
         assertNull((vm.state.value as HomeState.Waiting).departingInSeconds)
-    }
-
-    @Test
-    fun `위치를 받기 전에 홈을 열었으면 위치가 들어올 때 근처 오더로 다시 찾는다`() = homeTest { vm ->
-        assertEquals(listOf<GeoPoint?>(null), server.ordersNear)
-        assertTrue(!(vm.state.value as HomeState.Idle).nearby)
-
-        val here = GeoPoint(TripFixtures.PICKUP.latitude, TripFixtures.PICKUP.longitude)
-        sensors.parkAt(here)
-        runCurrent()
-
-        assertEquals(listOf(null, here), server.ordersNear)
-        val state = vm.state.value as HomeState.Idle
-        assertTrue(state.nearby)
-        assertEquals(12_300L, state.orders.single().distanceMeters)
-    }
-
-    @Test
-    fun `5km 넘게 움직이면 근처 오더를 다시 찾고 가까이 움직이면 그대로 둔다`() = homeTest { vm ->
-        val here = GeoPoint(TripFixtures.PICKUP.latitude, TripFixtures.PICKUP.longitude)
-        sensors.parkAt(here)
-        runCurrent()
-
-        // 약 1km 북쪽
-        val near = GeoPoint(here.latitude + 0.01, here.longitude)
-        sensors.drive(near)
-        runCurrent()
-        assertEquals(listOf(null, here), server.ordersNear)
-
-        // 약 11km 북쪽
-        val far = GeoPoint(here.latitude + 0.1, here.longitude)
-        sensors.drive(far)
-        runCurrent()
-        assertEquals(listOf(null, here, far), server.ordersNear)
-        assertTrue((vm.state.value as HomeState.Idle).nearby)
-    }
-
-    @Test
-    fun `운행 중에는 움직여도 근처 오더를 찾지 않는다`() = homeTest(TripStatus.TO_PICKUP) { vm ->
-        sensors.drive(GeoPoint(TripFixtures.PICKUP.latitude + 0.1, TripFixtures.PICKUP.longitude))
-        runCurrent()
-
-        assertEquals(listOf<GeoPoint?>(null), server.ordersNear)
-        assertTrue(vm.state.value is HomeState.Driving)
     }
 
     @Test
@@ -932,12 +631,83 @@ class HomeViewModelTest {
     }
 
     @Test
-    fun `운행 전 화면에 오늘 요약과 모집 중 오더를 서버에서 받아 보여 준다`() = homeTest { vm ->
+    fun `운행 전 화면에 오늘 요약과 내 배차를 서버에서 받아 보여 준다`() = homeTest { vm ->
         val state = vm.state.value as HomeState.Idle
 
         assertEquals(1, state.today.tripCount)
-        assertEquals(1, state.orders.size)
         assertEquals(1, state.myTrips.size)
+        // 세워 두지 않았으면 추천은 없다
+        assertTrue(state.picks.isEmpty())
+    }
+
+    private fun picks(vararg ids: Long) = ApiResult.Success(
+        ids.map { NextOrder(TripFixtures.order(id = it), 17_000, 7_771, 372_229 - it, false) },
+    )
+
+    @Test
+    fun `차를 세우면 세운 자리 근처 추천을 받아 보여 주고 움직이면 지운다`() = homeTest(prepare = { server.nextOrders = picks(11, 12, 13) }) { vm ->
+        val here = GeoPoint(36.0, 128.0)
+        sensors.drive(here)
+        runCurrent()
+        assertTrue(server.recommendRequests.isEmpty())
+
+        sensors.parkAt(here)
+        runCurrent()
+        assertEquals(listOf(here), server.recommendRequests)
+        assertEquals(listOf(11L, 12L, 13L), (vm.state.value as HomeState.Idle).picks.map { it.orderId })
+
+        // 세워 둔 동안에는 다시 묻지 않는다
+        sensors.parkAt(here)
+        advanceTimeBy(600_000)
+        runCurrent()
+        assertEquals(1, server.recommendRequests.size)
+
+        sensors.drive(here)
+        runCurrent()
+        assertTrue((vm.state.value as HomeState.Idle).picks.isEmpty())
+    }
+
+    @Test
+    fun `운행 중이어도 세우면 같은 방식으로 추천을 보여 준다`() = homeTest(TripStatus.IN_TRANSIT, prepare = { server.nextOrders = picks(11) }) { vm ->
+        sensors.parkAt(GeoPoint(36.0, 128.0))
+        runCurrent()
+
+        assertEquals(listOf(11L), (vm.state.value as HomeState.Driving).picks.map { it.orderId })
+    }
+
+    @Test
+    fun `세우면 가운데 창에 1등부터 띄우고 넘기거나 시간이 지나면 다음 추천, 마지막 뒤에는 닫는다`() = homeTest(prepare = { server.nextOrders = picks(11, 12, 13) }) { vm ->
+        sensors.parkAt(GeoPoint(36.0, 128.0))
+        runCurrent()
+        assertEquals(11L, vm.status.value.pick?.orderId)
+
+        vm.nextPick()
+        assertEquals(12L, vm.status.value.pick?.orderId)
+        vm.nextPick()
+        assertEquals(13L, vm.status.value.pick?.orderId)
+        vm.nextPick()
+        assertNull(vm.status.value.pick)
+        // 카드는 남아 있고, 눌러서 연 것은 넘기면 닫힌다
+        assertEquals(3, (vm.state.value as HomeState.Idle).picks.size)
+        vm.openPick(12)
+        vm.nextPick()
+        assertNull(vm.status.value.pick)
+        assertTrue(server.requests.isEmpty())
+    }
+
+    @Test
+    fun `추천을 눌러 배차를 요청하면 추천에서 눌렀다고 보내고 목록에서 뺀다`() = homeTest(prepare = { server.nextOrders = picks(11, 12) }) { vm ->
+        sensors.parkAt(GeoPoint(36.0, 128.0))
+        runCurrent()
+
+        assertEquals(11L, vm.status.value.pick?.orderId)
+        vm.requestPick()
+        runCurrent()
+
+        assertEquals(listOf(11L to true), server.requests)
+        assertNull(vm.status.value.pick)
+        assertEquals(listOf(12L), (vm.state.value as HomeState.Idle).picks.map { it.orderId })
+        assertEquals(HomeViewModel.NEXT_ORDER_REQUESTED_MESSAGE, vm.status.value.message)
     }
 
     @Test

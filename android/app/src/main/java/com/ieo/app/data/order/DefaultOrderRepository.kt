@@ -30,8 +30,9 @@ class DefaultOrderRepository(
     override suspend fun profit(orderId: Long, from: GeoPoint): ApiResult<OrderProfit> =
         caller.call { api.profit(orderId, from.latitude, from.longitude) }.mapResponse { it.toDomain() }
 
-    override suspend fun request(orderId: Long): ApiResult<DispatchRequest> =
-        caller.call { api.request(orderId) }.mapResponse { it.toDomain() }
+    override suspend fun request(orderId: Long, isRecommendation: Boolean): ApiResult<DispatchRequest> =
+        caller.call { api.request(orderId, CreateDispatchRequestRequest(isRecommendation = isRecommendation.takeIf { it })) }
+            .mapResponse { it.toDomain() }
 
     override suspend fun withdraw(requestId: Long): ApiResult<DispatchRequest> =
         caller.call { api.withdraw(requestId) }.mapResponse { it.toDomain() }

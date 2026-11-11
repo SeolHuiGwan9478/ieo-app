@@ -2,7 +2,7 @@ package com.ieo.app.domain.recommendation
 
 import com.ieo.app.core.network.ApiResult
 import com.ieo.app.domain.order.CargoCategory
-import com.ieo.app.domain.order.DispatchRequest
+import com.ieo.app.domain.vehicle.GeoPoint
 
 /**
  * 오더 찾기의 "제외할 화물"과 배차 추천의 "제외할 화물"은 같은 설정이다 (DSP-010, REC-004).
@@ -33,14 +33,11 @@ class PreferenceExcludedCargoStore(private val repository: RecommendationReposit
 
 interface RecommendationRepository {
 
-    /** 운송 중인 운행 다음에 이어서 할 배차 후보. 운송 전이거나 추천을 껐으면 빈 목록 */
-    suspend fun recommend(tripId: Long): ApiResult<NextOrders>
-
     /**
-     * 안내한 추천과 대답을 서버에 적는다. [answer]가 null이면 안내만 하고 대답이 없었던 것.
-     * 수락이면 배차 요청이 가고 그 요청을 돌려준다
+     * 차를 세운 자리([near]) 근처 추천, 실수익 높은 순 3건 (03 배차 추천). 추천을 껐으면 빈 목록.
+     * 서버는 보여 준 것을 기록하지 않는다
      */
-    suspend fun answer(tripId: Long, orderId: Long, answer: RecommendationAnswer?): ApiResult<DispatchRequest?>
+    suspend fun recommend(near: GeoPoint): ApiResult<List<NextOrder>>
 
     /** 내 추천 설정. 정한 적 없으면 서버 기본값 */
     suspend fun preference(): ApiResult<RecommendationPreference>

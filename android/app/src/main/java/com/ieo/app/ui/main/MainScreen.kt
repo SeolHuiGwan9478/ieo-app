@@ -4,7 +4,7 @@ import com.ieo.app.ui.component.IeoBannerHost
 import com.ieo.app.ui.component.ListeningPill
 import com.ieo.app.ui.component.MessageBanners
 import com.ieo.app.ui.component.ShowMessage
-import com.ieo.app.ui.home.NextOrderOfferModal
+import com.ieo.app.ui.home.PickModal
 import com.ieo.app.ui.home.StopConfirmModal
 import com.ieo.app.ui.home.FinishTripSheet
 import com.ieo.app.ui.home.DeliveryProofSheet
@@ -95,7 +95,6 @@ fun MainScreen(
 
     val liveState by homeViewModel.state.collectAsStateWithLifecycle()
     val status by homeViewModel.status.collectAsStateWithLifecycle()
-    val nextOffer by homeViewModel.nextOffer.collectAsStateWithLifecycle()
     ShowMessage(status.message, messages::show, homeViewModel::messageShown)
 
     val homeState: HomeState = when (demo) {
@@ -146,7 +145,7 @@ fun MainScreen(
                         onRequestDeliveryProof = homeViewModel::requestDeliveryProof,
                         onArrive = homeViewModel::arrive,
                         onResumeGuidance = homeViewModel::resumeGuidance,
-                        onNextOrderClick = { homeViewModel.openNextOrder(it.orderId) },
+                        onPickClick = { homeViewModel.openPick(it.orderId) },
                     )
                     // 주행 중에는 오더 목록을 보여 주지 않는다 (DSP-012)
                     Destination.ORDERS -> OrdersRoute(isDriving = liveState is HomeState.Driving, onMessage = messages::show)
@@ -178,13 +177,11 @@ fun MainScreen(
         UnlinkSheet(link = linksState.unlinking, busy = linksState.isBusy, actions = linksViewModel)
         // 다른 창을 쓰는 동안에는 끼어들지 않는다. QR 창은 ViewModel이 음성까지 함께 막는다
         val sheetOpen = confirmingTrip != null || registering
-        NextOrderOfferModal(
-            offer = nextOffer.takeUnless { sheetOpen || demo != DemoState.LIVE },
+        PickModal(
+            pick = status.pick.takeUnless { sheetOpen || demo != DemoState.LIVE },
             busy = status.isBusy,
-            asked = status.offerAsked == nextOffer?.orderId,
-            onAccept = homeViewModel::acceptNextOrder,
-            onSkip = homeViewModel::skipNextOrder,
-            onTimeout = homeViewModel::nextOrderTimedOut,
+            onRequest = homeViewModel::requestPick,
+            onNext = homeViewModel::nextPick,
         )
         FinishTripSheet(
             visible = status.finishing,

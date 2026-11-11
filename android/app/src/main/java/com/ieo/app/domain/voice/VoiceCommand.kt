@@ -1,6 +1,6 @@
 package com.ieo.app.domain.voice
 
-/** 안내 뒤에 차주가 하는 대답 (REC-020, UX-020) */
+/** 예/아니오로 물은 뒤 차주가 하는 대답 (WAIT-005·007, UX-020, UX-025) */
 enum class VoiceCommand {
     /** "응", "네", "맞아" */
     YES,

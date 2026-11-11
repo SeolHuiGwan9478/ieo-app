@@ -4,12 +4,10 @@ import android.os.SystemClock
 import com.ieo.app.domain.ledger.DailySummary
 import com.ieo.app.domain.ledger.Receivables
 import com.ieo.app.domain.navi.NaviProgress
-import com.ieo.app.domain.order.Order
 import com.ieo.app.domain.recommendation.NextOrder
 import com.ieo.app.domain.site.SiteCard
 import com.ieo.app.domain.trip.StopType
 import com.ieo.app.domain.trip.Trip
-import com.ieo.app.domain.vehicle.GeoPoint
 import com.ieo.app.domain.wait.ArrivalCheck
 import com.ieo.app.domain.wait.DepartureCheck
 import com.ieo.app.domain.wait.WaitRecord
@@ -31,11 +29,7 @@ data class HomeSnapshot(
     /** 오늘 운행 수와 실수익 */
     val today: DailySummary? = null,
     val receivables: Receivables? = null,
-    /** 모집 중 오더 */
-    val orders: List<Order> = emptyList(),
-    /** [orders]를 찾은 차량 위치. 위치를 몰라 전체에서 찾았으면 null */
-    val ordersNear: GeoPoint? = null,
-    /** 하차지에 서 있을 때 받은 다음 배차 추천 (REC-021) */
+    /** 차를 세웠을 때 받은 근처 추천 3건 (03 배차 추천). 움직이면 비운다 */
     val nextOrders: List<NextOrder> = emptyList(),
 )
 
@@ -54,34 +48,32 @@ class HomeStateFactory(
 
     private val labels = DayTimeFormatter(clock)
     private val tripMapper = AssignedTripMapper(clock)
-    private val orderMapper = OrderCardMapper(clock)
 
     fun create(
         snapshot: HomeSnapshot,
         navi: NaviProgress?,
         arrival: ArrivalCheck = ArrivalCheck.NotYet,
         departure: DepartureCheck = DepartureCheck.Staying,
-        next: NextOrder? = null,
         /** 가는 상하차지 3km 안 */
         nearStop: Boolean = false,
         /** 세워 두었다 (기어 P 또는 주차 브레이크) */
         parked: Boolean = false,
     ): HomeState {
-        val trip = snapshot.current ?: return idle(snapshot)
-        val stop = trip.currentStop ?: return idle(snapshot)
+        val picks = snapshot.nextOrders.map(::nextOrderCard)
+        val trip = snapshot.current ?: return idle(snapshot, picks)
+        val stop = trip.currentStop ?: return idle(snapshot, picks)
         val wait = snapshot.wait?.takeIf { it.stopType == stop }
         // 상하차지에 있는데 대기 기록을 못 받았으면 주행 화면의 "대기 시작"으로 다시 받게 한다 (도착은 여러 번 불러도 같다)
-        if (!trip.status.isAtStop || wait == null) return driving(trip, stop, navi, arrival, next, nearStop, parked)
+        if (!trip.status.isAtStop || wait == null) return driving(trip, stop, navi, arrival, nearStop, parked, picks)
         val site = snapshot.site?.takeIf { it.id == trip.stop(stop).siteId }
-        return waiting(trip, stop, wait, site, departure, snapshot.nextOrders.takeIf { stop == StopType.DROPOFF }.orEmpty())
+        return waiting(trip, stop, wait, site, departure, picks)
     }
 
-    private fun idle(snapshot: HomeSnapshot) = HomeState.Idle(
+    private fun idle(snapshot: HomeSnapshot, picks: List<NextOrderCard>) = HomeState.Idle(
         today = snapshot.today?.let { TodaySummary(it.tripCount, it.netProfit) } ?: TodaySummary(tripCount = 0, netProfit = 0),
         unpaid = snapshot.receivables?.mostOverdue(labels.today())?.let { UnpaidAlert(it.brokerName, it.amount, it.overdueDays) },
-        nearby = snapshot.ordersNear != null,
         myTrips = snapshot.upcoming.map(tripMapper::map),
-        orders = snapshot.orders.map(orderMapper::map),
+        picks = picks,
     )
 
     private fun driving(
@@ -89,9 +81,9 @@ class HomeStateFactory(
         stop: StopType,
         navi: NaviProgress?,
         arrival: ArrivalCheck,
-        next: NextOrder?,
         nearStop: Boolean,
         parked: Boolean,
+        picks: List<NextOrderCard>,
     ): HomeState.Driving {
         val remainSeconds = navi?.remainSeconds
         return HomeState.Driving(
@@ -103,26 +95,16 @@ class HomeStateFactory(
             remainingKm = navi?.remainMeters?.let { (it + 500) / 1000 },
             remainingMinutes = remainSeconds?.let { (it + 59) / 60 },
             etaShared = trip.etaShared,
-            recommendation = next?.let(::recommendation),
             naviActive = navi != null && !navi.failed,
             arrivingInSeconds = (arrival as? ArrivalCheck.Stopping)?.remaining?.seconds,
             nearStop = nearStop,
             parked = parked,
+            picks = picks,
         )
     }
 
     /** 화면에 보여 줄 시각 "14:00" */
     fun time(at: Instant): String = labels.time(at)
-
-    /** 다음 배차 추천 카드 (03 배차 추천) */
-    fun recommendation(next: NextOrder) = Recommendation(
-        route = "${next.order.pickup.name} → ${next.order.dropoff.name}",
-        pickupTime = labels.time(next.order.pickupFrom),
-        netProfit = next.netProfit,
-    )
-
-    /** 음성 안내에 쓰는 상차 시각 */
-    fun pickupTime(next: NextOrder): String = labels.time(next.order.pickupFrom)
 
     private fun waiting(
         trip: Trip,
@@ -130,7 +112,7 @@ class HomeStateFactory(
         wait: WaitRecord,
         site: SiteCard?,
         departure: DepartureCheck,
-        nextOrders: List<NextOrder>,
+        picks: List<NextOrderCard>,
     ) = HomeState.Waiting(
         trip = tripMapper.map(trip).toSummary(),
         stopName = trip.stop(stop).name,
@@ -141,10 +123,10 @@ class HomeStateFactory(
         policy = wait.policy,
         site = site?.let(::siteInfo),
         departingInSeconds = (departure as? DepartureCheck.Leaving)?.remaining?.seconds,
-        nextOrders = nextOrders.map(::nextOrderCard),
+        picks = picks,
     )
 
-    /** 하차지 정차 중 추천 카드 (REC-021): 상차지, 하차지, 상차 시각, 톤수, 실수익, 주선사 */
+    /** 추천 카드 (03): 상차지, 하차지, 상차 시각, 톤수, 실수익, 주선사 */
     fun nextOrderCard(next: NextOrder) = NextOrderCard(
         orderId = next.order.id,
         pickup = next.order.pickup.name,

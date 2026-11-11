@@ -12,12 +12,12 @@ import com.ieo.app.domain.navi.Destination
 import com.ieo.app.domain.navi.NaviProgress
 import com.ieo.app.domain.navi.Navigator
 import com.ieo.app.domain.order.DispatchRequest
+import com.ieo.app.domain.order.DispatchRequestStatus
 import com.ieo.app.domain.order.Order
 import com.ieo.app.domain.vehicle.GeoPoint
 import com.ieo.app.domain.order.ReportType
 import com.ieo.app.domain.order.OrderRepository
-import com.ieo.app.domain.recommendation.NextOrders
-import com.ieo.app.domain.recommendation.RecommendationAnswer
+import com.ieo.app.domain.recommendation.NextOrder
 import com.ieo.app.domain.recommendation.RecommendationPreference
 import com.ieo.app.domain.recommendation.RecommendationRepository
 import com.ieo.app.domain.trip.LocationSample
@@ -86,18 +86,14 @@ class FakeTripServer(var trip: Trip) :
     }
 
     /** 추천 결과. 기본은 후보 없음 */
-    var nextOrders: ApiResult<NextOrders> = ApiResult.Success(NextOrders(freeAt = null, items = emptyList()))
-    val recommendRequests = mutableListOf<Long>()
-    val answers = mutableListOf<Triple<Long, Long, RecommendationAnswer?>>()
+    var nextOrders: ApiResult<List<NextOrder>> = ApiResult.Success(emptyList())
 
-    override suspend fun recommend(tripId: Long): ApiResult<NextOrders> {
-        recommendRequests += tripId
+    /** 추천을 물은 자리 */
+    val recommendRequests = mutableListOf<GeoPoint>()
+
+    override suspend fun recommend(near: GeoPoint): ApiResult<List<NextOrder>> {
+        recommendRequests += near
         return nextOrders
-    }
-
-    override suspend fun answer(tripId: Long, orderId: Long, answer: RecommendationAnswer?): ApiResult<DispatchRequest?> {
-        answers += Triple(tripId, orderId, answer)
-        return ApiResult.Success(null)
     }
 
     /** 추천 설정. 바꾸면 그대로 돌려준다 */
@@ -136,7 +132,13 @@ class FakeTripServer(var trip: Trip) :
         return ApiResult.Success(listOf(TripFixtures.order(distanceMeters = near?.let { 12_300L })))
     }
 
-    override suspend fun request(orderId: Long): ApiResult<DispatchRequest> = error("홈에서는 쓰지 않음")
+    /** 홈의 배차 추천에서 보낸 요청: (오더, 추천에서 눌렀나) */
+    val requests = mutableListOf<Pair<Long, Boolean>>()
+
+    override suspend fun request(orderId: Long, isRecommendation: Boolean): ApiResult<DispatchRequest> {
+        requests += orderId to isRecommendation
+        return ApiResult.Success(DispatchRequest(99, orderId, DispatchRequestStatus.PENDING, TripFixtures.NOW.plusSeconds(600)))
+    }
 
     override suspend fun withdraw(requestId: Long): ApiResult<DispatchRequest> = error("홈에서는 쓰지 않음")
 

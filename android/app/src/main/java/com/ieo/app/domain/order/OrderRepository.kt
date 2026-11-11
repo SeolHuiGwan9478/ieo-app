@@ -21,7 +21,8 @@ interface OrderRepository {
     suspend fun documentsVerified(): ApiResult<Boolean> = ApiResult.Success(true)
 
     /** 배차 요청 (기본 차량으로). 동시에 3건까지 */
-    suspend fun request(orderId: Long): ApiResult<DispatchRequest>
+    /** [isRecommendation]: 차량 홈의 배차 추천에서 눌러 보냈다 (03 배차 추천). 서버 요청에 그대로 남는다 */
+    suspend fun request(orderId: Long, isRecommendation: Boolean = false): ApiResult<DispatchRequest>
 
     /** 확정 전 요청 철회 */
     suspend fun withdraw(requestId: Long): ApiResult<DispatchRequest>

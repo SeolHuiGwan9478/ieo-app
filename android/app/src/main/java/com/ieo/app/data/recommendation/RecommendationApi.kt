@@ -1,30 +1,21 @@
 package com.ieo.app.data.recommendation
 
-import com.ieo.app.data.order.DispatchRequestResponse
 import com.ieo.app.data.order.OrderResponse
 import com.ieo.app.domain.recommendation.NextOrder
-import com.ieo.app.domain.recommendation.NextOrders
 import com.ieo.app.domain.order.CargoCategory
 import com.ieo.app.domain.recommendation.RecommendationPreference
-import java.time.Instant
 import kotlinx.serialization.Serializable
 import retrofit2.Response
 import retrofit2.http.Body
 import retrofit2.http.GET
 import retrofit2.http.PUT
-import retrofit2.http.Path
+import retrofit2.http.Query
 
 interface RecommendationApi {
 
-    @GET("api/trips/{tripId}/recommendations")
-    suspend fun recommend(@Path("tripId") tripId: Long): Response<RecommendationListResponse>
-
-    @PUT("api/trips/{tripId}/recommendations/{orderId}")
-    suspend fun answer(
-        @Path("tripId") tripId: Long,
-        @Path("orderId") orderId: Long,
-        @Body body: AnswerRecommendationRequest,
-    ): Response<RecommendationAnswerResponse>
+    /** 차를 세운 자리 근처 추천 3건 */
+    @GET("api/recommendations")
+    suspend fun recommend(@Query("lat") lat: Double, @Query("lng") lng: Double): Response<RecommendationListResponse>
 
     @GET("api/recommendation-preference")
     suspend fun preference(): Response<RecommendationPreferenceBody>
@@ -36,8 +27,8 @@ interface RecommendationApi {
 // 서버 domain/recommendation/dto와 같은 모양
 
 @Serializable
-data class RecommendationListResponse(val freeAt: String? = null, val items: List<RecommendationResponse> = emptyList()) {
-    fun toDomain() = NextOrders(freeAt = freeAt?.let(Instant::parse), items = items.map(RecommendationResponse::toDomain))
+data class RecommendationListResponse(val items: List<RecommendationResponse> = emptyList()) {
+    fun toDomain() = items.map(RecommendationResponse::toDomain)
 }
 
 @Serializable
@@ -86,9 +77,3 @@ data class RecommendationPreferenceBody(
         )
     }
 }
-
-@Serializable
-data class AnswerRecommendationRequest(val answer: String? = null)
-
-@Serializable
-data class RecommendationAnswerResponse(val orderId: Long, val answer: String? = null, val dispatchRequest: DispatchRequestResponse? = null)

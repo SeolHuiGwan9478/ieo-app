@@ -37,7 +37,7 @@ class FakeOrderMarket(var orders: MutableList<Order>) : OrderRepository {
         return ApiResult.Success(orders.take(limit))
     }
 
-    override suspend fun request(orderId: Long): ApiResult<DispatchRequest> {
+    override suspend fun request(orderId: Long, isRecommendation: Boolean): ApiResult<DispatchRequest> {
         calls += "request $orderId"
         requestError?.let { return ApiResult.Failure(it) }
         val request = DispatchRequest(99, orderId, DispatchRequestStatus.PENDING, TripFixtures.NOW.plusSeconds(600))

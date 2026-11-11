@@ -16,11 +16,10 @@ sealed interface HomeState {
     data class Idle(
         val today: TodaySummary,
         val unpaid: UnpaidAlert?,
-        /** 차량 위치로 근처 오더를 찾았다. 위치를 몰라 전체에서 찾았으면 false ("모집 중인 오더") */
-        val nearby: Boolean,
         /** 내가 잡아 둔 배차. 눌러서 길 안내를 시작한다 */
         val myTrips: List<AssignedTrip>,
-        val orders: List<OrderCard>,
+        /** 세운 곳 근처 추천 3건 (03 배차 추천). 세워 두지 않았으면 비어 있다 */
+        val picks: List<NextOrderCard> = emptyList(),
     ) : HomeState
 
     data class Waiting(
@@ -37,8 +36,8 @@ sealed interface HomeState {
         val workStartedAt: Long? = null,
         /** 상하차지를 떠나는 중이다. 이만큼 더 이어지면 자동으로 떠남 처리 (WAIT-005) */
         val departingInSeconds: Long? = null,
-        /** 하차지에 서 있을 때 보여 주는 다음 배차 추천. 실수익 높은 순 최대 5건 (REC-021) */
-        val nextOrders: List<NextOrderCard> = emptyList(),
+        /** 세운 곳 근처 추천 3건 (03 배차 추천). 세워 두지 않았으면 비어 있다 */
+        val picks: List<NextOrderCard> = emptyList(),
     ) : HomeState {
         val isWorking: Boolean get() = workStartedAt != null
     }
@@ -55,8 +54,6 @@ sealed interface HomeState {
         val remainingKm: Int?,
         val remainingMinutes: Int?,
         val etaShared: Boolean,
-        /** 음성으로 안내 중인 다음 배차 추천. 없으면 null */
-        val recommendation: Recommendation?,
         /** 내비가 길 안내 중인지. 안내가 꺼졌거나 실패했으면 "길 안내 다시"·"대기 시작" 버튼을 보여 준다 */
         val naviActive: Boolean = true,
         /** 상하차지 반경 안에 세워 두었다. 이만큼 더 서 있으면 도착을 확인한다 (WAIT-001, 007) */
@@ -65,6 +62,8 @@ sealed interface HomeState {
         val nearStop: Boolean = false,
         /** 세워 두었다(기어 P 또는 주차 브레이크). 이때만 버튼이 눌린다 */
         val parked: Boolean = false,
+        /** 세운 곳 근처 추천 3건 (03 배차 추천). 세워 두지 않았으면 비어 있다 */
+        val picks: List<NextOrderCard> = emptyList(),
     ) : HomeState {
         /** "대기 시작" 버튼을 보여 주나: 상하차지 가까이 왔거나, 길 안내가 꺼졌을 때 */
         val showsStartWait: Boolean get() = nearStop || !naviActive
@@ -137,24 +136,6 @@ data class AssignedTrip(
     val brokerName: String,
 )
 
-data class OrderCard(
-    val id: String,
-    val pickup: String,
-    val dropoff: String,
-    val pickupDay: String,
-    val pickupTime: String,
-    val vehicle: String,
-    val fare: Long,
-    /** 공차 연료비를 뺀 실수익. 아직 계산하지 못하면 null */
-    val netProfit: Long?,
-    /** 주선사 신뢰 지표. 서버가 주지 않으면 null */
-    val brokerMetrics: BrokerMetrics?,
-    /** 지금 위치에서 상차지까지 거리(m). 위치 없이 찾았으면 null */
-    val distanceMeters: Long? = null,
-    /** 일반이 아닌 화물 종류. 일반이거나 모르면 null */
-    val cargo: CargoCategory? = null,
-)
-
 data class TripSummary(
     val route: String,
     val vehicle: String,
@@ -163,9 +144,7 @@ data class TripSummary(
     val brokerName: String,
 )
 
-data class Recommendation(val route: String, val pickupTime: String, val netProfit: Long)
-
-/** 하차지 정차 중 다음 배차 추천 카드 하나 (REC-021). 누르면 수락 확인 창이 뜬다 */
+/** 배차 추천 카드 하나 (03): 세운 곳 근처 오더. 누르면 오더를 열고 배차를 요청한다 */
 data class NextOrderCard(
     val orderId: Long,
     val pickup: String,

@@ -33,7 +33,7 @@ import com.ieo.app.ui.carlink.CarLinkUiState
 import com.ieo.app.ui.carlink.VehicleChoice
 import com.ieo.app.ui.home.DeliveryProofSheet
 import com.ieo.app.ui.home.HomeScreen
-import com.ieo.app.ui.home.NextOrderOfferModal
+import com.ieo.app.ui.home.PickModal
 import com.ieo.app.ui.home.StopConfirmModal
 import com.ieo.app.ui.home.StopQuestion
 import com.ieo.app.ui.home.StopQuestionKind
@@ -178,7 +178,7 @@ private object Scenes {
     )
     private val settings = SettingsUiState(Profile("김기사", "01012345678"), listOf(vehicle), preference, "0.1.0")
     private val link = LinkRow(1, "한빛물류", "연결 요청 11월 9일")
-    private val offer by lazy { SampleHomeData.unloading().nextOrders.first() }
+    private val pick by lazy { SampleHomeData.picks.first() }
 
     val all: Map<String, @Composable () -> Unit> = linkedMapOf(
         "home_idle" to { HomeScreen(SampleHomeData.idle()) },
@@ -190,11 +190,11 @@ private object Scenes {
         "sheet_wait_proof_send" to { Box(Modifier.fillMaxSize()) { WaitProofSheet(WaitProofLink("https://ieo.example/w/abc123", Instant.parse("2026-11-12T09:00:00Z"), canSend = true), {}) } },
         "sheet_wait_proof_sent" to { Box(Modifier.fillMaxSize()) { WaitProofSheet(WaitProofLink("https://ieo.example/w/abc123", Instant.parse("2026-11-12T09:00:00Z"), canSend = true, sent = true), {}) } },
         "sheet_delivery_proof" to { Box(Modifier.fillMaxSize()) { DeliveryProofSheet(DeliveryProof("https://ieo.example/d/abc123", DeliveryProofStatus.PENDING, null, null), {}) } },
-        "modal_next_order" to { Box(Modifier.fillMaxSize()) { NextOrderOfferModal(offer, false, false, {}, {}, {}) } },
-        "home_arriving" to { HomeScreen(SampleHomeData.driving().copy(arrivingInSeconds = 161, nearStop = true, parked = true, recommendation = null)) },
+        "modal_pick" to { Box(Modifier.fillMaxSize()) { HomeScreen(SampleHomeData.unloading()); PickModal(pick, busy = false, onRequest = {}, onNext = {}) } },
+        "home_arriving" to { HomeScreen(SampleHomeData.driving().copy(arrivingInSeconds = 161, nearStop = true, parked = true)) },
         "modal_arrival" to {
             Box(Modifier.fillMaxSize()) {
-                HomeScreen(SampleHomeData.driving().copy(nearStop = true, parked = true, recommendation = null))
+                HomeScreen(SampleHomeData.driving().copy(nearStop = true, parked = true))
                 StopConfirmModal(StopQuestion(StopQuestionKind.ARRIVE, "대구 성서 하차지", false, "14:00", asked = true), parked = true, busy = false, onConfirm = {}, onDecline = {})
             }
         },
@@ -207,7 +207,7 @@ private object Scenes {
         "sheet_finish_trip" to { Box(Modifier.fillMaxSize()) { HomeScreen(SampleHomeData.unloading()); FinishTripSheet(visible = true, busy = false, onFinish = {}, onDismiss = {}) } },
         "modal_arrival_driving" to {
             Box(Modifier.fillMaxSize()) {
-                HomeScreen(SampleHomeData.driving().copy(nearStop = true, parked = false, recommendation = null))
+                HomeScreen(SampleHomeData.driving().copy(nearStop = true, parked = false))
                 StopConfirmModal(StopQuestion(StopQuestionKind.ARRIVE, "대구 성서 하차지", false, "14:00", asked = true), parked = false, busy = false, onConfirm = {}, onDecline = {})
             }
         },

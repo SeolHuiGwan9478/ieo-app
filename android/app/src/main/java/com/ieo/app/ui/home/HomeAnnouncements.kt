@@ -2,7 +2,6 @@ package com.ieo.app.ui.home
 
 import com.ieo.app.domain.notification.AppNotification
 import com.ieo.app.domain.notification.NotificationType
-import com.ieo.app.domain.recommendation.NextOrder
 import com.ieo.app.domain.site.HeightWarning
 import com.ieo.app.domain.site.SiteCard
 import com.ieo.app.domain.voice.Announcement
@@ -10,7 +9,6 @@ import com.ieo.app.domain.voice.AnnouncementPriority
 import com.ieo.app.domain.wait.WaitPolicy
 import com.ieo.app.ui.common.formatMinutesKorean
 import com.ieo.app.ui.common.formatWon
-import com.ieo.app.ui.common.formatWonSpoken
 import com.ieo.app.ui.common.josa
 import com.ieo.app.ui.common.DayTimeFormatter
 import java.time.Instant
@@ -103,52 +101,6 @@ object HomeAnnouncements {
     /** 수하인 서명으로 운행이 끝남 (POD-008) */
     fun deliverySigned(signerName: String?): Announcement =
         trip("${signerName?.let { "${it}님이 " } ?: ""}인수증에 서명했어요. 운행을 마쳤어요.")
-
-    /**
-     * 다음 배차 추천 (REC-020). 요구사항의 예를 따른다:
-     * "대구 성서 공단 하차 후 17분 거리, 칠곡 물류센터 16:00 상차, 부산 신항행 5톤, 실수익 28만 원 건이 있어요."
-     * 공차 이동 시간은 서버와 같은 평균 시속 60km로 어림한다
-     */
-    fun nextOrder(dropoffName: String, next: NextOrder, pickupTime: String): Announcement {
-        val order = next.order
-        val minutes = (next.emptyMeters + 999) / 1000
-        val wait = if (next.longWait) " 대기가 길었던 곳이에요." else ""
-        return Announcement(
-            "다음 배차 추천이에요. $dropoffName 하차 후 ${formatMinutesKorean(minutes)} 거리, " +
-                "${order.pickup.name} $pickupTime 상차, ${order.dropoff.name}행 ${order.tonnageLabel}, " +
-                "실수익 ${formatWonSpoken(next.netProfit)} 건이 있어요.$wait 수락이나 다음이라고 말씀해 주세요.",
-            AnnouncementPriority.RECOMMENDATION,
-            NEXT_ORDER_KEY,
-        )
-    }
-
-    /** 수락 창과 함께 묻는다. 자세한 내용은 창에 있고 15초 안에 답해야 하니 짧게 */
-    fun nextOrderOffer(next: NextOrder): Announcement {
-        val order = next.order
-        return Announcement(
-            "${order.pickup.name}에서 ${order.dropoff.name}행, 실수익 ${formatWonSpoken(next.netProfit)}. 수락할까요?",
-            AnnouncementPriority.RECOMMENDATION,
-            NEXT_ORDER_KEY,
-        )
-    }
-
-    /** "자세히"라고 했을 때 */
-    fun nextOrderDetail(next: NextOrder, pickupDay: String, pickupTime: String): Announcement {
-        val order = next.order
-        return nextOrderLine(
-            "${if (order.limited) "" else order.brokerName + ", "}${order.vehicleLabel}, $pickupDay $pickupTime 상차, " +
-                "운임 ${formatWonSpoken(order.fare)}, 빈 차로 약 ${(next.emptyMeters + 500) / 1000}킬로미터예요.",
-        )
-    }
-
-    /** "수락"이라고 했을 때 한 번 더 묻는다 (REC-022) */
-    fun nextOrderConfirm(next: NextOrder): Announcement =
-        nextOrderLine("${next.order.pickup.name} ${next.order.dropoff.name}행 수락할까요?")
-
-    fun nextOrderLine(text: String) = Announcement(text, AnnouncementPriority.RECOMMENDATION, NEXT_ORDER_KEY)
-
-    /** 다음 배차 안내의 이름. 수락 창이 닫히거나 다음 후보로 넘어가면 말하던 것을 멈춘다 */
-    const val NEXT_ORDER_KEY = "next-order"
 
     private fun trip(text: String) = Announcement(text, AnnouncementPriority.TRIP)
 

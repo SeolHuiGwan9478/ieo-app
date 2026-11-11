@@ -98,7 +98,8 @@ data class DispatchRequestResponse(val id: Long, val orderId: Long, val status: 
 }
 
 @Serializable
-data class CreateDispatchRequestRequest(val vehicleId: Long? = null)
+/** [isRecommendation]: 배차 추천에서 눌러 보낸 요청이면 true. 아니면 보내지 않는다 */
+data class CreateDispatchRequestRequest(val vehicleId: Long? = null, val isRecommendation: Boolean? = null)
 
 @Serializable
 data class CreateOrderReportRequest(val type: String, val memo: String? = null)

@@ -20,16 +20,18 @@ object SampleHomeData {
         AssignedTrip("t2", anseong, busan, "내일", "08:00", "5톤 카고", 620_000, "선불", "△△운송"),
     )
 
+    /** 세운 곳 근처 추천 3건 (03 배차 추천) */
+    val picks = listOf(
+        NextOrderCard(1, "칠곡", "부산 강서", "내일", "06:00", "5톤 윙", 372_229, 380_000, "한빛로지스", 17_000, longWait = true, fuelCost = 57_000, tollFare = 17_000, brokerMetrics = BrokerMetrics(published = true, avgPaymentDays = 12)),
+        NextOrderCard(2, "대구 북구", "울산 남구", "오늘", "18:30", "5톤 카고", 268_000, 280_000, "○○물류", 12_000, longWait = false, fuelCost = 12_000, tollFare = null),
+        NextOrderCard(3, "대구 검단", "오산 가장", "내일", "07:00", "5톤 윙", 255_000, 300_000, "△△운송", 9_000, longWait = false, fuelCost = 45_000, tollFare = 13_000),
+    )
+
     fun idle() = HomeState.Idle(
         today = TodaySummary(tripCount = 1, netProfit = 320_000),
         unpaid = UnpaidAlert(brokerName = "○○물류", amount = 450_000, overdueDays = 3),
-        nearby = true,
         myTrips = myTrips,
-        orders = listOf(
-            OrderCard("o1", "평택 청북", "대구 북구", "오늘", "17:00", "5톤 카고", 470_000, 380_000, BrokerMetrics(published = true, avgPaymentDays = 12)),
-            OrderCard("o2", "오산 가장", "광주 광산", "오늘", "17:30", "5톤 윙", 410_000, 300_000, null),
-            OrderCard("o3", "화성 향남", "창원 성산", "내일", "06:00", "5톤 카고", 580_000, 450_000, BrokerMetrics(published = true, avgPaymentDays = 25)),
-        ),
+        picks = picks,
     )
 
     /** 1시간 42분째 기다리는 중 */
@@ -42,14 +44,11 @@ object SampleHomeData {
         site = SiteInfo(heightLimitMeters = 3.5, forklift = true, averageWaitMinutes = 80, notes = listOf("정문은 승용차만, 화물차는 후문(2게이트)으로 들어가요"), reportedLabel = "41분 전 제보"),
     )
 
-    /** 하차지에서 기다리는 중. 다음 배차 추천 카드가 있다 (REC-021) */
+    /** 하차지에서 기다리는 중. 세워 두어 근처 추천이 보인다 */
     fun unloading() = waiting().copy(
         stopName = "대구 성서 하차지",
         isPickup = false,
-        nextOrders = listOf(
-            NextOrderCard(1, "칠곡", "부산 강서", "내일", "06:00", "5톤 윙", 372_229, 380_000, "한빛로지스", 17_000, longWait = true, fuelCost = 57_000, tollFare = 17_000),
-            NextOrderCard(2, "대구 북구", "울산 남구", "오늘", "18:30", "5톤 카고", 268_000, 280_000, "○○물류", 12_000, longWait = false, fuelCost = 57_000, tollFare = 17_000),
-        ),
+        picks = picks,
     )
 
     fun driving() = HomeState.Driving(
@@ -61,6 +60,5 @@ object SampleHomeData {
         remainingKm = 142,
         remainingMinutes = 108,
         etaShared = true,
-        recommendation = Recommendation("칠곡 → 부산 강서", "16:00", 280_000),
     )
 }
