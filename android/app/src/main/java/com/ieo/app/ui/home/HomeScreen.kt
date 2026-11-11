@@ -1,5 +1,6 @@
 package com.ieo.app.ui.home
 
+import com.ieo.app.R
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.animateFloatAsState
@@ -431,7 +432,7 @@ private fun NextOrders(orders: List<NextOrderCard>, onClick: (NextOrderCard) -> 
 @Composable
 private fun SiteSection(site: SiteInfo, isPickup: Boolean) {
     WhiteSection {
-        SectionTitle(title = if (isPickup) "상차지 정보" else "하차지 정보")
+        SectionTitle(title = if (isPickup) "상차지 정보" else "하차지 정보", icon = R.drawable.ic_site_info)
         site.heightLimitMeters?.let { DetailLine("높이 제한", "${it}m${heightNote(site.heightWarning)}") }
         site.forklift?.let { DetailLine("지게차", if (it) "있음" else "없음") }
         site.parking?.let { DetailLine("주차", if (it) "가능" else "어려움") }
