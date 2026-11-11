@@ -43,6 +43,7 @@ private val ModalShape = RoundedCornerShape(28.dp)
 /**
  * 도착 확인 창 (WAIT-007). 음성으로 묻는 것과 같은 말을 보여 주고, 말로도 버튼으로도 대답할 수 있다.
  * 버튼은 세워 두었을 때(기어 P 또는 주차 브레이크)만 눌린다. 달리는 중이면 말로 대답하라고 알려 준다.
+ * 시간 표시는 수락 창과 같은 [CountdownHeader]를 쓴다.
  * 시간은 ViewModel이 재고(15초 뒤 창을 닫는다), 여기서는 남은 초만 보여 준다.
  * 추가 창은 Pleos 독에 아이콘을 하나 더 만들므로 화면 안에 직접 그린다 (NextOrderOfferModal과 같은 이유)
  */
@@ -79,21 +80,16 @@ fun BoxScope.ArrivalConfirmModal(
                 .background(CardSurface, ModalShape)
                 .padding(32.dp),
         ) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Text("도착 확인", fontSize = 24.sp, color = TextSub, modifier = Modifier.weight(1f))
-                Text("${secondsLeft}초", fontSize = 32.sp, fontWeight = FontWeight.Bold, color = TextStrong)
-            }
-            Spacer(Modifier.height(20.dp))
+            CountdownHeader("도착 확인", secondsLeft, HomeViewModel.ARRIVAL_CONFIRM_SECONDS)
+            Spacer(Modifier.height(24.dp))
             Text("${question.stopName}에 도착하셨어요?", fontSize = 36.sp, lineHeight = 44.sp, fontWeight = FontWeight.Bold, color = TextStrong)
             Spacer(Modifier.height(8.dp))
             Text("${question.startLabel}부터 대기로 기록할게요", fontSize = 24.sp, lineHeight = 32.sp, color = TextSub)
-            Spacer(Modifier.height(16.dp))
-            Text(
-                if (parked) "말로 \"응\"·\"아직\"이라고 해도 돼요" else "달리는 중이에요. \"응\" 또는 \"아직\"이라고 말해 주세요",
-                fontSize = 24.sp,
-                fontWeight = FontWeight.Bold,
-                color = IeoStatus.colors.waiting,
-            )
+            // 대답은 자유롭게 말해도 서버가 알아듣는다 (UX-025). 버튼이 잠긴 까닭만 알려 준다
+            if (!parked) {
+                Spacer(Modifier.height(16.dp))
+                Text("달리는 중이라 말로 대답해 주세요", fontSize = 24.sp, fontWeight = FontWeight.Bold, color = IeoStatus.colors.waiting)
+            }
             Spacer(Modifier.height(28.dp))
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 IeoTonalButton(text = "아직이에요", onClick = { if (!busy) onDecline() }, enabled = parked, modifier = Modifier.weight(1f))

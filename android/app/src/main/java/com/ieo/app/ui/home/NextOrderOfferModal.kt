@@ -102,12 +102,7 @@ fun BoxScope.NextOrderOfferModal(
                 .background(CardSurface, ModalShape)
                 .padding(32.dp),
         ) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Text("다음 배차 추천", fontSize = 24.sp, color = TextSub, modifier = Modifier.weight(1f))
-                Text("${secondsLeft}초", fontSize = 32.sp, fontWeight = FontWeight.Bold, color = TextStrong)
-            }
-            Spacer(Modifier.height(12.dp))
-            TimeBar(secondsLeft)
+            CountdownHeader("다음 배차 추천", secondsLeft, OFFER_SECONDS)
             Spacer(Modifier.height(24.dp))
             Text("${offer.pickup} → ${offer.dropoff}", fontSize = 36.sp, lineHeight = 44.sp, fontWeight = FontWeight.Bold, color = TextStrong)
             Spacer(Modifier.height(8.dp))
@@ -145,11 +140,22 @@ fun BoxScope.NextOrderOfferModal(
     }
 }
 
+/** 창 위쪽의 제목과 남은 초, 줄어드는 막대. 시간을 재는 창(수락 창, 도착 확인 창)이 같은 모양을 쓴다 */
+@Composable
+fun CountdownHeader(title: String, secondsLeft: Int, totalSeconds: Int) {
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        Text(title, fontSize = 24.sp, color = TextSub, modifier = Modifier.weight(1f))
+        Text("${secondsLeft}초", fontSize = 32.sp, fontWeight = FontWeight.Bold, color = TextStrong)
+    }
+    Spacer(Modifier.height(12.dp))
+    TimeBar(secondsLeft, totalSeconds)
+}
+
 /** 남은 시간 막대. 1초씩 부드럽게 줄어든다 */
 @Composable
-private fun TimeBar(secondsLeft: Int) {
+private fun TimeBar(secondsLeft: Int, totalSeconds: Int) {
     val fraction by animateFloatAsState(
-        targetValue = secondsLeft / OFFER_SECONDS.toFloat(),
+        targetValue = secondsLeft / totalSeconds.toFloat(),
         animationSpec = tween(durationMillis = 1_000, easing = LinearEasing),
         label = "offer-time",
     )
