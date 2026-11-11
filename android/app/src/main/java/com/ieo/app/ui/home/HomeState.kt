@@ -89,6 +89,9 @@ enum class StopQuestionKind {
 
     /** 떠남을 감지했다 (WAIT-005) */
     DEPART,
+
+    /** 떠남 확인으로 운행을 마쳤다. 대기 증빙을 만들지 묻는다 (WAIT-020) */
+    PROOF,
 }
 
 /** 도착이나 떠남을 감지하고 차주에게 묻는 창 */
@@ -105,22 +108,32 @@ data class StopQuestion(
         get() = when (kind) {
             StopQuestionKind.ARRIVE -> "도착 확인"
             StopQuestionKind.DEPART -> if (isPickup) "상차 끝 확인" else "하차 끝 확인"
+            StopQuestionKind.PROOF -> "대기 증빙"
         }
 
     val question: String
         get() = when (kind) {
             StopQuestionKind.ARRIVE -> "${stopName}에 도착하셨어요?"
             StopQuestionKind.DEPART -> if (isPickup) "${stopName}에서 상차 끝내고 출발할까요?" else "${stopName}에서 하차 끝내고 운행을 마칠까요?"
+            StopQuestionKind.PROOF -> "대기 증빙을 만들까요?"
         }
 
     val detail: String
         get() = when (kind) {
             StopQuestionKind.ARRIVE -> "${timeLabel}부터 대기로 기록할게요"
             StopQuestionKind.DEPART -> "${timeLabel}에 떠난 것으로 기록할게요"
+            StopQuestionKind.PROOF -> "운행을 마쳤어요. 만들면 주선사에게 보낼 링크가 생겨요"
         }
 
     val confirmLabel: String
-        get() = if (kind == StopQuestionKind.ARRIVE) "도착 맞아요" else "끝났어요"
+        get() = when (kind) {
+            StopQuestionKind.ARRIVE -> "도착 맞아요"
+            StopQuestionKind.DEPART -> "끝났어요"
+            StopQuestionKind.PROOF -> "만들기"
+        }
+
+    val declineLabel: String
+        get() = if (kind == StopQuestionKind.PROOF) "괜찮아요" else "아직이에요"
 }
 
 data class TodaySummary(val tripCount: Int, val netProfit: Long)

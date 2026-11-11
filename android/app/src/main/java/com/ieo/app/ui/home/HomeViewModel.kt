@@ -319,18 +319,30 @@ class HomeViewModel(
             val question = when (kind) {
                 StopQuestionKind.ARRIVE -> HomeAnnouncements.arrivalQuestion(name, at)
                 StopQuestionKind.DEPART -> HomeAnnouncements.departureQuestion(name, isPickup)
+                StopQuestionKind.PROOF -> HomeAnnouncements.proofQuestion()
             }
             announcer.speak(question)
             _status.update { status -> status.copy(stopQuestion = status.stopQuestion?.copy(asked = true)) }
-            when (stopDialog.listen(question.text, ARRIVAL_CONFIRM_SECONDS * 1_000L)) {
+            // 창은 15초를 채운다. 음성 인식이 일찍 끝나도(못 들음) 그사이 눌러서 대답할 수 있게
+            val window = launch { delay(ARRIVAL_CONFIRM_SECONDS * 1_000L) }
+            val answer = stopDialog.listen(question.text, ARRIVAL_CONFIRM_SECONDS * 1_000L)
+            if (answer == YesNo.YES || answer == YesNo.NO) window.cancel()
+            when (answer) {
                 YesNo.YES -> answerStopQuestion(yes = true, source = WaitSource.CONFIRM_VOICE)
                 YesNo.NO -> {
                     announcer.say(
-                        if (kind == StopQuestionKind.ARRIVE) HomeAnnouncements.arrivalDeclined() else HomeAnnouncements.departureDeclined(isPickup),
+                        when (kind) {
+                            StopQuestionKind.ARRIVE -> HomeAnnouncements.arrivalDeclined()
+                            StopQuestionKind.DEPART -> HomeAnnouncements.departureDeclined(isPickup)
+                            StopQuestionKind.PROOF -> HomeAnnouncements.proofDeclined()
+                        },
                     )
                     answerStopQuestion(yes = false, source = WaitSource.CONFIRM_VOICE)
                 }
-                else -> answerStopQuestion(yes = false, source = WaitSource.CONFIRM_VOICE)
+                else -> {
+                    window.join()
+                    answerStopQuestion(yes = false, source = WaitSource.CONFIRM_VOICE)
+                }
             }
         }
     }
@@ -343,17 +355,19 @@ class HomeViewModel(
         _status.update { it.copy(stopQuestion = null) }
         when (pending.kind) {
             StopQuestionKind.ARRIVE -> if (yes) arriveAt(pending.at, source)
-            StopQuestionKind.DEPART -> if (yes) departAt(pending.at, source) else departureOnHold = true
+            StopQuestionKind.DEPART -> if (yes) departAndAskProof(pending, source) else departureOnHold = true
+            StopQuestionKind.PROOF -> if (yes) makeProofAfterTrip(pending.tripId)
         }
     }
 
     /**
-     * 서버에 닿지 못했으면 차에 쌓아 두고 true. 시각은 지금(또는 감지한 때)으로 정해 두어, 나중에 보내도 그때로 남는다.
+     * 서버에 닿지 못했으면 차에 쌓아 두고 true. 시각은 누른 때(또는 감지한 때)로 정해 두어, 나중에 보내도 그때로 남는다.
+     * [at]은 요청을 보내기 전에 잡아 둔 시각이다: 통신 실패를 기다리는 동안(10초 넘게) 밀리지 않게 (WAIT-026).
      * 쌓아 둔 것은 [retryPendingWaits]가 다시 보낸다
      */
-    private fun queueIfOffline(result: ApiResult<*>, action: PendingWait.Action, trip: Trip, stop: StopType, at: Instant?, source: WaitSource): Boolean {
+    private fun queueIfOffline(result: ApiResult<*>, action: PendingWait.Action, trip: Trip, stop: StopType, at: Instant, source: WaitSource): Boolean {
         if ((result as? ApiResult.Failure)?.error !is ApiError.Network) return false
-        outbox.add(PendingWait(action, trip.id, stop, at ?: clock.instant(), sensors.location.value, source))
+        outbox.add(PendingWait(action, trip.id, stop, at, sensors.location.value, source))
         show(WAIT_QUEUED_MESSAGE)
         return true
     }
@@ -382,8 +396,9 @@ class HomeViewModel(
     private fun arriveAt(at: Instant?, source: WaitSource) = runAction {
         val trip = snapshot.value.current?.takeIf { it.status.isDriving } ?: return@runAction
         val stop = trip.currentStop ?: return@runAction
+        val pressedAt = clock.instant()
         val result = waitRepository.arrive(trip.id, stop, at, markOf(source))
-        if (queueIfOffline(result, PendingWait.Action.ARRIVE, trip, stop, at, source)) {
+        if (queueIfOffline(result, PendingWait.Action.ARRIVE, trip, stop, at ?: pressedAt, source)) {
             // 보낼 때까지 같은 정차에서 다시 묻지 않는다
             holdUntilMoved = true
             return@runAction
@@ -396,8 +411,9 @@ class HomeViewModel(
 
     override fun startWork() = runAction {
         val (trip, stop) = currentAtStop() ?: return@runAction
+        val pressedAt = clock.instant()
         val result = waitRepository.startWork(trip.id, stop, mark = markOf(WaitSource.BUTTON))
-        if (queueIfOffline(result, PendingWait.Action.START_WORK, trip, stop, null, WaitSource.BUTTON)) return@runAction
+        if (queueIfOffline(result, PendingWait.Action.START_WORK, trip, stop, pressedAt, WaitSource.BUTTON)) return@runAction
         val record = result.orShow() ?: return@runAction
         snapshot.update { it.copy(wait = record) }
     }
@@ -431,14 +447,33 @@ class HomeViewModel(
     /** [at]: 떠남 확인이면 반경을 벗어나거나 달리기 시작한 때. 버튼이면 null(서버가 받은 때) */
     private fun departAt(at: Instant?, source: WaitSource) = runAction { departNow(at, source) }
 
+    /**
+     * 떠남 확인으로 떠난다. 하차지였으면 운행이 끝났으니 대기 증빙을 만들지 묻는다 (WAIT-020).
+     * [운행 완료] 버튼으로 끝낼 때는 창의 체크박스로 고르므로 묻지 않는다. 대부분 이 길로 끝나서 증빙 만들 때를 놓치지 않게 한다
+     */
+    private fun departAndAskProof(pending: PendingQuestion, source: WaitSource) = runAction {
+        val trip = snapshot.value.current?.takeIf { it.id == pending.tripId } ?: return@runAction
+        if (!departNow(pending.at, source) || pending.stop != StopType.DROPOFF) return@runAction
+        askStopQuestion(StopQuestionKind.PROOF, trip, StopType.DROPOFF, clock.instant())
+    }
+
+    private fun makeProofAfterTrip(tripId: Long) = runAction {
+        // 운행은 이미 끝났다. 증빙을 못 만들었으면 장부에서 다시 만들 수 있다
+        val link = waitRepository.createProof(tripId).orShow() ?: return@runAction
+        proofTripId = tripId
+        _status.update { it.copy(proof = link) }
+        announcer.say(HomeAnnouncements.proofMade())
+    }
+
     /** 떠난다. 상차지면 하차지로 안내하고, 하차지면 운행이 끝난다. 성공하면 true */
     private suspend fun departNow(at: Instant?, source: WaitSource): Boolean {
         val (trip, stop) = currentAtStop() ?: return false
         // 서버는 진입 ≤ 작업 시작 ≤ 떠남 순서만 받는다. 떠나기 시작한 뒤에 "상차 시작"을 눌렀으면 그때로 맞춘다
         val record = snapshot.value.wait?.takeIf { it.stopType == stop }
         val departedAt = at?.let { maxOf(it, record?.workStartedAt ?: record?.arrivedAt ?: it) }
+        val pressedAt = clock.instant()
         val result = waitRepository.depart(trip.id, stop, departedAt, markOf(source))
-        if (queueIfOffline(result, PendingWait.Action.DEPART, trip, stop, departedAt, source)) {
+        if (queueIfOffline(result, PendingWait.Action.DEPART, trip, stop, departedAt ?: pressedAt, source)) {
             departureOnHold = true
             return false
         }

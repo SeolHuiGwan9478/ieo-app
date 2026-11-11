@@ -75,6 +75,14 @@ object HomeAnnouncements {
         ARRIVAL_KEY,
     )
 
+    /** 떠남 확인으로 운행을 마친 뒤 대기 증빙을 묻는다 (WAIT-020) */
+    fun proofQuestion(): Announcement =
+        Announcement("대기 증빙을 만들까요? 만들면 주선사에게 보낼 링크가 생겨요.", AnnouncementPriority.TRIP, ARRIVAL_KEY)
+
+    fun proofMade(): Announcement = trip("대기 증빙을 만들었어요. 차를 세우고 화면에서 주선사에게 보낼 수 있어요.")
+
+    fun proofDeclined(): Announcement = trip("알겠어요. 장부에서 언제든 만들 수 있어요.")
+
     /** 떠남을 "아직"이라고 했을 때. 다시 묻지 않으니 버튼으로 끝내는 법을 알려 준다 */
     fun departureDeclined(isPickup: Boolean): Announcement =
         trip(if (isPickup) "알겠어요. 끝나면 상차 끝, 출발을 눌러 주세요." else "알겠어요. 끝나면 운행 완료를 눌러 주세요.")

@@ -411,6 +411,11 @@ class HomeViewModelTest {
         runCurrent()
         assertTrue(vm.status.value.stopQuestion != null)
 
+        // 음성 인식이 아무것도 못 듣고 일찍 끝나도 창은 15초 동안 남아 눌러서 대답할 수 있다
+        advanceTimeBy(5_000)
+        runCurrent()
+        assertTrue(vm.status.value.stopQuestion != null)
+
         advanceTimeBy(HomeViewModel.ARRIVAL_CONFIRM_SECONDS * 1_000L + 1)
         runCurrent()
         assertNull(vm.status.value.stopQuestion)
@@ -505,6 +510,43 @@ class HomeViewModelTest {
     }
 
     @Test
+    fun `떠남 확인으로 하차지를 끝내면 대기 증빙을 만들지 묻고 응이면 링크를 보여 준다`() = homeTest(TripStatus.IN_TRANSIT, prepare = { heard += "응"; heard += "응" }) { vm ->
+        vm.arrive()
+        sensors.parkAt(dropoff)
+        advanceTimeBy(1_001)
+        runCurrent()
+        clock.instant = NOW.plusSeconds(10)
+        sensors.drive(GeoPoint(TripFixtures.DROPOFF.latitude + 0.01, TripFixtures.DROPOFF.longitude), speedKph = 15.0)
+        advanceTimeBy(1_000)
+        clock.instant = NOW.plusSeconds(40)
+        advanceTimeBy(1_000)
+        runCurrent()
+
+        assertEquals(listOf("arrive DROPOFF", "depart DROPOFF", "proof 1"), server.calls)
+        assertTrue(announcer.texts.contains("대기 증빙을 만들까요? 만들면 주선사에게 보낼 링크가 생겨요."))
+        assertEquals("http://localhost/api/public/wait-proofs/token-1", vm.status.value.proof?.url)
+        assertNull(vm.status.value.stopQuestion)
+    }
+
+    @Test
+    fun `떠남 확인 뒤 증빙을 괜찮다고 하면 만들지 않는다`() = homeTest(TripStatus.IN_TRANSIT, prepare = { heard += "응"; heard += "아니" }) { vm ->
+        vm.arrive()
+        sensors.parkAt(dropoff)
+        advanceTimeBy(1_001)
+        runCurrent()
+        clock.instant = NOW.plusSeconds(10)
+        sensors.drive(GeoPoint(TripFixtures.DROPOFF.latitude + 0.01, TripFixtures.DROPOFF.longitude), speedKph = 15.0)
+        advanceTimeBy(1_000)
+        clock.instant = NOW.plusSeconds(40)
+        advanceTimeBy(1_000)
+        runCurrent()
+
+        assertEquals(listOf("arrive DROPOFF", "depart DROPOFF"), server.calls)
+        assertEquals("알겠어요. 장부에서 언제든 만들 수 있어요.", announcer.texts.last())
+        assertNull(vm.status.value.proof)
+    }
+
+    @Test
     fun `떠남을 아직이라고 하면 반경 안으로 돌아오기 전에는 다시 묻지 않는다`() = homeTest(TripStatus.IN_TRANSIT, prepare = { heard += "아직" }) { vm ->
         vm.arrive()
         sensors.parkAt(dropoff)
@@ -544,6 +586,8 @@ class HomeViewModelTest {
     @Test
     fun `통신이 끊겨 대기를 못 보내면 쌓아 두었다가 누른 시각으로 다시 보낸다`() = homeTest(TripStatus.TO_PICKUP) { vm ->
         server.offline = true
+        // 실패가 오기까지 13초가 걸려도 누른 때로 쌓아야 한다 (에뮬레이터에서 밀렸던 것)
+        server.whileFailing = { clock.instant = NOW.plusSeconds(13) }
         vm.arrive()
         runCurrent()
         assertTrue(server.calls.isEmpty())

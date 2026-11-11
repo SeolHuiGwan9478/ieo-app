@@ -150,11 +150,14 @@ class FakeTripServer(var trip: Trip) :
     /** 통신이 끊긴 것처럼 대기 요청에 Network 실패를 돌려준다 */
     var offline = false
 
+    /** 통신 실패를 돌려주기 전에 부른다. 실패를 기다리는 동안 시간이 흐르는 것을 흉내 낸다 */
+    var whileFailing: () -> Unit = {}
+
     /** 대기 요청마다 함께 보낸 위치와 방법 (WAIT-025) */
     val marks = mutableListOf<WaitMark>()
 
     override suspend fun arrive(tripId: Long, stop: StopType, at: Instant?, mark: WaitMark): ApiResult<WaitRecord> {
-        if (offline) return ApiResult.Failure(ApiError.Network)
+        if (offline) return ApiResult.Failure(ApiError.Network).also { whileFailing() }
         calls += "arrive $stop"
         marks += mark
         arrivedAt += at
@@ -198,7 +201,7 @@ class FakeTripServer(var trip: Trip) :
     }
 
     override suspend fun startWork(tripId: Long, stop: StopType, at: Instant?, mark: WaitMark): ApiResult<WaitRecord> {
-        if (offline) return ApiResult.Failure(ApiError.Network)
+        if (offline) return ApiResult.Failure(ApiError.Network).also { whileFailing() }
         calls += "work $stop"
         marks += mark
         val record = records.getValue(stop).copy(status = WaitStatus.WORKING, workStartedAt = TripFixtures.NOW)
@@ -209,7 +212,7 @@ class FakeTripServer(var trip: Trip) :
     val departedAt = mutableListOf<Instant?>()
 
     override suspend fun depart(tripId: Long, stop: StopType, at: Instant?, mark: WaitMark): ApiResult<WaitRecord> {
-        if (offline) return ApiResult.Failure(ApiError.Network)
+        if (offline) return ApiResult.Failure(ApiError.Network).also { whileFailing() }
         calls += "depart $stop"
         marks += mark
         departedAt += at

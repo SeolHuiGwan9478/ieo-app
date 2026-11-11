@@ -98,7 +98,7 @@ fun BoxScope.StopConfirmModal(
             }
             Spacer(Modifier.height(28.dp))
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                IeoTonalButton(text = "아직이에요", onClick = { if (!busy) onDecline() }, enabled = parked, modifier = Modifier.weight(1f))
+                IeoTonalButton(text = question.declineLabel, onClick = { if (!busy) onDecline() }, enabled = parked, modifier = Modifier.weight(1f))
                 IeoPrimaryButton(text = question.confirmLabel, onClick = { if (!busy) onConfirm() }, enabled = parked, modifier = Modifier.weight(1f))
             }
         }

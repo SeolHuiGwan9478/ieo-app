@@ -218,6 +218,12 @@ private object Scenes {
                 StopConfirmModal(StopQuestion(StopQuestionKind.DEPART, "대구 성서 하차지", false, "16:20", asked = true), parked = false, busy = false, onConfirm = {}, onDecline = {})
             }
         },
+        "modal_proof" to {
+            Box(Modifier.fillMaxSize()) {
+                HomeScreen(SampleHomeData.unloading())
+                StopConfirmModal(StopQuestion(StopQuestionKind.PROOF, "대구 성서 하차지", false, "16:20", asked = true), parked = false, busy = false, onConfirm = {}, onDecline = {})
+            }
+        },
         "sheet_finish_trip" to { Box(Modifier.fillMaxSize()) { HomeScreen(SampleHomeData.unloading()); FinishTripSheet(visible = true, busy = false, onFinish = {}, onDismiss = {}) } },
         "modal_arrival_driving" to {
             Box(Modifier.fillMaxSize()) {
