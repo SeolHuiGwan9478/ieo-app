@@ -34,6 +34,8 @@ import com.ieo.app.ui.carlink.VehicleChoice
 import com.ieo.app.ui.home.DeliveryProofSheet
 import com.ieo.app.ui.home.HomeScreen
 import com.ieo.app.ui.home.NextOrderOfferModal
+import com.ieo.app.ui.home.ArrivalConfirmModal
+import com.ieo.app.ui.home.ArrivalQuestion
 import com.ieo.app.ui.home.SampleHomeData
 import com.ieo.app.ui.home.StartGuidanceSheet
 import com.ieo.app.ui.home.WaitProofSheet
@@ -187,6 +189,19 @@ private object Scenes {
         "sheet_wait_proof_sent" to { Box(Modifier.fillMaxSize()) { WaitProofSheet(WaitProofLink("https://ieo.example/w/abc123", Instant.parse("2026-11-12T09:00:00Z"), canSend = true, sent = true), {}) } },
         "sheet_delivery_proof" to { Box(Modifier.fillMaxSize()) { DeliveryProofSheet(DeliveryProof("https://ieo.example/d/abc123", DeliveryProofStatus.PENDING, null, null), {}) } },
         "modal_next_order" to { Box(Modifier.fillMaxSize()) { NextOrderOfferModal(offer, false, false, {}, {}, {}) } },
+        "home_arriving" to { HomeScreen(SampleHomeData.driving().copy(arrivingInSeconds = 161, nearStop = true, parked = true, recommendation = null)) },
+        "modal_arrival" to {
+            Box(Modifier.fillMaxSize()) {
+                HomeScreen(SampleHomeData.driving().copy(nearStop = true, parked = true, recommendation = null))
+                ArrivalConfirmModal(ArrivalQuestion("대구 성서 하차지", "14:00", asked = true), parked = true, busy = false, onConfirm = {}, onDecline = {})
+            }
+        },
+        "modal_arrival_driving" to {
+            Box(Modifier.fillMaxSize()) {
+                HomeScreen(SampleHomeData.driving().copy(nearStop = true, parked = false, recommendation = null))
+                ArrivalConfirmModal(ArrivalQuestion("대구 성서 하차지", "14:00", asked = true), parked = false, busy = false, onConfirm = {}, onDecline = {})
+            }
+        },
         "sheet_register" to { Box(Modifier.fillMaxSize()) { RegisterTripSheet(true, RegisterTripUiState(), noop<RegisterTripActions>(), {}) } },
         "sheet_car_link" to { Box(Modifier.fillMaxSize()) { CarLinkSheet(CarLinkUiState(listOf(VehicleChoice(1, "경기80바1234", "5톤 카고"), VehicleChoice(2, "서울90사5678", "11톤 윙바디"))), noop<CarLinkActions>()) } },
         "sheet_link_invite" to { Box(Modifier.fillMaxSize()) { LinkInvitationSheet(link, false, noop<DriverLinksActions>()) } },

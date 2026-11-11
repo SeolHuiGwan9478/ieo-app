@@ -12,6 +12,8 @@ import com.ieo.app.ui.common.formatMinutesKorean
 import com.ieo.app.ui.common.formatWon
 import com.ieo.app.ui.common.formatWonSpoken
 import com.ieo.app.ui.common.josa
+import com.ieo.app.ui.common.DayTimeFormatter
+import java.time.Instant
 
 /**
  * 운행 중 음성 안내 문장. 15초 안에 끝나게 짧게, 숫자는 듣기 쉽게 쓴다 (UX-011).
@@ -53,6 +55,27 @@ object HomeAnnouncements {
     fun arrived(stopName: String, policy: WaitPolicy?): Announcement {
         val free = policy?.let { " 무료 대기는 ${formatMinutesKorean(it.freeMinutes.toLong())}이에요." }.orEmpty()
         return trip("${stopName}에 도착했어요. 대기를 시작해요.$free")
+    }
+
+    /** 도착을 감지하고 묻는다 (WAIT-007). [startsAt]은 확인하면 대기를 세기 시작하는 때(감지한 때) */
+    fun arrivalQuestion(stopName: String, startsAt: Instant): Announcement =
+        Announcement("${stopName}에 도착하셨어요? ${spokenTime(startsAt)}부터 대기로 기록할까요?", AnnouncementPriority.TRIP, ARRIVAL_KEY)
+
+    /** 도착 확인 중 다시 묻는 말 */
+    fun arrivalLine(text: String) = Announcement(text, AnnouncementPriority.TRIP, ARRIVAL_KEY)
+
+    /** "아직"이라고 했을 때. 다시 묻지 않으니 직접 시작하는 법을 알려 준다 (WAIT-008) */
+    fun arrivalDeclined(): Announcement = trip("알겠어요. 도착하면 대기 시작을 눌러 주세요.")
+
+    /** 도착 확인의 이름. 창이 닫히면 묻던 말을 멈춘다 */
+    const val ARRIVAL_KEY = "arrival"
+
+    /** 14:05 → "오후 2시 5분", 09:00 → "오전 9시" */
+    fun spokenTime(at: Instant): String {
+        val time = at.atZone(DayTimeFormatter.KOREA).toLocalTime()
+        val hour = (time.hour % 12).let { if (it == 0) 12 else it }
+        val minute = if (time.minute == 0) "" else " ${time.minute}분"
+        return "${if (time.hour < 12) "오전" else "오후"} ${hour}시$minute"
     }
 
     /** 무료 대기 시간이 끝난 순간 (WAIT-012) */

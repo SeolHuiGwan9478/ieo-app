@@ -18,12 +18,12 @@ sealed interface ArrivalCheck {
     /** 반경 안에서 멈췄다. [remaining]만큼 더 서 있으면 도착 */
     data class Stopping(val remaining: Duration) : ArrivalCheck
 
-    /** 도착. [at]은 멈추기 시작한 때로, 대기 시간은 여기서부터 센다 */
+    /** 도착 감지. 차주가 확인하면 대기를 시작한다 (WAIT-007). [at]은 멈추기 시작한 때로, 확인하면 대기 시간은 여기서부터 센다 */
     data class Arrived(val at: Instant) : ArrivalCheck
 }
 
 /**
- * 자동 도착 판단 (WAIT-001): 상하차지 반경 안에서 3분 이상 정차(속도 0 또는 기어 P)하면 도착.
+ * 도착 감지 (WAIT-001): 상하차지 반경 안에서 3분 이상 세워 두면(기어 P 또는 주차 브레이크) 도착으로 본다.
  * 반경을 벗어나거나 다시 달리면 처음부터 센다. 신호가 끊기면(null) 세던 것을 그대로 둔다.
  * 상태를 들고 있으므로 운행의 정차 지점마다 [reset]한다.
  */
@@ -39,7 +39,7 @@ class ArrivalDetector(private val dwell: Duration = DEFAULT_DWELL) {
         if (location == null || motion == null) {
             return stoppedSince?.let { remainingOrArrived(now, it) } ?: ArrivalCheck.NotYet
         }
-        if (!fence.contains(location) || !motion.isStopped) {
+        if (!fence.contains(location) || !motion.isParked) {
             stoppedSince = null
             return ArrivalCheck.NotYet
         }

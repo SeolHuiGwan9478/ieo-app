@@ -5,7 +5,7 @@ enum class VoiceCommand {
     /** "응", "네", "맞아" */
     YES,
 
-    /** "아니", "다음", "안 해" */
+    /** "아니", "다음", "안 해", "아직" */
     NO,
 
     /** "수락", "받을게" */
@@ -21,7 +21,7 @@ enum class VoiceCommand {
     UNKNOWN;
 
     companion object {
-        private val NEGATIVE = listOf("아니", "안해", "안할", "안받", "싫어", "됐어", "다음", "넘겨", "거절")
+        private val NEGATIVE = listOf("아니", "안해", "안할", "안받", "싫어", "됐어", "다음", "넘겨", "거절", "아직")
         /** 전화 받겠다는 말이나 옆 사람과 하는 통화를 수락으로 듣지 않는다 */
         private val NOT_FOR_US = listOf("전화", "통화")
         private val ACCEPTS = listOf("수락", "받을게", "받겠", "접수")

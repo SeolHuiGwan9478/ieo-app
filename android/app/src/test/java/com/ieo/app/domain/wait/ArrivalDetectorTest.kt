@@ -29,11 +29,19 @@ class ArrivalDetectorTest {
     }
 
     @Test
-    fun `기어가 D여도 속도가 0이면 정차로 본다`() {
-        val stopped = VehicleMotion(0.0, Gear.DRIVE)
-        detector.check(t0, fence, inside, stopped)
+    fun `P가 없는 차는 주차 브레이크로 세워 둔 것을 안다`() {
+        val braked = VehicleMotion(0.0, Gear.NEUTRAL, parkingBrake = true)
+        detector.check(t0, fence, inside, braked)
 
-        assertEquals(ArrivalCheck.Arrived(t0), detector.check(t0.plusSeconds(180), fence, inside, stopped))
+        assertEquals(ArrivalCheck.Arrived(t0), detector.check(t0.plusSeconds(180), fence, inside, braked))
+    }
+
+    @Test
+    fun `발 브레이크로 선 것은 정차로 보지 않는다`() {
+        val held = VehicleMotion(0.0, Gear.DRIVE)
+        detector.check(t0, fence, inside, held)
+
+        assertEquals(ArrivalCheck.NotYet, detector.check(t0.plusSeconds(180), fence, inside, held))
     }
 
     @Test

@@ -40,14 +40,16 @@ class CarSensors(context: Context) : VehicleSensors {
     // 속도와 기어는 따로 와서, 마지막 값을 들고 있다가 합친다
     @Volatile private var speedKph: Double? = null
     @Volatile private var gear: Gear = Gear.UNKNOWN
+    @Volatile private var parkingBrake: Boolean = false
 
     private val propertyCallback = object : CarPropertyManager.CarPropertyEventCallback {
         override fun onChangeEvent(value: CarPropertyValue<*>) {
             when (value.propertyId) {
                 VehiclePropertyIds.PERF_VEHICLE_SPEED -> speedKph = ((value.value as? Float) ?: return) * MPS_TO_KPH
                 VehiclePropertyIds.GEAR_SELECTION -> gear = gearOf((value.value as? Int) ?: return)
+                VehiclePropertyIds.PARKING_BRAKE_ON -> parkingBrake = (value.value as? Boolean) ?: return
             }
-            speedKph?.let { _motion.value = VehicleMotion(it, gear) }
+            speedKph?.let { _motion.value = VehicleMotion(it, gear, parkingBrake) }
         }
 
         override fun onErrorEvent(propertyId: Int, areaId: Int) {
@@ -67,8 +69,10 @@ class CarSensors(context: Context) : VehicleSensors {
         runCatching {
             val connected = Car.createCar(appContext).also { car = it }
             val properties = connected.getCarManager(Car.PROPERTY_SERVICE) as CarPropertyManager
-            for (id in listOf(VehiclePropertyIds.PERF_VEHICLE_SPEED, VehiclePropertyIds.GEAR_SELECTION)) {
-                properties.registerCallback(propertyCallback, id, CarPropertyManager.SENSOR_RATE_NORMAL)
+            for (id in listOf(VehiclePropertyIds.PERF_VEHICLE_SPEED, VehiclePropertyIds.GEAR_SELECTION, VehiclePropertyIds.PARKING_BRAKE_ON)) {
+                // 하나를 못 받아도(차에 없는 신호) 나머지는 받는다
+                runCatching { properties.registerCallback(propertyCallback, id, CarPropertyManager.SENSOR_RATE_NORMAL) }
+                    .onFailure { Log.w(TAG, "차량 신호를 받을 수 없습니다 ${VehiclePropertyIds.toString(id)}", it) }
             }
         }.onFailure { Log.w(TAG, "차량 신호를 받을 수 없습니다", it) }
     }

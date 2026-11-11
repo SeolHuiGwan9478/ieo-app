@@ -13,7 +13,9 @@ import com.ieo.app.domain.trip.StopType
 import com.ieo.app.domain.trip.TripStatus
 import com.ieo.app.domain.vehicle.GeoPoint
 import com.ieo.app.domain.voice.AnnouncementPriority
+import com.ieo.app.domain.voice.AnswerClassifier
 import com.ieo.app.domain.voice.SpeechRecognizer
+import com.ieo.app.domain.voice.YesNo
 import com.ieo.app.testing.FakeAnnouncer
 import com.ieo.app.ui.component.BannerKind
 import com.ieo.app.ui.component.IeoBanner
@@ -58,6 +60,17 @@ class HomeViewModelTest {
     private val recognizer = object : SpeechRecognizer {
         override suspend fun listen(timeoutMillis: Long) = heard.removeFirstOrNull()
     }
+    /** 서버 대답 판별. 물어본 대답을 모은다 */
+    private val classified = mutableListOf<String>()
+    private var serverMeaning: YesNo = YesNo.UNKNOWN
+    private val classifier = object : AnswerClassifier {
+        override suspend fun classify(question: String, answer: String): YesNo {
+            classified += answer
+            return serverMeaning
+        }
+    }
+    private val dropoff = GeoPoint(TripFixtures.DROPOFF.latitude, TripFixtures.DROPOFF.longitude)
+    private val nearPickup = GeoPoint(TripFixtures.PICKUP.latitude + 0.001, TripFixtures.PICKUP.longitude)
 
     /**
      * [status] 상태의 운행으로 ViewModel을 만들어 [body]를 돌린다.
@@ -84,6 +97,7 @@ class HomeViewModelTest {
             recommendationRepository = server,
             notifications = notifications,
             recognizer = recognizer,
+            answerClassifier = classifier,
             clock = clock,
             stateFactory = HomeStateFactory(clock) { 1_000_000L },
         )
@@ -158,29 +172,39 @@ class HomeViewModelTest {
     }
 
     @Test
-    fun `내비가 도착을 알리면 도착 처리하고 대기 화면으로 바뀐다`() = homeTest { vm ->
+    fun `내비가 도착을 알리면 묻고 응이라고 하면 그때부터 대기를 시작한다`() = homeTest(prepare = { heard += "응" }) { vm ->
         vm.startTrip("1")
         runCurrent()
 
         navigator.arrive()
         runCurrent()
 
+        assertTrue(announcer.texts.first().startsWith("평택 포승에 도착하셨어요? "))
         assertEquals(listOf("start", "arrive PICKUP"), server.calls)
+        assertEquals(listOf<Instant?>(NOW), server.arrivedAt)
+        assertNull(vm.status.value.arrivalQuestion)
         assertNull(navigator.progress.value)
         val state = vm.state.value as HomeState.Waiting
         assertTrue(state.isPickup)
     }
 
     @Test
-    fun `상차지 반경 안에서 3분 서 있으면 멈추기 시작한 시각으로 도착한다`() = homeTest(TripStatus.TO_PICKUP) { vm ->
+    fun `상차지 반경 안에서 3분 세워 두면 묻고 확인하면 멈추기 시작한 시각으로 대기를 시작한다`() = homeTest(TripStatus.TO_PICKUP) { vm ->
         // 상차지(평택 포승)에서 약 110m
-        sensors.parkAt(GeoPoint(TripFixtures.PICKUP.latitude + 0.001, TripFixtures.PICKUP.longitude))
+        sensors.parkAt(nearPickup)
         advanceTimeBy(1_001)
         runCurrent()
         assertEquals(180L, (vm.state.value as HomeState.Driving).arrivingInSeconds)
 
         clock.instant = NOW.plusSeconds(180)
         advanceTimeBy(1_000)
+        runCurrent()
+        assertTrue(server.calls.isEmpty())
+        val question = vm.status.value.arrivalQuestion!!
+        assertEquals("평택 포승", question.stopName)
+        assertTrue(question.asked)
+
+        vm.confirmArrival()
         runCurrent()
 
         assertEquals(listOf("arrive PICKUP"), server.calls)
@@ -301,6 +325,7 @@ class HomeViewModelTest {
 
     @Test
     fun `하차지에 도착하면 추천 5건을 카드로 보여 주고 수락하면 배차 요청을 보낸다`() = homeTest(TripStatus.IN_TRANSIT, prepare = {
+        sensors.parkAt(dropoff)
         server.nextOrders = ApiResult.Success(
             NextOrders(
                 freeAt = NOW,
@@ -338,6 +363,7 @@ class HomeViewModelTest {
 
     @Test
     fun `하차지에서 후보를 하나씩 띄우고 시간이 끝나면 거절 없이 다음으로 넘어간다`() = homeTest(TripStatus.IN_TRANSIT, prepare = {
+        sensors.parkAt(dropoff)
         server.nextOrders = candidates(11, 12)
     }) { vm ->
         vm.arrive()
@@ -363,6 +389,7 @@ class HomeViewModelTest {
 
     @Test
     fun `넘기면 거절로 적고 서버에서 후보를 다시 받는다`() = homeTest(TripStatus.IN_TRANSIT, prepare = {
+        sensors.parkAt(dropoff)
         server.nextOrders = candidates(11, 12)
     }) { vm ->
         vm.arrive()
@@ -380,6 +407,7 @@ class HomeViewModelTest {
 
     @Test
     fun `수락한 요청이 마감되면 다음 후보를 띄우고 확정되면 그친다`() = homeTest(TripStatus.IN_TRANSIT, prepare = {
+        sensors.parkAt(dropoff)
         server.nextOrders = candidates(11, 12, 13)
     }) { vm ->
         vm.arrive()
@@ -402,6 +430,7 @@ class HomeViewModelTest {
 
     @Test
     fun `인수증 QR 창이 열려 있으면 수락 창도 음성도 끼어들지 않고 닫으면 나온다`() = homeTest(TripStatus.IN_TRANSIT, prepare = {
+        sensors.parkAt(dropoff)
         server.nextOrders = candidates(11, 12)
     }) { vm ->
         vm.arrive()
@@ -483,6 +512,7 @@ class HomeViewModelTest {
 
     @Test
     fun `수락 창에서 다음이라고 하면 넘기고 응이라고 하면 바로 수락한다`() = homeTest(TripStatus.IN_TRANSIT, prepare = {
+        sensors.parkAt(dropoff)
         server.nextOrders = candidates(11, 12)
         heard += listOf("다음", "응")
     }) { vm ->
@@ -661,6 +691,95 @@ class HomeViewModelTest {
 
         assertEquals(listOf<GeoPoint?>(null), server.ordersNear)
         assertTrue(vm.state.value is HomeState.Driving)
+    }
+
+    @Test
+    fun `도착을 물었는데 대답이 없으면 창을 닫고 같은 정차 중에는 다시 묻지 않는다`() = homeTest(TripStatus.TO_PICKUP) { vm ->
+        sensors.parkAt(nearPickup)
+        advanceTimeBy(1_001)
+        clock.instant = NOW.plusSeconds(180)
+        advanceTimeBy(1_000)
+        runCurrent()
+        assertTrue(vm.status.value.arrivalQuestion != null)
+
+        advanceTimeBy(HomeViewModel.ARRIVAL_CONFIRM_SECONDS * 1_000L + 1)
+        runCurrent()
+        assertNull(vm.status.value.arrivalQuestion)
+        assertTrue(server.calls.isEmpty())
+
+        // 그대로 10분 더 서 있어도 다시 묻지 않는다
+        clock.instant = NOW.plusSeconds(780)
+        advanceTimeBy(600_000)
+        runCurrent()
+        assertNull(vm.status.value.arrivalQuestion)
+        assertEquals(1, announcer.texts.count { it.endsWith("대기로 기록할까요?") })
+
+        // 움직였다가 다시 3분 세우면 다시 묻는다
+        sensors.drive(nearPickup, speedKph = 5.0)
+        advanceTimeBy(1_000)
+        clock.instant = NOW.plusSeconds(800)
+        sensors.parkAt(nearPickup)
+        advanceTimeBy(1_000)
+        clock.instant = NOW.plusSeconds(900)
+        advanceTimeBy(1_000)
+        runCurrent()
+        assertNull(vm.status.value.arrivalQuestion)
+        clock.instant = NOW.plusSeconds(980)
+        advanceTimeBy(1_000)
+        runCurrent()
+        assertTrue(vm.status.value.arrivalQuestion != null)
+    }
+
+    @Test
+    fun `아직이라고 하면 대기를 시작하지 않고 직접 시작하는 법을 알려 준다`() = homeTest(TripStatus.TO_PICKUP, prepare = { heard += "아직 줄 서 있어" }) { vm ->
+        navigator.progress.value = NaviProgress("평택 포승", arrived = true)
+        runCurrent()
+
+        assertNull(vm.status.value.arrivalQuestion)
+        assertTrue(server.calls.isEmpty())
+        assertEquals("알겠어요. 도착하면 대기 시작을 눌러 주세요.", announcer.texts.last())
+        // 단어 목록으로 알아들었으니 서버에 묻지 않는다
+        assertTrue(classified.isEmpty())
+    }
+
+    @Test
+    fun `단어 목록으로 못 알아들은 대답은 서버에 묻는다`() = homeTest(TripStatus.TO_PICKUP, prepare = {
+        heard += "어어 들어왔지"
+        serverMeaning = YesNo.YES
+    }) { vm ->
+        navigator.progress.value = NaviProgress("평택 포승", arrived = true)
+        runCurrent()
+
+        assertEquals(listOf("어어 들어왔지"), classified)
+        assertEquals(listOf("arrive PICKUP"), server.calls)
+    }
+
+    @Test
+    fun `대기 시작 버튼은 상하차지 3km 안에서 보이고 세워 두었을 때만 눌린다`() = homeTest(TripStatus.TO_PICKUP) { vm ->
+        // 약 5.5km
+        sensors.drive(GeoPoint(TripFixtures.PICKUP.latitude + 0.05, TripFixtures.PICKUP.longitude))
+        advanceTimeBy(1_001)
+        runCurrent()
+        assertTrue(!(vm.state.value as HomeState.Driving).nearStop)
+
+        // 약 2.2km, 달리는 중
+        val near = GeoPoint(TripFixtures.PICKUP.latitude + 0.02, TripFixtures.PICKUP.longitude)
+        sensors.drive(near)
+        advanceTimeBy(1_000)
+        runCurrent()
+        var driving = vm.state.value as HomeState.Driving
+        assertTrue(driving.nearStop && driving.showsStartWait && !driving.parked)
+
+        sensors.parkAt(near)
+        advanceTimeBy(1_000)
+        runCurrent()
+        driving = vm.state.value as HomeState.Driving
+        assertTrue(driving.parked)
+
+        // 반경 밖이어도 누르면 묻지 않고 바로 시작한다
+        vm.arrive()
+        runCurrent()
+        assertEquals(listOf("arrive PICKUP"), server.calls)
     }
 
     @Test

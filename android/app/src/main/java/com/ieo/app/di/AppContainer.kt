@@ -37,6 +37,8 @@ import com.ieo.app.data.vehicle.DefaultVehicleRepository
 import com.ieo.app.data.vehicle.PleosCarIdentity
 import com.ieo.app.data.vehicle.VehicleApi
 import com.ieo.app.data.voice.PleosSpeechRecognizer
+import com.ieo.app.data.voice.ServerAnswerClassifier
+import com.ieo.app.data.voice.VoiceApi
 import com.ieo.app.data.voice.TtsAnnouncer
 import com.ieo.app.data.wait.DefaultWaitRepository
 import com.ieo.app.data.wait.WaitApi
@@ -58,6 +60,7 @@ import com.ieo.app.domain.trip.TripRepository
 import com.ieo.app.domain.vehicle.CarIdentity
 import com.ieo.app.domain.vehicle.VehicleRepository
 import com.ieo.app.domain.vehicle.VehicleSensors
+import com.ieo.app.domain.voice.AnswerClassifier
 import com.ieo.app.domain.voice.Announcer
 import com.ieo.app.domain.voice.ConsentAwareSpeechRecognizer
 import com.ieo.app.domain.voice.SpeechRecognizer
@@ -91,6 +94,7 @@ interface AppContainer {
     val carIdentity: CarIdentity
     val announcer: Announcer
     val speechRecognizer: SpeechRecognizer
+    val answerClassifier: AnswerClassifier
     val locationTracker: LocationTracker
     val notifications: NotificationListener
 }
@@ -181,6 +185,10 @@ class DefaultAppContainer(context: Context) : AppContainer {
 
     override val speechRecognizer: SpeechRecognizer by lazy {
         ConsentAwareSpeechRecognizer(PleosSpeechRecognizer(appContext), { accountRepository.voiceConsent() })
+    }
+
+    override val answerClassifier: AnswerClassifier by lazy {
+        ServerAnswerClassifier(network.authenticated.create(VoiceApi::class.java), network.caller)
     }
 
     /** 앱이 살아 있는 동안 도는 일. 화면이 바뀌거나 내비가 앞에 떠도 이어진다 */

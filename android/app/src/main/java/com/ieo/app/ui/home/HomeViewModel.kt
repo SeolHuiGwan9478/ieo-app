@@ -33,9 +33,13 @@ import com.ieo.app.domain.vehicle.Gear
 import com.ieo.app.domain.vehicle.GeoPoint
 import com.ieo.app.domain.vehicle.VehicleMotion
 import com.ieo.app.domain.vehicle.VehicleSensors
+import com.ieo.app.domain.voice.AnswerClassifier
 import com.ieo.app.domain.voice.Announcer
+import com.ieo.app.domain.voice.NoAnswerClassifier
 import com.ieo.app.domain.voice.NoSpeechRecognizer
 import com.ieo.app.domain.voice.SpeechRecognizer
+import com.ieo.app.domain.voice.YesNo
+import com.ieo.app.domain.voice.YesNoDialog
 import com.ieo.app.domain.voice.speak
 import com.ieo.app.domain.wait.ArrivalCheck
 import com.ieo.app.domain.wait.ArrivalDetector
@@ -87,6 +91,8 @@ data class HomeStatus(
     val proof: WaitProofLink? = null,
     /** 인수증 QR 창. 닫으면 null ([HomeViewModel.closeDeliveryProof]) */
     val deliveryProof: DeliveryProof? = null,
+    /** 도착 확인 창 (WAIT-007). 대답하거나 시간이 지나면 null */
+    val arrivalQuestion: ArrivalQuestion? = null,
 )
 
 /** 홈 화면이 ViewModel에 보내는 동작 */
@@ -94,8 +100,14 @@ interface HomeActions {
     /** 내 배차에서 "안내 시작": 출발 처리 후 상차지로 길 안내 */
     fun startTrip(tripId: String)
 
-    /** 상하차지 도착 */
+    /** "대기 시작": 확인 없이 지금부터 대기를 시작한다 (WAIT-008). 도착 확인 창이 떠 있으면 그 확인과 같다 */
     fun arrive()
+
+    /** 도착 확인 창의 "도착 맞아요": 감지한 때부터 대기를 시작한다 (WAIT-007) */
+    fun confirmArrival()
+
+    /** 도착 확인 창의 "아직이에요": 창을 닫고, 같은 정차 중에는 다시 묻지 않는다 */
+    fun declineArrival()
 
     /** "상차 시작" · "하차 시작" */
     fun startWork()
@@ -132,8 +144,8 @@ interface HomeActions {
  * 홈 화면: 운행 진행(출발 → 상차지 도착 → 상차 → 출발 → 하차지 도착 → 하차 → 완료)을 서버에 알리고,
  * 그 결과로 화면 상태를 바꾼다. 화면을 고르는 규칙은 [HomeStateFactory]가 갖고 있다.
  *
- * 상하차지 도착은 셋 중 먼저 오는 것으로 처리한다: 상하차지 반경 안 3분 정차(WAIT-001),
- * 차량 내비의 "목적지 도착", "도착했어요" 버튼.
+ * 상하차지 도착: 반경 안에서 3분 세워 두거나(WAIT-001) 차량 내비가 "목적지 도착"을 알리면 음성과 창으로 묻고,
+ * 차주가 맞다고 하면 감지한 때부터 대기를 시작한다 (WAIT-007). "대기 시작" 버튼은 묻지 않고 바로 시작한다 (WAIT-008).
  * 떠남은 반경을 벗어나거나 시속 20km 이상으로 1분 달린 때(WAIT-005), 또는 "출발"·"운행 완료" 버튼.
  * 상하차지 3km 전, 도착, 대기비 시작, 떠남, 인수증 서명은 음성으로도 알린다 (문장은 [HomeAnnouncements]).
  */
@@ -152,15 +164,27 @@ class HomeViewModel(
     /** 서버 알림 (09 알림). 앱 전체의 [com.ieo.app.domain.notification.NotificationListener]가 받는다 */
     private val notifications: Flow<AppNotification> = emptyFlow(),
     private val recognizer: SpeechRecognizer = NoSpeechRecognizer,
+    /** 단어 목록으로 못 알아들은 예/아니오 대답을 서버에서 판별한다 (UX-025) */
+    private val answerClassifier: AnswerClassifier = NoAnswerClassifier,
     private val clock: Clock = Clock.systemUTC(),
     private val stateFactory: HomeStateFactory = HomeStateFactory(),
 ) : ViewModel(), HomeActions {
 
     private val snapshot = MutableStateFlow(HomeSnapshot())
 
-    /** 상하차지 반경 안에서 멈춘 동안 남은 시간을 화면에 보여 준다 */
-    private val arrivalCheck = MutableStateFlow<ArrivalCheck>(ArrivalCheck.NotYet)
+    /** 상하차지 반경 안에서 멈춘 동안 남은 시간, 상하차지 3km 안인지, 세워 두었는지를 화면에 보여 준다 */
+    private val arrivalView = MutableStateFlow(ArrivalView())
     private val arrivalDetector = ArrivalDetector()
+
+    /** 묻고 있는 도착. 대답하면 null */
+    private var pendingArrival: PendingArrival? = null
+    private var arrivalJob: Job? = null
+
+    /** 이미 물은 정차에서는 다시 묻지 않는다. 차가 움직이거나 반경을 벗어나면 풀린다 */
+    private var holdUntilMoved = false
+
+    /** 내비 도착 알림으로 물은 정차 지점. 운행·지점마다 한 번 */
+    private val naviArrivalAsked = mutableSetOf<Pair<Long, StopType>>()
 
     /** 상하차지를 떠나는 동안 남은 시간을 화면에 보여 준다 */
     private val departureCheck = MutableStateFlow<DepartureCheck>(DepartureCheck.Staying)
@@ -173,7 +197,9 @@ class HomeViewModel(
     }
 
     val state: StateFlow<HomeState> =
-        combine(snapshot, navigator.progress, arrivalCheck, departureCheck, nextOrderAdvisor.current, stateFactory::create)
+        combine(snapshot, navigator.progress, arrivalView, departureCheck, nextOrderAdvisor.current) { snapshot, navi, arrival, departure, next ->
+            stateFactory.create(snapshot, navi, arrival.check, departure, next, arrival.nearStop, arrival.parked)
+        }
         .stateIn(viewModelScope, SharingStarted.Eagerly, stateFactory.create(HomeSnapshot(), null))
 
     private val _status = MutableStateFlow(HomeStatus())
@@ -185,18 +211,26 @@ class HomeViewModel(
 
     /** 다음 배차를 두고 차주와 말을 주고받는 일. 한 번에 하나 */
     private var voiceJob: Job? = null
-    private val voiceDialog = NextOrderVoiceDialog(
-        recognizer = object : SpeechRecognizer {
-            override suspend fun listen(timeoutMillis: Long): String? {
-                _status.update { it.copy(listening = true) }
-                try {
-                    return recognizer.listen(timeoutMillis)
-                } finally {
-                    _status.update { it.copy(listening = false) }
-                }
+
+    /** 듣는 동안 화면에 "듣는 중"을 띄운다 */
+    private val listeningRecognizer = object : SpeechRecognizer {
+        override suspend fun listen(timeoutMillis: Long): String? {
+            _status.update { it.copy(listening = true) }
+            try {
+                return recognizer.listen(timeoutMillis)
+            } finally {
+                _status.update { it.copy(listening = false) }
             }
-        },
+        }
+    }
+    private val voiceDialog = NextOrderVoiceDialog(
+        recognizer = listeningRecognizer,
         speak = { announcer.speak(HomeAnnouncements.nextOrderLine(it)) },
+    )
+    private val arrivalDialog = YesNoDialog(
+        recognizer = listeningRecognizer,
+        classifier = answerClassifier,
+        speak = { announcer.speak(HomeAnnouncements.arrivalLine(it)) },
     )
 
     /** 지금 띄울 수락 창. 정차 중이고 QR 창이 닫혀 있을 때만 있고, 차가 움직이면 바로 null이 된다. 그 후보는 다음에 멈추면 다시 나온다 */
@@ -205,8 +239,8 @@ class HomeViewModel(
             offers.current,
             snapshot.map { it.current?.status }.distinctUntilChanged(),
             sensors.motion,
-            // 수하인이 QR로 서명하는 동안 창도 음성도 끼어들지 않는다
-            _status.map { it.proof != null || it.deliveryProof != null }.distinctUntilChanged(),
+            // 수하인이 QR로 서명하는 동안, 도착을 묻는 동안에는 창도 음성도 끼어들지 않는다
+            _status.map { it.proof != null || it.deliveryProof != null || it.arrivalQuestion != null }.distinctUntilChanged(),
         ) { next, status, motion, sheetOpen ->
             next?.takeUnless { sheetOpen }?.takeIf { canOffer(status, motion) }?.let(stateFactory::nextOrderCard)
         }.distinctUntilChanged().stateIn(viewModelScope, SharingStarted.Eagerly, null)
@@ -216,8 +250,8 @@ class HomeViewModel(
             load()
             resumeGuidanceAfterRestart()
         }
-        arriveWhenNaviArrives()
-        arriveWhenStoppedAtStop()
+        askWhenNaviArrives()
+        askWhenStoppedAtStop()
         departWhenLeavingStop()
         announceChargeableStart()
         keepNaviProgressFresh()
@@ -242,9 +276,57 @@ class HomeViewModel(
         started.currentStop?.let { guideTo(started.stop(it)) }
     }
 
-    override fun arrive() = arriveAt(at = null)
+    override fun arrive() {
+        if (pendingArrival != null) return confirmArrival()
+        arriveAt(at = null)
+    }
 
-    /** [at]: 자동 도착이면 멈추기 시작한 때. 버튼·내비 도착이면 null(서버가 받은 때) */
+    override fun confirmArrival() {
+        arrivalJob?.cancel()
+        answerArrival(yes = true)
+    }
+
+    override fun declineArrival() {
+        arrivalJob?.cancel()
+        answerArrival(yes = false)
+    }
+
+    /**
+     * 도착을 묻는다 (WAIT-007): 창을 띄우고 말한 뒤 15초 동안 대답을 듣는다.
+     * 단어 목록으로 못 알아들은 말은 서버에서 판별한다 (UX-025). 대답이 없으면 창을 닫는다
+     */
+    private fun askArrival(trip: Trip, stop: StopType, at: Instant) {
+        if (pendingArrival != null) return
+        pendingArrival = PendingArrival(trip.id, stop, at)
+        val name = trip.stop(stop).name
+        _status.update { it.copy(arrivalQuestion = ArrivalQuestion(name, stateFactory.time(at))) }
+        // 다음 배차를 말하던 중이면 멈추고 도착부터 묻는다
+        voiceJob?.cancel()
+        arrivalJob = viewModelScope.launch {
+            val question = HomeAnnouncements.arrivalQuestion(name, at)
+            announcer.speak(question)
+            _status.update { status -> status.copy(arrivalQuestion = status.arrivalQuestion?.copy(asked = true)) }
+            when (arrivalDialog.listen(question.text, ARRIVAL_CONFIRM_SECONDS * 1_000L)) {
+                YesNo.YES -> answerArrival(yes = true)
+                YesNo.NO -> {
+                    announcer.say(HomeAnnouncements.arrivalDeclined())
+                    answerArrival(yes = false)
+                }
+                else -> answerArrival(yes = false)
+            }
+        }
+    }
+
+    /** 창을 닫고, 맞다고 했으면 감지한 때부터 대기를 시작한다 */
+    private fun answerArrival(yes: Boolean) {
+        val pending = pendingArrival ?: return
+        pendingArrival = null
+        announcer.cancel(HomeAnnouncements.ARRIVAL_KEY)
+        _status.update { it.copy(arrivalQuestion = null) }
+        if (yes) arriveAt(pending.at)
+    }
+
+    /** [at]: 도착 확인이면 감지한 때. "대기 시작" 버튼이면 null(서버가 받은 때) */
     private fun arriveAt(at: Instant?) = runAction {
         val trip = snapshot.value.current?.takeIf { it.status.isDriving } ?: return@runAction
         val stop = trip.currentStop ?: return@runAction
@@ -570,40 +652,63 @@ class HomeViewModel(
         if (!started) show(NAVI_FAILED_MESSAGE)
     }
 
-    private fun arriveWhenNaviArrives() {
+    /** 차량 내비가 "목적지 도착"을 알리면 묻는다. 달리는 중일 수 있어 음성이 먼저고, 터치는 세워 두었을 때만 받는다 */
+    private fun askWhenNaviArrives() {
         viewModelScope.launch {
             navigator.progress.filter { it?.arrived == true }.collect {
-                if (snapshot.value.current?.status?.isDriving == true) arrive()
+                val trip = snapshot.value.current?.takeIf { it.status.isDriving } ?: return@collect
+                val stop = trip.currentStop ?: return@collect
+                if (naviArrivalAsked.add(trip.id to stop)) askArrival(trip, stop, clock.instant())
             }
         }
     }
 
     /**
-     * 자동 도착 (WAIT-001): 1초마다 지금 가는 상하차지 반경 안에서 멈춰 있는지 본다.
-     * 3분이 차면 멈추기 시작한 시각으로 도착을 알린다. 가는 곳이 바뀌면 처음부터 센다.
+     * 도착 감지 (WAIT-001): 1초마다 지금 가는 상하차지 반경 안에 세워 두었는지(기어 P 또는 주차 브레이크) 본다.
+     * 3분이 차면 멈추기 시작한 시각으로 도착을 묻는다. 가는 곳이 바뀌면 처음부터 센다.
+     * 물은 뒤에는 차가 움직이거나 반경을 벗어날 때까지 다시 세지 않는다.
+     * 화면의 "대기 시작" 버튼에 쓰려고 상하차지 3km 안인지, 세워 두었는지도 함께 적는다.
      */
-    private fun arriveWhenStoppedAtStop() {
+    private fun askWhenStoppedAtStop() {
         viewModelScope.launch {
             var fenceOf: Pair<Long, StopType>? = null
             while (true) {
                 delay(SENSOR_CHECK_MILLIS)
+                val motion = sensors.motion.value
+                val here = sensors.location.value
+                val parked = motion?.isParked == true
                 val trip = snapshot.value.current?.takeIf { it.status.isDriving }
                 val stop = trip?.currentStop
                 if (trip == null || stop == null) {
                     fenceOf = null
-                    arrivalCheck.value = ArrivalCheck.NotYet
+                    // 묻는 사이 운행이 바뀌었으면(취소, 다른 화면에서 도착 등) 창을 닫는다
+                    if (pendingArrival != null) declineArrival()
+                    arrivalView.value = ArrivalView(parked = parked)
                     continue
                 }
                 if (fenceOf != trip.id to stop) {
                     fenceOf = trip.id to stop
                     arrivalDetector.reset()
+                    holdUntilMoved = false
                 }
-                announceApproach(trip, stop, sensors.location.value)
-                val check = arrivalDetector.check(clock.instant(), fenceOf(trip.stop(stop)), sensors.location.value, sensors.motion.value)
-                arrivalCheck.value = check
-                if (check is ArrivalCheck.Arrived && !_status.value.isBusy) {
+                announceApproach(trip, stop, here)
+                val target = trip.stop(stop)
+                val fence = fenceOf(target)
+                if (holdUntilMoved && ((motion != null && !motion.isParked) || (here != null && !fence.contains(here)))) {
+                    holdUntilMoved = false
+                }
+                val check = if (holdUntilMoved || pendingArrival != null) {
                     arrivalDetector.reset()
-                    arriveAt(check.at)
+                    ArrivalCheck.NotYet
+                } else {
+                    arrivalDetector.check(clock.instant(), fence, here, motion)
+                }
+                val nearStop = here != null && GeoPoint(target.latitude, target.longitude).distanceTo(here) <= APPROACH_ANNOUNCE_METERS
+                arrivalView.value = ArrivalView(check, nearStop, parked)
+                if (check is ArrivalCheck.Arrived) {
+                    arrivalDetector.reset()
+                    holdUntilMoved = true
+                    askArrival(trip, stop, check.at)
                 }
             }
         }
@@ -786,8 +891,11 @@ class HomeViewModel(
         private const val ETA_SHARED_CHECK_MILLIS = 60_000L
         private const val SENSOR_CHECK_MILLIS = 1_000L
 
-        /** 상하차지 정보 카드를 읽어 주는 거리 (SITE-006) */
+        /** 상하차지 정보 카드를 읽어 주고 "대기 시작" 버튼을 보여 주는 거리 (SITE-006, WAIT-008) */
         private const val APPROACH_ANNOUNCE_METERS = 3_000.0
+
+        /** 도착 확인 창이 기다리는 시간 (WAIT-007) */
+        const val ARRIVAL_CONFIRM_SECONDS = 15
 
         /** 근처 오더를 찾은 곳에서 이만큼 움직이면 다시 찾는다 */
         private const val NEARBY_REFRESH_METERS = 5_000.0
@@ -796,15 +904,12 @@ class HomeViewModel(
         private val OFFER_STATUSES = setOf(TripStatus.IN_TRANSIT, TripStatus.AT_DROPOFF)
 
         /**
-         * 수락 창을 띄워도 되는 정차인가. 운전 중에 터치를 요구하지 않는다 (REC-020, 10 음성·안전 UX).
-         * 하차지에서는 멈춰 있으면 된다. 운송 중에는 기어 P일 때만: 신호 대기는 언제 출발할지 몰라 정차로 보지 않는다.
-         * 차량 신호를 모르면 하차지에서만 띄운다
+         * 수락 창을 띄워도 되는 정차인가. 운전 중에 터치를 요구하지 않는다 (REC-026, 10 음성·안전 UX).
+         * 하차지든 운송 중이든 세워 두었을 때(기어 P 또는 주차 브레이크)만. 신호 대기·발 브레이크는 언제 출발할지 몰라 정차로 보지 않는다.
+         * 차량 신호를 모르면 띄우지 않는다
          */
-        fun canOffer(status: TripStatus?, motion: VehicleMotion?): Boolean = when (status) {
-            TripStatus.AT_DROPOFF -> motion == null || motion.isStopped
-            TripStatus.IN_TRANSIT -> motion?.gear == Gear.PARK
-            else -> false
-        }
+        fun canOffer(status: TripStatus?, motion: VehicleMotion?): Boolean =
+            status in OFFER_STATUSES && motion?.isParked == true
 
         /** 홈에는 오더를 이만큼만. 나머지는 오더 탭에서 */
         private const val HOME_ORDER_COUNT = 5
@@ -831,8 +936,21 @@ class HomeViewModel(
                     recommendationRepository = container.recommendationRepository,
                     notifications = container.notifications.received,
                     recognizer = container.speechRecognizer,
+                    answerClassifier = container.answerClassifier,
                 )
             }
         }
     }
 }
+
+/** 도착 감지 상태와 "대기 시작" 버튼에 쓰는 값 */
+private data class ArrivalView(
+    val check: ArrivalCheck = ArrivalCheck.NotYet,
+    /** 가는 상하차지 3km 안 */
+    val nearStop: Boolean = false,
+    /** 세워 두었다 (기어 P 또는 주차 브레이크) */
+    val parked: Boolean = false,
+)
+
+/** 묻고 있는 도착. [at]은 감지한 때 */
+private data class PendingArrival(val tripId: Long, val stop: StopType, val at: Instant)

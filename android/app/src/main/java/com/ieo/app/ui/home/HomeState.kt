@@ -57,12 +57,28 @@ sealed interface HomeState {
         val etaShared: Boolean,
         /** 음성으로 안내 중인 다음 배차 추천. 없으면 null */
         val recommendation: Recommendation?,
-        /** 내비가 길 안내 중인지. 안내가 꺼졌거나 실패했으면 "길 안내 다시"·"도착했어요" 버튼을 보여 준다 */
+        /** 내비가 길 안내 중인지. 안내가 꺼졌거나 실패했으면 "길 안내 다시"·"대기 시작" 버튼을 보여 준다 */
         val naviActive: Boolean = true,
-        /** 상하차지 반경 안에서 멈춰 있다. 이만큼 더 서 있으면 자동으로 도착 처리 (WAIT-001) */
+        /** 상하차지 반경 안에 세워 두었다. 이만큼 더 서 있으면 도착을 확인한다 (WAIT-001, 007) */
         val arrivingInSeconds: Long? = null,
-    ) : HomeState
+        /** 가는 상하차지 3km 안이다. "대기 시작" 버튼을 보여 준다 (WAIT-008) */
+        val nearStop: Boolean = false,
+        /** 세워 두었다(기어 P 또는 주차 브레이크). 이때만 버튼이 눌린다 */
+        val parked: Boolean = false,
+    ) : HomeState {
+        /** "대기 시작" 버튼을 보여 주나: 상하차지 가까이 왔거나, 길 안내가 꺼졌을 때 */
+        val showsStartWait: Boolean get() = nearStop || !naviActive
+    }
 }
+
+/** 도착을 감지하고 차주에게 묻는 창 (WAIT-007) */
+data class ArrivalQuestion(
+    val stopName: String,
+    /** 확인하면 대기를 세기 시작하는 시각 "14:00" (감지한 때) */
+    val startLabel: String,
+    /** 묻는 말을 마쳤다. 이때부터 시간을 잰다 */
+    val asked: Boolean = false,
+)
 
 data class TodaySummary(val tripCount: Int, val netProfit: Long)
 

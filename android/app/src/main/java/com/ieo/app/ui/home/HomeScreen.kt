@@ -481,7 +481,8 @@ private fun heightNote(warning: HeightWarning) = when (warning) {
 
 /**
  * 주행 중에는 버튼을 두지 않는다. 도착 시각과 진행 상황만 크게 보여 주고, 다음 배차는 음성으로 안내한다.
- * 내비 안내가 꺼졌을 때만(도착해서 끄거나, 앱을 다시 켰거나, 내비가 요청을 받지 못했을 때) "길 안내 다시"·"도착했어요" 버튼을 보여 준다.
+ * 내비 안내가 꺼졌을 때(도착해서 끄거나, 앱을 다시 켰거나, 내비가 요청을 받지 못했을 때) "길 안내 다시"·"대기 시작" 버튼을,
+ * 상하차지 3km 안에서는 "대기 시작" 버튼을 보여 준다 (WAIT-008). 버튼은 세워 두었을 때(기어 P 또는 주차 브레이크)만 눌린다.
  */
 @Composable
 private fun DrivingHome(state: HomeState.Driving, onArrive: () -> Unit, onResumeGuidance: () -> Unit) {
@@ -523,7 +524,7 @@ private fun DrivingHome(state: HomeState.Driving, onArrive: () -> Unit, onResume
                 state.arrivingInSeconds?.let { seconds ->
                     Spacer(Modifier.height(20.dp))
                     Text(
-                        "${if (state.isPickup) "상차지" else "하차지"}에 멈췄어요 · ${formatDuration(seconds).takeLast(5)} 뒤 대기를 시작해요",
+                        "${if (state.isPickup) "상차지" else "하차지"}에 멈췄어요 · ${formatDuration(seconds).takeLast(5)} 뒤 도착을 확인할게요",
                         fontSize = 24.sp,
                         fontWeight = FontWeight.Bold,
                         color = IeoStatus.colors.waiting,
@@ -558,7 +559,7 @@ private fun DrivingHome(state: HomeState.Driving, onArrive: () -> Unit, onResume
                         time = rec.pickupTime,
                         day = "상차",
                         title = rec.route,
-                        subtitle = "기어 P로 세우면 수락할 수 있어요",
+                        subtitle = "차를 세우면(P·주차 브레이크) 수락할 수 있어요",
                         amount = "실수익",
                         amountNote = formatWon(rec.netProfit),
                         onClick = {},
@@ -567,16 +568,28 @@ private fun DrivingHome(state: HomeState.Driving, onArrive: () -> Unit, onResume
             }
             if (!state.naviActive) {
                 Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    // 경로를 모르면 다시 안내가 먼저고, 안내를 마친 뒤라면 도착 처리가 먼저다
+                    // 경로를 모르면 다시 안내가 먼저고, 안내를 마친 뒤라면 대기 시작이 먼저다
                     if (state.etaText == null) {
-                        IeoTonalButton(text = "도착했어요", onClick = onArrive, modifier = Modifier.weight(1f))
+                        IeoTonalButton(text = "대기 시작", onClick = onArrive, enabled = state.parked, modifier = Modifier.weight(1f))
                         IeoPrimaryButton(text = "길 안내 다시", onClick = onResumeGuidance, modifier = Modifier.weight(1f))
                     } else {
                         IeoTonalButton(text = "길 안내 다시", onClick = onResumeGuidance, modifier = Modifier.weight(1f))
-                        IeoPrimaryButton(text = "도착했어요", onClick = onArrive, modifier = Modifier.weight(1f))
+                        IeoPrimaryButton(text = "대기 시작", onClick = onArrive, enabled = state.parked, modifier = Modifier.weight(1f))
                     }
                 }
-            } else if (state.recommendation == null) {
+            } else if (state.nearStop) {
+                IeoPrimaryButton(text = "대기 시작", onClick = onArrive, enabled = state.parked, modifier = Modifier.fillMaxWidth())
+            }
+            if (state.showsStartWait && !state.parked) {
+                Text(
+                    "차를 세우면(P·주차 브레이크) 대기 시작을 누를 수 있어요",
+                    fontSize = 24.sp,
+                    color = TextSub,
+                    modifier = Modifier.fillMaxWidth(),
+                    textAlign = TextAlign.Center,
+                )
+            }
+            if (state.naviActive && !state.nearStop && state.recommendation == null) {
                 Text(
                     "안내를 끝내려면 내비에서 안내 종료를 눌러 주세요",
                     fontSize = 24.sp,
