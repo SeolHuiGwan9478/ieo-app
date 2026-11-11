@@ -10,7 +10,6 @@ import android.os.SystemClock
 import androidx.compose.foundation.background
 import java.time.Instant
 import java.time.Duration
-import com.ieo.app.ui.theme.Orange500
 import com.ieo.app.ui.theme.CardSurface
 import com.ieo.app.ui.component.KeywordTag
 import com.ieo.app.domain.order.CargoCategory
@@ -29,6 +28,9 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.FlowRow
+import androidx.annotation.DrawableRes
+import androidx.compose.ui.res.painterResource
+import com.ieo.app.R
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -61,8 +63,6 @@ import com.ieo.app.ui.component.IeoPrimaryButton
 import com.ieo.app.ui.component.IeoSecondaryButton
 import com.ieo.app.ui.component.IeoTonalButton
 import com.ieo.app.ui.component.Keyword
-import com.ieo.app.ui.component.SectionTitle
-import com.ieo.app.ui.component.SheetLine
 import com.ieo.app.ui.component.SheetTitle
 import com.ieo.app.ui.component.WhiteSection
 import com.ieo.app.ui.theme.CanvasGray
@@ -94,7 +94,7 @@ fun OrdersScreen(state: OrdersUiState, actions: OrdersActions, isDriving: Boolea
             Toolbar(state, actions)
             if (!state.verified) UnverifiedNotice()
             state.pending?.let { PendingStrip(it, onWithdraw = actions::withdraw, onExpired = actions::refresh) }
-            OrderList(state, onOrderClick = actions::open)
+            OrderList(state, onOrderClick = actions::open, onSort = actions::toggleSort)
         }
         IeoBottomSheet(item = state.detail, onDismiss = actions::close) { detail ->
             DetailSheet(detail, reporting = state.reporting, busy = state.isBusy, verified = state.verified, actions = actions)
@@ -169,7 +169,7 @@ private fun UpdatedLabel(updatedAt: Instant) {
             delay(30_000)
         }
     }
-    Text(updatedLabel(updatedAt, Instant.ofEpochMilli(now)), fontSize = 24.sp, color = TextSub, modifier = Modifier.padding(vertical = 8.dp))
+    Text(updatedLabel(updatedAt, Instant.ofEpochMilli(now)), fontSize = 24.sp, fontWeight = FontWeight.Medium, color = TextSub, modifier = Modifier.padding(vertical = 8.dp))
 }
 
 internal fun updatedLabel(updatedAt: Instant, now: Instant): String {
@@ -251,7 +251,7 @@ private fun DrivingNotice() {
     ) {
         Text("주행 중에는 오더를 보여 드리지 않아요", fontSize = 28.sp, fontWeight = FontWeight.ExtraBold, color = TextStrong)
         Spacer(Modifier.height(12.dp))
-        Text("정차하면 다시 보여 드릴게요", fontSize = 24.sp, color = TextSub, textAlign = TextAlign.Center)
+        Text("정차하면 다시 보여 드릴게요", fontSize = 24.sp, fontWeight = FontWeight.Medium, color = TextSub, textAlign = TextAlign.Center)
     }
 }
 
@@ -294,13 +294,19 @@ private fun PendingStrip(pending: PendingRequest, onWithdraw: () -> Unit, onExpi
 }
 
 @Composable
-private fun OrderList(state: OrdersUiState, onOrderClick: (Long) -> Unit) {
+private fun OrderList(state: OrdersUiState, onOrderClick: (Long) -> Unit, onSort: () -> Unit) {
     WhiteSection {
-        SectionTitle(
-            title = if (state.nearby) "근처 오더" else "모집 중인 오더",
-            count = state.rows.size,
-            note = "내 차로 실을 수 있는 것만",
-        )
+        // 휴대폰과 같이 건수와 정렬만 둔다
+        Row(Modifier.fillMaxWidth().padding(horizontal = 12.dp), verticalAlignment = Alignment.CenterVertically) {
+            Text("${state.rows.size}건", fontSize = 24.sp, fontWeight = FontWeight.Medium, color = TextSub, modifier = Modifier.weight(1f))
+            Text(
+                "${state.sort.label} ▾",
+                fontSize = 24.sp,
+                fontWeight = FontWeight.Bold,
+                color = TextStrong,
+                modifier = Modifier.heightIn(min = 64.dp).clickable(onClick = onSort).wrapContentHeight().padding(horizontal = 8.dp),
+            )
+        }
         if (state.rows.isEmpty()) {
             Text(
                 if (state.isLoading) "오더를 불러오는 중이에요" else "조건에 맞는 오더가 없어요",
@@ -319,10 +325,10 @@ private fun OrderRowView(row: OrderRow, onClick: () -> Unit) {
     Column(Modifier.fillMaxWidth().clickable(onClick = onClick).padding(horizontal = 12.dp, vertical = 18.dp)) {
         Row(verticalAlignment = Alignment.Top) {
             Row(Modifier.weight(1f).height(IntrinsicSize.Min)) {
-                Column(Modifier.width(22.dp).fillMaxHeight(), horizontalAlignment = Alignment.CenterHorizontally) {
-                    Box(Modifier.padding(top = 10.dp).size(14.dp).background(Orange500, CircleShape))
-                    Box(Modifier.padding(vertical = 4.dp).width(3.dp).weight(1f).background(CanvasGray))
-                    Box(Modifier.padding(bottom = 42.dp).size(14.dp).background(TextStrong, CircleShape))
+                Column(Modifier.width(34.dp).fillMaxHeight(), horizontalAlignment = Alignment.CenterHorizontally) {
+                    Icon(painterResource(R.drawable.ic_pin_pickup), contentDescription = null, tint = Color.Unspecified, modifier = Modifier.padding(top = 2.dp).size(32.dp))
+                    Box(Modifier.padding(vertical = 2.dp).width(3.dp).weight(1f).background(CanvasGray))
+                    Icon(painterResource(R.drawable.ic_pin_dropoff), contentDescription = null, tint = Color.Unspecified, modifier = Modifier.padding(bottom = 34.dp).size(32.dp))
                 }
                 Spacer(Modifier.width(12.dp))
                 Column {
@@ -338,16 +344,15 @@ private fun OrderRowView(row: OrderRow, onClick: () -> Unit) {
                             )
                         }
                     }
-                    Text(row.pickupTime, fontSize = 24.sp, color = TextSub, modifier = Modifier.padding(bottom = 10.dp))
+                    Text(row.pickupTime, fontSize = 24.sp, fontWeight = FontWeight.Medium, color = TextSub, modifier = Modifier.padding(bottom = 10.dp))
                     Text(row.dropoffName, fontSize = 26.sp, fontWeight = FontWeight.Bold, color = TextStrong)
-                    Text(row.dropoffTime, fontSize = 24.sp, color = TextSub)
+                    Text(row.dropoffTime, fontSize = 24.sp, fontWeight = FontWeight.Medium, color = TextSub)
                 }
             }
             Column(horizontalAlignment = Alignment.End, modifier = Modifier.padding(start = 16.dp)) {
                 Text(row.fare, fontSize = 30.sp, fontWeight = FontWeight.ExtraBold, color = TextStrong)
                 row.netProfit?.let { Text(it, fontSize = 24.sp, fontWeight = FontWeight.Bold, color = Orange700) }
-                row.distanceMeters?.let { Text("상차지까지 ${Keyword.distanceText(it)}", fontSize = 24.sp, color = TextSub, modifier = Modifier.padding(top = 10.dp)) }
-                if (row.requested) Text("요청함", fontSize = 24.sp, fontWeight = FontWeight.Bold, color = Orange700, modifier = Modifier.padding(top = 6.dp))
+                row.distanceMeters?.let { Text("상차지까지 ${Keyword.distanceText(it)}", fontSize = 24.sp, fontWeight = FontWeight.Medium, color = TextSub, modifier = Modifier.padding(top = 10.dp)) }
             }
         }
         FlowRow(Modifier.padding(top = 12.dp), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -358,6 +363,8 @@ private fun OrderRowView(row: OrderRow, onClick: () -> Unit) {
                 row.brokerMetrics?.let(Keyword::brokerPayment),
             ).forEach { KeywordTag(it) }
         }
+        // 휴대폰 목록과 같은 문구
+        if (row.requested) Text("요청 중 · 주선사 확인 중", fontSize = 24.sp, fontWeight = FontWeight.Bold, color = Orange700, modifier = Modifier.padding(top = 12.dp))
     }
 }
 
@@ -372,19 +379,56 @@ private fun UnverifiedNotice() {
         Spacer(Modifier.width(14.dp))
         Column {
             Text("서류 승인 전이라 주소와 주선사를 가렸어요", fontSize = 24.sp, fontWeight = FontWeight.Bold, color = Orange700)
-            Text("휴대폰 앱 내 정보 > 서류에서 4가지를 올리면 배차를 요청할 수 있어요", fontSize = 24.sp, color = TextSub)
+            Text("휴대폰 앱 내 정보 > 서류에서 4가지를 올리면 배차를 요청할 수 있어요", fontSize = 24.sp, fontWeight = FontWeight.Medium, color = TextSub)
         }
     }
 }
 
+/**
+ * 오더 상세. 휴대폰 오더 상세와 같은 구성을 가로 화면에 둘로 나눠 놓는다:
+ * 왼쪽은 운임·실수익, 오른쪽은 상차→하차·화물·주선사
+ */
 @Composable
 private fun DetailSheet(detail: OrderDetail, reporting: Boolean, busy: Boolean, actions: OrdersActions, verified: Boolean = true) {
     SheetTitle(detail.route)
-    Spacer(Modifier.height(24.dp))
-    detail.lines.forEach { (label, value) -> SheetLine(label, value) }
-    Spacer(Modifier.height(32.dp))
+    FlowRow(Modifier.padding(top = 10.dp), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        detail.tags.forEach { KeywordTag(it) }
+    }
+    Spacer(Modifier.height(20.dp))
+    Row(horizontalArrangement = Arrangement.spacedBy(32.dp)) {
+        Column(Modifier.weight(1f)) {
+            Text("운임", fontSize = 24.sp, fontWeight = FontWeight.Medium, color = TextSub)
+            Text(detail.fare, fontSize = 40.sp, fontWeight = FontWeight.ExtraBold, color = TextStrong)
+            Text(detail.fareNote, fontSize = 24.sp, fontWeight = FontWeight.Medium, color = TextSub)
+            if (detail.profit != null) {
+                DetailDivider()
+                Text("실수익 · ${detail.profitNote}", fontSize = 24.sp, fontWeight = FontWeight.Medium, color = TextSub)
+                Text(detail.profit, fontSize = 36.sp, fontWeight = FontWeight.ExtraBold, color = Orange700)
+                detail.profitLines.forEach { (label, value) -> DetailLine(label, value) }
+            }
+        }
+        Column(Modifier.weight(1f)) {
+            DetailStopView("상차", detail.pickup, R.drawable.ic_pin_pickup)
+            Spacer(Modifier.height(16.dp))
+            DetailStopView("하차", detail.dropoff, R.drawable.ic_pin_dropoff)
+            DetailDivider()
+            FlowRow(horizontalArrangement = Arrangement.spacedBy(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp), itemVerticalAlignment = Alignment.CenterVertically) {
+                Text("화물", fontSize = 24.sp, fontWeight = FontWeight.Medium, color = TextSub)
+                Text(detail.cargo, fontSize = 24.sp, fontWeight = FontWeight.Bold, color = TextStrong)
+                detail.loadingTag?.let { KeywordTag(it) }
+            }
+            DetailDivider()
+            FlowRow(horizontalArrangement = Arrangement.spacedBy(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp), itemVerticalAlignment = Alignment.CenterVertically) {
+                Text(detail.broker, fontSize = 24.sp, fontWeight = FontWeight.Bold, color = if (detail.limited) TextSub else TextStrong)
+                detail.brokerTag?.let { KeywordTag(it) }
+            }
+            detail.brokerNote?.let { Text(it, fontSize = 24.sp, lineHeight = 34.sp, fontWeight = FontWeight.Medium, color = TextSub) }
+        }
+    }
+    Spacer(Modifier.height(28.dp))
     if (reporting) {
-        Text("어떤 문제가 있나요?", fontSize = 24.sp, fontWeight = FontWeight.Bold, color = TextStrong)
+        Text("무엇이 문제인가요?", fontSize = 24.sp, fontWeight = FontWeight.Bold, color = TextStrong)
+        Text("운영팀이 확인해요. 신고는 오더마다 한 번 할 수 있어요", fontSize = 24.sp, fontWeight = FontWeight.Medium, color = TextSub, modifier = Modifier.padding(top = 4.dp))
         Spacer(Modifier.height(16.dp))
         ReportType.entries.chunked(2).forEach { pair ->
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.padding(bottom = 12.dp)) {
@@ -397,7 +441,7 @@ private fun DetailSheet(detail: OrderDetail, reporting: Boolean, busy: Boolean, 
         return
     }
     if (!verified && !detail.requested) {
-        Text("서류 4가지가 승인되면 배차를 요청할 수 있어요.\n휴대폰 앱 내 정보 > 서류에서 올려 주세요", fontSize = 24.sp, lineHeight = 34.sp, color = TextSub)
+        Text("서류 4가지가 승인되면 배차를 요청할 수 있어요.\n휴대폰 앱 내 정보 > 서류에서 올려 주세요", fontSize = 24.sp, lineHeight = 34.sp, fontWeight = FontWeight.Medium, color = TextSub)
         Spacer(Modifier.height(20.dp))
     }
     Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -407,6 +451,41 @@ private fun DetailSheet(detail: OrderDetail, reporting: Boolean, busy: Boolean, 
             IeoSecondaryButton(text = "요청 철회", onClick = actions::withdraw, modifier = Modifier.weight(2f))
         } else {
             IeoPrimaryButton(text = if (busy) "요청 중…" else "배차 요청", onClick = actions::request, modifier = Modifier.weight(2f), enabled = verified)
+        }
+    }
+}
+
+@Composable
+private fun DetailDivider() {
+    Box(Modifier.padding(vertical = 16.dp).fillMaxWidth().height(2.dp).background(CanvasGray))
+}
+
+@Composable
+private fun DetailLine(label: String, value: String, alignEnd: Boolean = true) {
+    Row(Modifier.fillMaxWidth().padding(top = 8.dp), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+        Text(label, fontSize = 24.sp, fontWeight = FontWeight.Medium, color = TextSub)
+        Text(
+            value,
+            fontSize = 24.sp,
+            fontWeight = FontWeight.Bold,
+            color = TextStrong,
+            textAlign = if (alignEnd) TextAlign.End else TextAlign.Start,
+            modifier = Modifier.weight(1f),
+        )
+    }
+}
+
+/** 핀 + 상차/하차 이름·주소·시간 (휴대폰 상세와 같은 모양). 위 화살표는 싣는 곳, 아래 화살표는 내리는 곳 */
+@Composable
+private fun DetailStopView(label: String, stop: DetailStop, @DrawableRes pin: Int) {
+    Row {
+        Icon(painterResource(pin), contentDescription = null, tint = Color.Unspecified, modifier = Modifier.size(40.dp))
+        Spacer(Modifier.width(10.dp))
+        Column {
+            Text(label, fontSize = 24.sp, fontWeight = FontWeight.Medium, color = TextSub)
+            Text(stop.name, fontSize = 26.sp, fontWeight = FontWeight.Bold, color = TextStrong)
+            Text(stop.address, fontSize = 24.sp, fontWeight = FontWeight.Medium, color = TextSub)
+            Text(stop.time, fontSize = 24.sp, fontWeight = FontWeight.SemiBold, color = TextStrong)
         }
     }
 }
@@ -436,6 +515,7 @@ private object PreviewOrdersActions : OrdersActions {
     override fun closeConditions() = Unit
     override fun applyConditions() = Unit
     override fun autoRefresh() = Unit
+    override fun toggleSort() = Unit
     override fun open(orderId: Long) = Unit
     override fun close() = Unit
     override fun request() = Unit

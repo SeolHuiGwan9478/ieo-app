@@ -1,0 +1,215 @@
+<title>차량 오더 상세 시안</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700;800&display=swap">
+<style>
+/* 레이아웃: 위에 시안 고르는 탭, 아래에 차량 화면 반쪽 크기(1175px) 상세 시트를 그대로 그린다. 글자 크기는 에뮬레이터 화면과 같은 비율(24sp → 18px) */
+:root {
+  --page: #E9ECEF;
+  --sheet: #FFFFFF;
+  --strong: #191F28;
+  --mid: #4E5968;
+  --sub-old: #8B95A1;
+  --sub-new: #4E5968;
+  --line: #F2F4F6;
+  --btn-gray: #F2F4F6;
+  --orange: #F25A22;
+  --orange-text: #C2410C;
+  --orange-dot: #FF6C37;
+  --note: #4E5968;
+  /* 목록 태그와 같은 색 (차량 앱 IeoTag) */
+  --tag-navy-bg: #E8ECF4; --tag-navy: #1E2A44;
+  --tag-sand-bg: #F5EBDD; --tag-sand: #7C5A2E;
+  --tag-gray-bg: #F2F4F6; --tag-gray: #4E5968;
+  --tag-plum-bg: #F3E6F5; --tag-plum: #74307F;
+  --font: "Noto Sans KR", "Apple SD Gothic Neo", "Malgun Gothic", system-ui, sans-serif;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --page: #0F1216; --sheet: #1B2027; --strong: #F2F4F6; --mid: #C4CBD4; --sub-old: #9CA6B2; --sub-new: #B0B8C1;
+  --line: #2A313A; --btn-gray: #2A313A; --orange-text: #FF9A73; --note: #B0B8C1;
+  --tag-navy-bg: #25304A; --tag-navy: #C5D2EE; --tag-sand-bg: #40331F; --tag-sand: #E8CFA6;
+  --tag-gray-bg: #2A313A; --tag-gray: #C4CBD4; --tag-plum-bg: #3E2544; --tag-plum: #E6B8EE; color-scheme: dark;
+} }
+:root[data-theme="dark"] {
+  --page: #0F1216; --sheet: #1B2027; --strong: #F2F4F6; --mid: #C4CBD4; --sub-old: #9CA6B2; --sub-new: #B0B8C1;
+  --line: #2A313A; --btn-gray: #2A313A; --orange-text: #FF9A73; --note: #B0B8C1;
+  --tag-navy-bg: #25304A; --tag-navy: #C5D2EE; --tag-sand-bg: #40331F; --tag-sand: #E8CFA6;
+  --tag-gray-bg: #2A313A; --tag-gray: #C4CBD4; --tag-plum-bg: #3E2544; --tag-plum: #E6B8EE; color-scheme: dark;
+}
+body { background: var(--page); color: var(--strong); font-family: var(--font); padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 24px 48px; }
+.wrap { max-width: 1175px; margin: 0 auto; display: grid; gap: 18px; }
+h1 { font-size: 22px; margin: 0; text-wrap: balance; }
+.lead { margin: 0; color: var(--note); font-size: 15px; line-height: 1.6; max-width: 70ch; }
+.tabs { display: flex; flex-wrap: wrap; gap: 8px; }
+.tabs button { font: inherit; font-size: 15px; font-weight: 600; padding: 10px 16px; border-radius: 12px; border: 1.5px solid transparent; background: var(--sheet); color: var(--mid); cursor: pointer; }
+.tabs button[aria-pressed="true"] { border-color: var(--orange); color: var(--orange-text); }
+.tabs button:focus-visible { outline: 2px solid var(--orange); outline-offset: 2px; }
+.tabs .sep { width: 1px; background: var(--sub-old); opacity: .4; margin: 4px 4px; }
+.caption { font-size: 15px; color: var(--note); margin: 0; line-height: 1.7; }
+.caption b { color: var(--strong); }
+.frame { overflow-x: auto; border-radius: 24px; }
+
+/* 시트: 시안마다 클래스로 회색·핀·아이콘·태그를 바꿔 끼운다 */
+.sheet { --sub: var(--sub-old); --sub-w: 400; background: var(--sheet); border-radius: 24px; padding: 26px 24px 20px; min-width: 760px; }
+.sheet.darker { --sub: var(--sub-new); --sub-w: 500; }
+.title { font-size: 24px; font-weight: 800; margin: 0; }
+.summary { font-size: 18px; color: var(--sub); font-weight: var(--sub-w); margin: 4px 0 0; }
+.cols { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-top: 16px; }
+.cols > div { min-width: 0; }
+.label { font-size: 18px; color: var(--sub); font-weight: var(--sub-w); display: flex; align-items: center; gap: 8px; }
+.fare { font-size: 30px; font-weight: 800; margin: 2px 0; }
+.profit { font-size: 27px; font-weight: 800; color: var(--orange-text); margin: 2px 0 4px; }
+.divider { height: 2px; background: var(--line); margin: 14px 0; }
+.line { display: flex; justify-content: space-between; gap: 12px; font-size: 18px; padding-top: 6px; font-variant-numeric: tabular-nums; }
+.line span:first-child { color: var(--sub); font-weight: var(--sub-w); }
+.line span:last-child { font-weight: 700; }
+.stop { display: grid; grid-template-columns: 24px 1fr; gap: 10px; }
+.stop + .stop { margin-top: 12px; }
+.dot { width: 11px; height: 11px; border-radius: 50%; margin-top: 7px; justify-self: center; }
+.pin { width: 24px; height: 24px; margin-top: 1px; }
+.stop .k { font-size: 18px; color: var(--sub); font-weight: var(--sub-w); }
+.stop .n { font-size: 19.5px; font-weight: 700; }
+.stop .a { font-size: 18px; color: var(--sub); font-weight: var(--sub-w); }
+.stop .t { font-size: 18px; font-weight: 600; }
+.cargo { display: flex; flex-wrap: wrap; gap: 8px 12px; font-size: 18px; align-items: center; }
+.cargo .k { color: var(--sub); font-weight: var(--sub-w); }
+.cargo .v { font-weight: 700; }
+.broker { font-size: 18px; font-weight: 700; display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px; }
+.broker-note { font-size: 18px; color: var(--sub); font-weight: var(--sub-w); margin-top: 2px; }
+.buttons { display: grid; grid-template-columns: 1fr 1fr 2fr; gap: 9px; margin-top: 22px; }
+.buttons span { display: flex; align-items: center; justify-content: center; gap: 8px; min-height: 57px; border-radius: 14px; font-size: 18px; font-weight: 700; }
+.b-gray { background: var(--btn-gray); color: var(--mid); }
+.b-main { background: var(--orange); color: #fff; }
+.ic { width: 22px; height: 22px; flex: none; }
+
+/* 태그: 목록과 같은 모양 */
+.tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+.tag { font-size: 18px; font-weight: 700; padding: 3px 9px; border-radius: 8px; line-height: 1.35; white-space: nowrap; }
+.t-navy { background: var(--tag-navy-bg); color: var(--tag-navy); }
+.t-sand { background: var(--tag-sand-bg); color: var(--tag-sand); }
+.t-gray { background: var(--tag-gray-bg); color: var(--tag-gray); }
+.t-plum { background: var(--tag-plum-bg); color: var(--tag-plum); }
+
+/* 켜고 끄기 */
+.sheet:not(.icons) .ic { display: none; }
+.sheet:not(.pins) .pin { display: none; }
+.sheet.pins .dot { display: none; }
+.sheet:not(.tagged) .only-tag { display: none; }
+.sheet.tagged .no-tag { display: none; }
+
+.compare { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; }
+.card { background: var(--sheet); border-radius: 16px; padding: 14px 16px; display: grid; gap: 8px; font-size: 15px; line-height: 1.6; }
+.card h2 { font-size: 16px; margin: 0; }
+.card p { margin: 0; color: var(--note); }
+@media (prefers-reduced-motion: no-preference) { .tabs button { transition: border-color .15s; } }
+</style>
+
+<!-- 아이콘: 휴대폰·차량 설정 메뉴 아이콘처럼 색을 채운 납작한 모양 -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <symbol id="i-won" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" fill="#FFB020"/><circle cx="12" cy="12" r="7.6" fill="#FFC94D"/><path d="M7.4 8.6h1.6l1.1 4.4 1.2-4.4h1.4l1.2 4.4 1.1-4.4h1.6l-1.9 7h-1.5L12 11.4l-1.2 4.2H9.3z" fill="#9A5B00"/><path d="M7 11.2h10v1.1H7z" fill="#9A5B00"/></symbol>
+    <symbol id="i-profit" viewBox="0 0 24 24"><rect x="3" y="6" width="18" height="13" rx="3" fill="#FF6C37"/><rect x="3" y="9" width="18" height="2.4" fill="#C2410C"/><rect x="14" y="13" width="5" height="3.2" rx="1.2" fill="#FFE2D6"/><path d="M8 4.5l3-2.5 3 2.5h-2V7h-2V4.5z" fill="#16A34A"/></symbol>
+    <symbol id="i-pin-up" viewBox="0 0 24 24"><path d="M12 2a7 7 0 0 1 7 7c0 5-7 13-7 13S5 14 5 9a7 7 0 0 1 7-7z" fill="#FF6C37"/><path d="M12 5.5l3.2 3.4h-2.1V12h-2.2V8.9H8.8z" fill="#fff"/></symbol>
+    <symbol id="i-pin-down" viewBox="0 0 24 24"><path d="M12 2a7 7 0 0 1 7 7c0 5-7 13-7 13S5 14 5 9a7 7 0 0 1 7-7z" fill="#334155"/><path d="M12 12.5l-3.2-3.4h2.1V6h2.2v3.1h2.1z" fill="#fff"/></symbol>
+    <symbol id="i-box" viewBox="0 0 24 24"><path d="M3 7.5L12 3l9 4.5v9L12 21l-9-4.5z" fill="#D9A066"/><path d="M3 7.5L12 12l9-4.5L12 3z" fill="#EBC08C"/><path d="M12 12v9l-9-4.5v-9z" fill="#C78A4E"/><path d="M7.4 5.3l9 4.5v3l-2 1v-3L5.4 6.3z" fill="#F7DDB8"/></symbol>
+    <symbol id="i-office" viewBox="0 0 24 24"><rect x="4" y="3" width="11" height="18" rx="1.5" fill="#3B82F6"/><rect x="15" y="9" width="5" height="12" rx="1" fill="#93C5FD"/><path d="M6.5 6h2v2h-2zm4 0h2v2h-2zm-4 4h2v2h-2zm4 0h2v2h-2zm-4 4h2v2h-2zm4 0h2v2h-2z" fill="#DBEAFE"/><rect x="8" y="17.5" width="3" height="3.5" fill="#1E40AF"/></symbol>
+    <symbol id="i-flag" viewBox="0 0 24 24"><rect x="5" y="3" width="2" height="18" rx="1" fill="#64748B"/><path d="M7 4h11l-2.5 4L18 12H7z" fill="#EF4444"/></symbol>
+    <symbol id="i-truck" viewBox="0 0 24 24"><path d="M3 6h10.5a1 1 0 0 1 1 1v9H2V7a1 1 0 0 1 1-1z" fill="#fff"/><path d="M14.5 9h4.2l3.3 3.6V16h-7.5z" fill="#FFE2D6"/><circle cx="6.5" cy="17.5" r="2" fill="#fff" stroke="#F25A22" stroke-width="1.2"/><circle cx="17.5" cy="17.5" r="2" fill="#fff" stroke="#F25A22" stroke-width="1.2"/></symbol>
+  </defs>
+</svg>
+
+<div class="wrap">
+  <h1>차량 오더 상세 · 핀과 태그</h1>
+  <p class="lead">평택 물류센터 → 대구 성서 산단 오더(38만 원)를 차량 화면 반쪽 크기로 그렸어요. 보조 글자는 앱에 넣은 진한 회색(#4E5968, 한 단계 굵게)이에요.</p>
+
+  <div class="tabs" role="group" aria-label="시안 고르기">
+    <button type="button" id="t-tags" data-v="tags" aria-pressed="true">핀 + 태그</button>
+    <button type="button" id="t-pins" data-v="pins" aria-pressed="false">핀만</button>
+    <button type="button" id="t-app" data-v="app" aria-pressed="false">지금 앱</button>
+    <span class="sep" aria-hidden="true"></span>
+    <button type="button" id="t-icons" data-v="icons" aria-pressed="false">아이콘 모두 (지난 안)</button>
+    <button type="button" id="t-old" data-v="old" aria-pressed="false">예전 회색 (지난 안)</button>
+  </div>
+  <p class="caption" id="caption"></p>
+
+  <div class="frame">
+    <section class="sheet darker pins tagged" id="sheet" aria-label="오더 상세 시트">
+      <p class="title">평택 물류센터 → 대구 성서 산단</p>
+      <p class="summary no-tag">5톤 카고 · 인수증 · 거래 기록 적음</p>
+      <div class="tags only-tag"><span class="tag t-navy">5톤 카고</span><span class="tag t-sand">인수증</span><span class="tag t-gray">이사</span></div>
+      <div class="cols">
+        <div>
+          <div class="label"><svg class="ic"><use href="#i-won"/></svg>운임</div>
+          <div class="fare">38만 원</div>
+          <div class="summary" style="margin:0">인수증 · 30일 안에 지급</div>
+          <div class="divider"></div>
+          <div class="label"><svg class="ic"><use href="#i-profit"/></svg>실수익 · 기름값·통행료 뺀 금액</div>
+          <div class="profit">262,383원</div>
+          <div class="line"><span>예상 통행료</span><span>17,400원</span></div>
+          <div class="line"><span>기름값</span><span>100,217원</span></div>
+          <div class="line"><span>상차지까지</span><span>15km</span></div>
+        </div>
+        <div>
+          <div class="stop">
+            <span class="dot" style="background:var(--orange-dot)"></span>
+            <svg class="pin" aria-hidden="true"><use href="#i-pin-up"/></svg>
+            <div><div class="k">상차</div><div class="n">평택 물류센터</div><div class="a">경기 평택시 포승읍 평택항로 156</div><div class="t">내일 09:00~11:00</div></div>
+          </div>
+          <div class="stop">
+            <span class="dot" style="background:var(--strong)"></span>
+            <svg class="pin" aria-hidden="true"><use href="#i-pin-down"/></svg>
+            <div><div class="k">하차</div><div class="n">대구 성서 산단</div><div class="a">대구 달서구 성서공단로 11</div><div class="t">내일 16:00까지</div></div>
+          </div>
+          <div class="divider"></div>
+          <div class="cargo no-tag"><svg class="ic"><use href="#i-box"/></svg><span class="k">화물</span><span class="v">이사 · 가구 (이사) · 4.5톤 · 수작업</span></div>
+          <div class="cargo only-tag"><span class="k">화물</span><span class="v">가구 · 4.5톤</span><span class="tag t-plum">수작업</span></div>
+          <div class="divider"></div>
+          <div class="broker"><svg class="ic"><use href="#i-office"/></svg>한빛물류<span class="tag t-gray only-tag">거래 기록 적음</span></div>
+          <div class="broker-note no-tag">거래 기록 적음</div>
+        </div>
+      </div>
+      <div class="buttons">
+        <span class="b-gray"><svg class="ic"><use href="#i-flag"/></svg>신고</span>
+        <span class="b-gray">닫기</span>
+        <span class="b-main"><svg class="ic"><use href="#i-truck"/></svg>배차 요청</span>
+      </div>
+    </section>
+  </div>
+
+  <div class="compare">
+    <div class="card">
+      <h2>태그로 바꾼 곳</h2>
+      <p>제목 아래 "5톤 카고 · 인수증"을 목록과 같은 색 태그로 바꿨어요. 이사·냉동·위험물 같은 화물 종류도 여기 태그로 올렸어요.</p>
+    </div>
+    <div class="card">
+      <h2>화물 줄</h2>
+      <p>"수작업"은 몸으로 싣고 내려야 해서 따로 눈에 띄게 했어요. 지게차면 회색 태그로 바뀌어요. 이사는 위로 올라가 화물 줄에서 빠져요.</p>
+    </div>
+    <div class="card">
+      <h2>주선사 줄</h2>
+      <p>"거래 기록 적음"을 이름 옆 태그로 붙였어요. 제목 아래와 주선사 줄에 두 번 나오던 것을 한 번으로 줄였어요. 지급 평균이 쌓이면 초록(빠름)·보라(늦음)로 바뀌어요.</p>
+    </div>
+    <div class="card">
+      <h2>그대로 둔 곳</h2>
+      <p>운임·실수익 금액, 통행료·기름값·거리는 숫자라 태그로 바꾸지 않았어요. "30일 안에 지급"도 문장으로 두는 편이 읽기 쉬워요.</p>
+    </div>
+  </div>
+</div>
+
+<script>
+const sheet = document.getElementById("sheet");
+const caption = document.getElementById("caption");
+const variants = {
+  tags:  { cls: ["darker", "pins", "tagged"], text: "<b>핀 + 태그</b> 상하차 점을 화살표 핀으로 바꾸고, 차량·결제·화물 종류·작업 방식·주선사 기록을 목록과 같은 태그로 보여 줘요." },
+  pins:  { cls: ["darker", "pins"], text: "<b>핀만</b> 상하차 점만 위·아래 화살표 핀으로 바꿨어요. 나머지는 지금 앱과 같아요." },
+  app:   { cls: ["darker"], text: "<b>지금 앱</b> 보조 글자를 진하게 바꾼 현재 화면이에요." },
+  icons: { cls: ["darker", "pins", "icons"], text: "<b>아이콘 모두 (지난 안)</b> 운임·실수익·화물·주선사 앞과 버튼에도 아이콘을 단 안이에요. 한 화면에 색이 많아져서 빼기로 했어요." },
+  old:   { cls: [], text: "<b>예전 회색 (지난 안)</b> 보조 글자가 #8B95A1, 보통 굵기였던 화면이에요." }
+};
+function show(v) {
+  ["darker", "pins", "tagged", "icons"].forEach(c => sheet.classList.toggle(c, variants[v].cls.includes(c)));
+  document.querySelectorAll(".tabs button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.v === v)));
+  caption.innerHTML = variants[v].text;
+}
+document.querySelectorAll(".tabs button").forEach(b => b.addEventListener("click", () => show(b.dataset.v)));
+show("tags");
+</script>

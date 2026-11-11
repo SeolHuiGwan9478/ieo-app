@@ -39,12 +39,37 @@ data class OrderRow(
     val isNew: Boolean = false,
 )
 
-/** 아래에서 올라오는 상세 */
+/** 상세의 상차지·하차지 한 곳 */
+data class DetailStop(val name: String, val address: String, val time: String)
+
+/** 아래에서 올라오는 상세. 휴대폰 오더 상세와 같은 순서: 운임 → 실수익 → 상하차 → 화물 → 주선사 */
 data class OrderDetail(
     val id: Long,
     val route: String,
-    /** 이름 · 값 */
-    val lines: List<Pair<String, String>>,
+    /** 제목 아래 태그: 차량, 일반이 아닌 화물 종류, 결제 방식 (목록과 같은 색) */
+    val tags: List<Keyword>,
+    val fare: String,
+    /** "인수증 · 30일 안에 지급" */
+    val fareNote: String,
+    /** "기름값·통행료 뺀 금액". 위치를 몰라 실수익이 없으면 [profit]과 함께 null */
+    val profitNote: String? = null,
+    /** "273,755원", 경로를 받기 전에는 "약 28만 원" */
+    val profit: String? = null,
+    /** 예상 통행료, 기름값, 상차지까지, 노선 평균 운임 */
+    val profitLines: List<Pair<String, String>> = emptyList(),
+    val pickup: DetailStop,
+    val dropoff: DetailStop,
+    /** "가구 · 4.5톤". 종류는 [tags], 싣는 방법은 [loadingTag]에 있다 */
+    val cargo: String,
+    /** 지게차·수작업 같은 싣고 내리는 방법 */
+    val loadingTag: Keyword? = null,
+    val broker: String,
+    /** 이름 옆 태그: "거래 기록 적음", "지급 평균 12일" */
+    val brokerTag: Keyword? = null,
+    /** "평균 지급 12일 · 지급 지연 8% …". 기록이 적어 태그만으로 충분하면 null */
+    val brokerNote: String? = null,
+    /** 서류 승인 전이라 주소·주선사를 가렸다 */
+    val limited: Boolean = false,
     /** 확정을 기다리는 내 요청이 있으면 "배차 요청" 대신 "요청 철회" */
     val requested: Boolean,
     /** 이미 신고했으면 신고 버튼을 닫는다 */
@@ -96,22 +121,36 @@ class OrderUiMapper(private val labels: DayTimeFormatter) {
     fun detail(order: Order, profit: OrderProfit? = null) = OrderDetail(
         id = order.id,
         route = route(order),
-        lines = listOfNotNull(
-            "상차" to "${labels.dayTime(order.pickupFrom)} ~ ${labels.time(order.pickupUntil)} · ${addressOf(order, order.pickup.address)}",
-            "하차" to "${labels.dayTime(order.dropoffBy)}까지 · ${addressOf(order, order.dropoff.address)}",
-            "차량" to order.vehicleLabel,
-            "화물" to cargo(order),
-            "운임" to "${formatWon(order.fare)} · ${order.paymentTypeLabel} · ${order.expectedPaymentDays}일 안에 지급",
-            profitLine(order, profit),
+        tags = listOfNotNull(
+            Keyword.vehicle(order.vehicleLabel),
+            order.specialCargo?.let(Keyword::cargo),
+            Keyword.payment(order.paymentTypeLabel),
+        ),
+        fare = formatWon(order.fare),
+        fareNote = "${order.paymentTypeLabel} · ${order.expectedPaymentDays}일 안에 지급",
+        profitNote = when {
+            profit?.tollFare != null -> "기름값·통행료 뺀 금액"
+            profit != null -> "기름값만 뺀 금액"
+            order.netProfit != null -> "기름값만 뺀 어림값"
+            else -> null
+        },
+        profit = profit?.let { formatWon(it.netProfit) } ?: order.netProfit?.let { "약 ${formatWon(roundedToManwon(it))}" },
+        profitLines = listOfNotNull(
             profit?.tollFare?.let { "예상 통행료" to formatWon(it) },
             profit?.let { "기름값" to formatWon(it.fuelCost) },
             profit?.let { "상차지까지" to "${(it.emptyMeters + 500) / 1000}km" }
                 // 실제 경로를 받기 전에는 목록과 같은 어림 거리
                 ?: order.distanceMeters?.let { "상차지까지" to Keyword.distanceText(it) },
-            order.routeAverageFare?.let { "노선 평균 운임" to "${formatWon(roundedToManwon(it))} (Ieo에서 끝난 운행 기준)" },
-            "주선사" to brokerOf(order),
-            order.brokerMetrics?.let { "주선사 기록" to metricsSummary(it) },
+            order.routeAverageFare?.let { "이 노선 평균 운임" to "${formatWon(roundedToManwon(it))} (Ieo 완료 운행 기준)" },
         ),
+        pickup = DetailStop(order.pickup.name, addressOf(order, order.pickup.address), "${labels.dayTime(order.pickupFrom)}~${labels.time(order.pickupUntil)}"),
+        dropoff = DetailStop(order.dropoff.name, addressOf(order, order.dropoff.address), "${labels.dayTime(order.dropoffBy)}까지"),
+        cargo = cargo(order),
+        loadingTag = order.loadingMethodLabel?.takeIf { it.isNotBlank() }?.let(Keyword::loading),
+        broker = brokerOf(order),
+        brokerTag = order.brokerMetrics?.let(Keyword::brokerPayment),
+        brokerNote = order.brokerMetrics?.takeIf { it.published }?.let(::metricsSummary),
+        limited = order.limited,
         requested = order.isRequestedByMe,
         reported = order.reportedByMe,
     )
@@ -120,13 +159,7 @@ class OrderUiMapper(private val labels: DayTimeFormatter) {
     private fun brokerOf(order: Order): String = if (order.limited) "서류 승인 후 보여요" else order.brokerName
 
     /** 서류 심사 전이면 시·구까지만 온다 */
-    private fun addressOf(order: Order, address: String): String = if (order.limited) "$address (정확한 주소는 승인 후)" else address
-
-    private fun profitLine(order: Order, profit: OrderProfit?): Pair<String, String>? = when {
-        profit != null && profit.tollFare != null -> "실수익" to "${formatWon(profit.netProfit)} (기름값·통행료 뺀 금액)"
-        profit != null -> "실수익" to "${formatWon(profit.netProfit)} (기름값만 뺀 금액)"
-        else -> order.netProfit?.let { "실수익" to "약 ${formatWon(roundedToManwon(it))} (기름값만 뺀 어림값)" }
-    }
+    private fun addressOf(order: Order, address: String): String = if (order.limited) "정확한 주소는 서류 승인 후 보여요" else address
 
     private fun roundedToManwon(won: Long): Long = (won + 5_000) / 10_000 * 10_000
 
@@ -148,11 +181,9 @@ class OrderUiMapper(private val labels: DayTimeFormatter) {
         ).joinToString(" · ").ifEmpty { "아직 기록이 없어요" }
     }
 
-    /** "냉동·냉장 · 냉동 닭 · 4.2톤 · 지게차". 비어 있는 값과 "일반"은 뺀다 */
+    /** "냉동 닭 · 4.2톤". 화물 종류와 싣는 방법은 태그로 따로 보여 준다 */
     private fun cargo(order: Order): String = listOfNotNull(
-        order.specialCargo?.label,
         order.cargoType,
         order.weightKg.takeIf { it > 0 }?.let { "%.1f톤".format(it / 1000.0) },
-        order.loadingMethodLabel,
     ).joinToString(" · ").ifEmpty { "정보 없음" }
 }

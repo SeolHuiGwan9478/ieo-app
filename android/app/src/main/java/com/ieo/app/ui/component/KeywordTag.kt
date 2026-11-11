@@ -54,6 +54,9 @@ data class Keyword(val text: String, val color: TagColor) {
             if (category == CargoCategory.HAZARDOUS) IeoTag.Plum else IeoTag.Gray,
         )
 
+        /** 싣고 내리는 방법: "지게차", "수작업". 색으로 좋고 나쁨을 말하지 않는다 */
+        fun loading(label: String) = Keyword(label, IeoTag.Gray)
+
         /** 상차지 평균 대기가 길었던 곳 (REC-012) */
         fun longWait() = Keyword("대기 길었던 곳", IeoTag.Plum)
 

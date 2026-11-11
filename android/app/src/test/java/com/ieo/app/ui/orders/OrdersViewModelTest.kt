@@ -173,14 +173,30 @@ class OrdersViewModelTest {
     }
 
     @Test
+    fun `정렬을 누르면 상차 시간순과 운임 높은 순을 오간다`() = runTest(main.dispatcher) {
+        market.orders = mutableListOf(
+            TripFixtures.order(id = 1, pickupFrom = Instant.parse("2026-11-03T08:00:00Z")).copy(fare = 300_000),
+            TripFixtures.order(id = 2).copy(fare = 500_000),
+        )
+        viewModel.refresh()
+        advanceUntilIdle()
+        assertEquals(listOf(1L, 2L), viewModel.state.value.rows.map { it.id })
+
+        viewModel.toggleSort()
+        assertEquals(OrderSort.FARE, viewModel.state.value.sort)
+        assertEquals(listOf(2L, 1L), viewModel.state.value.rows.map { it.id })
+    }
+
+    @Test
     fun `상세에는 화물 정보를 이어 붙여 보여 준다`() = runTest(main.dispatcher) {
         viewModel.refresh()
         advanceUntilIdle()
 
         viewModel.open(2)
 
-        val lines = viewModel.state.value.detail!!.lines.toMap()
-        assertEquals("파렛트 · 4.2톤 · 지게차", lines["화물"])
-        assertEquals("내일 06:00 ~ 08:00 · 경북 칠곡군", lines["상차"])
+        val detail = viewModel.state.value.detail!!
+        assertEquals("파렛트 · 4.2톤", detail.cargo)
+        assertEquals("내일 06:00~08:00", detail.pickup.time)
+        assertEquals("경북 칠곡군", detail.pickup.address)
     }
 }

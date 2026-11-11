@@ -24,7 +24,10 @@ class OrderUiMapperTest {
         val cold = TripFixtures.order().copy(cargoCategory = CargoCategory.COLD, cargoType = "냉동 닭")
 
         assertEquals(CargoCategory.COLD, mapper.row(cold).cargo)
-        assertEquals("냉동·냉장 · 냉동 닭 · 4.2톤 · 지게차", mapper.detail(cold).lines.toMap()["화물"])
+        val detail = mapper.detail(cold)
+        assertEquals("냉동 닭 · 4.2톤", detail.cargo)
+        assertEquals(listOf("5톤 윙바디", "냉동·냉장", "인수증"), detail.tags.map { it.text })
+        assertEquals("지게차", detail.loadingTag?.text)
     }
 
     @Test
@@ -32,7 +35,8 @@ class OrderUiMapperTest {
         val general = TripFixtures.order().copy(cargoCategory = CargoCategory.GENERAL)
 
         assertNull(mapper.row(general).cargo)
-        assertEquals("파렛트 · 4.2톤 · 지게차", mapper.detail(general).lines.toMap()["화물"])
+        assertEquals("파렛트 · 4.2톤", mapper.detail(general).cargo)
+        assertEquals(2, mapper.detail(general).tags.size)
         assertNull(mapper.row(TripFixtures.order()).cargo)
     }
 
@@ -66,7 +70,7 @@ class OrderUiMapperTest {
         assertEquals(metrics, mapper.row(order).brokerMetrics)
         assertEquals(
             "평균 지급 12일 · 지급 지연 8% · 이 회사 운행 평균 대기 35분",
-            mapper.detail(order).lines.toMap()["주선사 기록"],
+            mapper.detail(order).brokerNote,
         )
     }
 
@@ -74,8 +78,10 @@ class OrderUiMapperTest {
     fun `운행이 모자란 주선사는 거래 기록 적음이고 지표가 없으면 줄을 뺀다`() {
         val building = TripFixtures.order().copy(brokerMetrics = BrokerMetrics(published = false))
 
-        assertEquals("거래 기록 적음", mapper.detail(building).lines.toMap()["주선사 기록"])
-        assertNull(mapper.detail(TripFixtures.order()).lines.toMap()["주선사 기록"])
+        // 기록이 적으면 이름 옆 태그만 두고 설명 줄은 뺀다
+        assertEquals("거래 기록 적음", mapper.detail(building).brokerTag?.text)
+        assertNull(mapper.detail(building).brokerNote)
+        assertNull(mapper.detail(TripFixtures.order()).brokerTag)
     }
 
     @Test

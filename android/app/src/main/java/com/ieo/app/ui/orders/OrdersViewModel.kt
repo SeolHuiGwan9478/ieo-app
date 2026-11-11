@@ -86,9 +86,13 @@ data class OrderConditions(
     )
 }
 
+/** 목록 정렬. 휴대폰과 같다 */
+enum class OrderSort(val label: String) { SOON("상차 시간순"), FARE("운임 높은 순") }
+
 /** 오더 탭 화면 상태. 목록 한 줄과 상세는 [OrderUiMapper]가 만든다 */
 data class OrdersUiState(
     val conditions: OrderConditions = OrderConditions(),
+    val sort: OrderSort = OrderSort.SOON,
     /** 조건 창에서 고르는 중인 조건. 창이 닫혀 있으면 null */
     val draft: OrderConditions? = null,
     /** [draft]로 찾으면 나올 건수. 세는 중이면 null */
@@ -120,6 +124,8 @@ interface OrdersActions {
     fun applyConditions()
     /** 화면이 보이는 동안 1분마다 부른다 */
     fun autoRefresh()
+    /** 상차 시간순 ↔ 운임 높은 순 */
+    fun toggleSort()
     fun open(orderId: Long)
     fun close()
     fun request()
@@ -179,6 +185,11 @@ class OrdersViewModel(
             return
         }
         viewModelScope.launch { reload(markNew = true) }
+    }
+
+    override fun toggleSort() {
+        _state.update { it.copy(sort = if (it.sort == OrderSort.SOON) OrderSort.FARE else OrderSort.SOON) }
+        publish()
     }
 
     override fun openConditions() {
@@ -302,7 +313,12 @@ class OrdersViewModel(
     /** 받아 둔 오더와 고른 날짜·제외할 화물로 화면 상태를 다시 만든다 */
     private fun publish() {
         val conditions = _state.value.conditions
-        val visible = orders.filter { mapper.matches(it, conditions) }
+        val visible = orders.filter { mapper.matches(it, conditions) }.let { list ->
+            when (_state.value.sort) {
+                OrderSort.SOON -> list.sortedBy { it.pickupFrom }
+                OrderSort.FARE -> list.sortedByDescending { it.fare }
+            }
+        }
         _state.update { current ->
             current.copy(
                 rows = visible.map { mapper.row(it, isNew = it.id in newIds) },

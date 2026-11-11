@@ -156,14 +156,20 @@ private object Scenes {
         pickupName = "대전 산업단지", pickupTime = "오늘 17:03~20:03", dropoffName = "부산 신항 CY", dropoffTime = "11월 13일 14:00까지",
     )
     private val orderDetail = OrderDetail(
-        1, "대전 산업단지 → 부산 신항 CY",
-        listOf(
-            "상차" to "오늘 17:03 ~ 20:03 · 대전 대덕구 대화로 106",
-            "하차" to "11월 13일 14:00까지 · 부산 강서구 신항로 300",
-            "차량" to "5톤 카고", "화물" to "가전 박스 · 4.5톤 · 지게차",
-            "운임" to "58만 원 · 인수증 · 30일 안에 지급",
-            "실수익" to "497,000원 (기름값·통행료 뺀 금액)", "예상 통행료" to "17,000원", "기름값" to "66,000원", "상차지까지" to "4km", "주선사" to "한빛물류", "주선사 기록" to "거래 기록 적음",
-        ),
+        id = 1,
+        route = "대전 산업단지 → 부산 신항 CY",
+        tags = listOf(com.ieo.app.ui.component.Keyword.vehicle("5톤 카고"), com.ieo.app.ui.component.Keyword.payment("인수증")),
+        fare = "58만 원",
+        fareNote = "인수증 · 30일 안에 지급",
+        profitNote = "기름값·통행료 뺀 금액",
+        profit = "497,000원",
+        profitLines = listOf("예상 통행료" to "17,000원", "기름값" to "66,000원", "상차지까지" to "4km"),
+        pickup = com.ieo.app.ui.orders.DetailStop("대전 산업단지", "대전 대덕구 대화로 106", "오늘 17:03~20:03"),
+        dropoff = com.ieo.app.ui.orders.DetailStop("부산 신항 CY", "부산 강서구 신항로 300", "11월 13일 14:00까지"),
+        cargo = "가전 박스 · 4.5톤",
+        loadingTag = com.ieo.app.ui.component.Keyword.loading("지게차"),
+        broker = "한빛물류",
+        brokerTag = com.ieo.app.ui.component.Keyword("거래 기록 적음", com.ieo.app.ui.theme.IeoTag.Gray),
         requested = false,
     )
     private val settings = SettingsUiState(Profile("김기사", "01012345678"), listOf(vehicle), preference, "0.1.0")
@@ -189,7 +195,7 @@ private object Scenes {
         "orders_conditions" to { OrdersScreen(OrdersUiState(nearby = true, rows = listOf(orderRow), draft = com.ieo.app.ui.orders.OrderConditions(minFare = com.ieo.app.ui.orders.OrderMinFare.OVER_30), draftCount = 3), noop<OrdersActions>(), false) },
         "orders_detail" to { OrdersScreen(OrdersUiState(nearby = true, rows = listOf(orderRow), detail = orderDetail), noop<OrdersActions>(), false) },
         "orders_unverified" to { OrdersScreen(OrdersUiState(nearby = true, rows = listOf(orderRow), verified = false), noop<OrdersActions>(), false) },
-        "orders_detail_unverified" to { OrdersScreen(OrdersUiState(nearby = true, rows = listOf(orderRow), detail = orderDetail.copy(lines = orderDetail.lines.map { (k, v) -> k to when (k) { "주선사" -> "서류 승인 후 보여요"; "상차" -> "오늘 17:03 ~ 20:03 · 대전 대덕구 (정확한 주소는 승인 후)"; "하차" -> "11월 13일 14:00까지 · 부산 강서구 (정확한 주소는 승인 후)"; else -> v } }), verified = false), noop<OrdersActions>(), false) },
+        "orders_detail_unverified" to { OrdersScreen(OrdersUiState(nearby = true, rows = listOf(orderRow), detail = orderDetail.copy(broker = "서류 승인 후 보여요", limited = true, brokerTag = null, pickup = orderDetail.pickup.copy(address = "정확한 주소는 서류 승인 후 보여요"), dropoff = orderDetail.dropoff.copy(address = "정확한 주소는 서류 승인 후 보여요")), verified = false), noop<OrdersActions>(), false) },
         "orders_report" to { OrdersScreen(OrdersUiState(nearby = true, rows = listOf(orderRow), detail = orderDetail, reporting = true), noop<OrdersActions>(), false) },
         "ledger_entries" to { LedgerScreen(ledger, noop<LedgerActions>()) },
         "ledger_receivables" to { LedgerScreen(ledger.copy(tab = LedgerTab.RECEIVABLES), noop<LedgerActions>()) },

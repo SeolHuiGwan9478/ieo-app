@@ -49,7 +49,9 @@ private val LightPalette = Palette(
     canvas = Color(0xFFF2F4F6),
     textStrong = Color(0xFF191F28),
     textMid = Color(0xFF4E5968),
-    textSub = Color(0xFF8B95A1),
+    // 어르신도 차 안 밝은 곳에서 읽히게 본문 회색과 같은 값 (흰 바탕 대비 7.4:1).
+    // 예전 #8B95A1(3.0:1), #6B7684(4.6:1)는 흐렸다. 보조 글은 크기·굵기로 구분한다
+    textSub = Color(0xFF4E5968),
     chevron = Color(0xFFB0B8C1),
     disabled = Color(0xFFD1D6DB),
     orangeTint = Color(0xFFFFF3EE),
@@ -64,7 +66,8 @@ private val DarkPalette = Palette(
     canvas = Gray950,
     textStrong = Color(0xFFF2F4F6),
     textMid = Color(0xFFC4CBD4),
-    textSub = Color(0xFF9CA6B2),
+    // 어두운 바탕에서도 한 단계 밝게 (예전 #9CA6B2)
+    textSub = Color(0xFFB0B8C1),
     chevron = Color(0xFF6B7480),
     disabled = Color(0xFF4A4F57),
     orangeTint = Color(0xFF3A2418),
