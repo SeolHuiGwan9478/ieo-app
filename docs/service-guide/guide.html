@@ -127,6 +127,13 @@ body {
 .mini { width: 100%; border-collapse: collapse; font-size: 1cqw; font-variant-numeric: tabular-nums; }
 .mini th, .mini td { padding: .45cqw .3cqw; text-align: center; border-bottom: .1cqw solid var(--line); }
 .mini th { color: var(--ink-sub); font-weight: 500; }
+.apis { width: 100%; border-collapse: collapse; font-size: .98cqw; line-height: 1.4; margin-top: 1cqw; }
+.apis th, .apis td { padding: .45cqw .7cqw; text-align: left; vertical-align: top; border-bottom: .1cqw solid var(--line); }
+.apis thead th { color: var(--ink-sub); font-weight: 500; border-bottom: .15cqw solid var(--ink); }
+.apis td:first-child { color: var(--ink); font-weight: 700; white-space: nowrap; }
+.apis td { color: var(--ink-mid); }
+.apis code { font-size: .9cqw; }
+.apis .group td { padding-top: .8cqw; color: var(--ink-sub); font-weight: 500; border-bottom: none; }
 .order3 { display: flex; align-items: center; gap: .7cqw; font-size: 1.08cqw; flex-wrap: wrap; }
 .order3 span { padding: .35cqw .8cqw; border-radius: .35cqw; background: #F2F4F6; color: var(--ink); font-weight: 500; }
 .order3 span:first-child { background: #FFF3EE; color: var(--orange-text); }
@@ -154,6 +161,10 @@ body {
           <li>아이콘</li>
           <li>브랜드 색</li>
           <li>로고를 쓸 때</li>
+        </ol>
+        <h3 style="margin-top: 2.4cqw">부록</h3>
+        <ol>
+          <li>외부 API와 데이터 출처</li>
         </ol>
       </div>
       <div>
@@ -512,6 +523,32 @@ body {
       </div>
     </div>
     <div class="foot"><img src="assets/ieo_wordmark_orange.svg" alt="ieo"><span>배차 추천 · 설정</span></div>
+  </section>
+
+  <section class="page sheet" aria-label="외부 API와 데이터 출처">
+    <div class="eyebrow">APPENDIX · 01</div>
+    <h2>이에오가 쓰는 외부 API와 데이터</h2>
+    <p class="lead">키는 모두 서버에만 두고, 비어 있으면 그 기능만 대신하는 값으로 돌아가요. 공공데이터는 출처를 밝혀야 해서 앱의 데이터 출처에 함께 적어요.</p>
+    <table class="apis" aria-label="외부 API 목록">
+      <thead><tr><th>API·데이터</th><th>어디에 쓰나</th><th>제공</th><th>키 (서버 환경변수)</th><th>지킬 것</th></tr></thead>
+      <tbody>
+        <tr class="group"><td colspan="5">길·돈</td></tr>
+        <tr><td>TMAP 화물차 경로</td><td>배차 추천과 오더 상세의 실수익: 빈 차 거리, 운송 거리, 통행료</td><td>SK텔레콤 TMAP</td><td><code>TMAP_APP_KEY</code></td><td>결과는 24시간까지만 들고 있어요. 못 받으면 직선거리 어림</td></tr>
+        <tr><td>오피넷 유가</td><td>시도별 경유 평균 가격으로 기름값 계산</td><td>한국석유공사</td><td><code>OPINET_API_KEY</code></td><td>못 받으면 1L 1,600원</td></tr>
+        <tr><td>카카오 로컬</td><td>상하차지 주소를 좌표로 바꾸기</td><td>카카오</td><td><code>KAKAO_REST_API_KEY</code></td><td>서버에서만 불러요</td></tr>
+        <tr class="group"><td colspan="5">휴게</td></tr>
+        <tr><td>도로공사 노선별 휴게시설 현황</td><td>휴게소 편의시설(수면실·샤워실·세탁실), 화물 휴게소 여부</td><td>한국도로공사 (data.ex.co.kr)</td><td><code>EX_API_KEY</code></td><td>매주 월요일 새벽 4시에 받아 저장</td></tr>
+        <tr><td>전국휴게소정보표준데이터</td><td>휴게소 좌표와 상행·하행</td><td>공공데이터포털 (data.go.kr)</td><td><code>DATA_GO_KR_KEY</code></td><td><b>저작자표시</b>. 출처를 밝혀요</td></tr>
+        <tr class="group"><td colspan="5">계정·심사·음성</td></tr>
+        <tr><td>카카오·구글 로그인</td><td>주선사 콘솔 소셜 로그인</td><td>카카오, Google</td><td><code>KAKAO_REST_API_KEY</code> 등</td><td>키가 없으면 '준비 중'</td></tr>
+        <tr><td>국세청 사업자등록 진위확인</td><td>주선사 사업자등록증 심사</td><td>국세청 (공공데이터포털)</td><td><code>NTS_SERVICE_KEY</code></td><td>키가 없으면 건너뛰고 사람이 심사</td></tr>
+        <tr><td>OpenRouter (typesafe/jev-1.14)</td><td>음성 대답이 '예'인지 '아니오'인지 판별</td><td>OpenRouter</td><td><code>OPENROUTER_API_KEY</code></td><td>단어 목록으로 못 알아들은 말만 보내고, 대답을 저장하지 않아요</td></tr>
+        <tr class="group"><td colspan="5">차량 (Pleos SDK, 차 안에서만)</td></tr>
+        <tr><td>NaviHelper · Vehicle · STT · TTS</td><td>길 안내 요청과 남은 거리·시간, 속도·기어·주차 브레이크·연비, 음성 듣기·말하기</td><td>현대자동차 Pleos</td><td>앱 권한</td><td>출시 전 <code>CAR_INFO</code>, <code>CAR_ENERGY</code> 권한 신청 확인</td></tr>
+      </tbody>
+    </table>
+    <p class="note" style="margin-top: 1.2cqw; margin-bottom: 3.6cqw">데이터 출처 표시: 휴게소 정보 — 공공데이터포털 전국휴게소정보표준데이터, 한국도로공사 고속도로 공공데이터 포털 · 유가 — 한국석유공사 오피넷 · 경로·통행료 — TMAP. 문자 발송 업체는 아직 정하지 않아 서버 기록에만 남아요.</p>
+    <div class="foot"><img src="assets/ieo_wordmark_orange.svg" alt="ieo"><span>부록 · 외부 API와 데이터 출처</span></div>
   </section>
 
 </div>
