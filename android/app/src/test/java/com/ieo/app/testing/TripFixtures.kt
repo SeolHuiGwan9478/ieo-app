@@ -48,7 +48,6 @@ object TripFixtures {
         forklift = true,
         parking = null,
         averageWaitMinutes = 80,
-        averageWorkMinutes = 40,
         notes = listOf("정문 말고 후문으로", "점심시간 12~13시 상차 안 함", "경비실에 차번 말하기"),
     )
 

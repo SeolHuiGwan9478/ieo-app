@@ -14,9 +14,10 @@ data class SiteCard(
     val parking: Boolean?,
     /** 대기 기록이 3건 미만이면 null */
     val averageWaitMinutes: Int?,
-    val averageWorkMinutes: Int?,
     /** 최근 메모. 작성자는 익명 */
     val notes: List<String>,
+    /** 높이·지게차·주차를 기사님이 마지막으로 남긴 시각. 아무도 안 남겼으면 null */
+    val reportedAt: java.time.Instant? = null,
 )
 
 enum class HeightWarning {

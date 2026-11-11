@@ -39,7 +39,7 @@ object SampleHomeData {
         isPickup = true,
         waitStartedAt = SystemClock.elapsedRealtime() - (102 * 60 + 10) * 1000L,
         policy = WaitPolicy(freeMinutes = 120, unitMinutes = 30, unitAmount = 10_000, maxAmount = 50_000),
-        site = SiteInfo(heightLimitMeters = 3.5, forklift = true, averageWaitMinutes = 80),
+        site = SiteInfo(heightLimitMeters = 3.5, forklift = true, averageWaitMinutes = 80, notes = listOf("정문은 승용차만, 화물차는 후문(2게이트)으로 들어가요"), reportedLabel = "41분 전 제보"),
     )
 
     /** 하차지에서 기다리는 중. 다음 배차 추천 카드가 있다 (REC-021) */

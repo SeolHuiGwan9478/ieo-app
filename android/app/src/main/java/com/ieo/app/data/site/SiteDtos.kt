@@ -23,8 +23,8 @@ data class SiteCardResponse(
         forklift = attributes.forklift,
         parking = attributes.parking,
         averageWaitMinutes = stats?.avgWaitMinutes,
-        averageWorkMinutes = stats?.avgWorkMinutes,
         notes = notes.map { it.text },
+        reportedAt = attributes.updatedAt?.let { runCatching { java.time.Instant.parse(it) }.getOrNull() },
     )
 }
 
@@ -33,13 +33,15 @@ data class SiteAttributesResponse(
     val heightLimitM: Double? = null,
     val forklift: Boolean? = null,
     val parking: Boolean? = null,
+    /** 높이·지게차·주차 중 가장 최근에 남긴 시각 */
+    val updatedAt: String? = null,
 )
 
 @Serializable
 data class HeightWarningResponse(val level: String)
 
 @Serializable
-data class SiteStatsResponse(val avgWaitMinutes: Int? = null, val avgWorkMinutes: Int? = null)
+data class SiteStatsResponse(val avgWaitMinutes: Int? = null)
 
 @Serializable
 data class SiteNoteResponse(val text: String)

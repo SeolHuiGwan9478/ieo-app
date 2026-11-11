@@ -152,9 +152,20 @@ class HomeStateFactory(
         forklift = card.forklift,
         parking = card.parking,
         averageWaitMinutes = card.averageWaitMinutes,
-        averageWorkMinutes = card.averageWorkMinutes,
         notes = card.notes.take(SITE_NOTE_COUNT),
+        reportedLabel = card.reportedAt?.let { "${timeAgo(it)} 제보" },
     )
+
+    /** "방금", "12분 전", "3시간 전", "11월 9일" (휴대폰 앱과 같은 규칙) */
+    private fun timeAgo(at: Instant): String {
+        val minutes = Duration.between(at, clock.instant()).toMinutes()
+        return when {
+            minutes < 1 -> "방금"
+            minutes < 60 -> "${minutes}분 전"
+            minutes < 24 * 60 -> "${minutes / 60}시간 전"
+            else -> labels.shortDate(at.atZone(DayTimeFormatter.KOREA).toLocalDate())
+        }
+    }
 
     /** 서버 시각을 기기 시계 기준으로. 기기 시계를 바꿔도 타이머가 맞는다 */
     private fun toElapsed(at: Instant): Long = elapsedRealtime() - Duration.between(at, clock.instant()).toMillis()

@@ -151,13 +151,10 @@ data class SiteInfo(
     val averageWaitMinutes: Int?,
     val heightWarning: HeightWarning = HeightWarning.UNKNOWN,
     val parking: Boolean? = null,
-    val averageWorkMinutes: Int? = null,
     val notes: List<String> = emptyList(),
-) {
-    val isEmpty: Boolean
-        get() = heightLimitMeters == null && forklift == null && parking == null &&
-            averageWaitMinutes == null && averageWorkMinutes == null && notes.isEmpty()
-}
+    /** "12분 전 제보". 아무도 정보를 안 남겼으면 null (휴대폰 현장 정보와 같은 문구) */
+    val reportedLabel: String? = null,
+)
 
 fun AssignedTrip.toSummary() = TripSummary(
     route = "${pickup.name} → ${dropoff.name}",

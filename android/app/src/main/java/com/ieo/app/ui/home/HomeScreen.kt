@@ -1,5 +1,8 @@
 package com.ieo.app.ui.home
 
+import androidx.compose.foundation.Image
+import androidx.compose.ui.res.painterResource
+import androidx.annotation.DrawableRes
 import com.ieo.app.R
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.core.LinearEasing
@@ -428,29 +431,50 @@ private fun NextOrders(orders: List<NextOrderCard>, onClick: (NextOrderCard) -> 
     }
 }
 
-/** 다른 차주들이 남긴 상하차지 정보. 아무도 남기지 않았으면 그렇게 알려 준다 (SITE-007) */
+/**
+ * 다른 차주들이 남긴 상하차지 정보 (SITE-007). 휴대폰 현장 정보와 같은 구성:
+ * 제목 옆에 언제 남긴 정보인지, 높이·대기·지게차·주차 네 칸(모르면 "몰라요"), 아래에 메모
+ */
 @Composable
 private fun SiteSection(site: SiteInfo, isPickup: Boolean) {
     WhiteSection {
-        SectionTitle(title = if (isPickup) "상차지 정보" else "하차지 정보", icon = R.drawable.ic_site_info)
-        site.heightLimitMeters?.let { DetailLine("높이 제한", "${it}m${heightNote(site.heightWarning)}") }
-        site.forklift?.let { DetailLine("지게차", if (it) "있음" else "없음") }
-        site.parking?.let { DetailLine("주차", if (it) "가능" else "어려움") }
-        site.averageWaitMinutes?.let { DetailLine("평균 대기", formatMinutesKorean(it.toLong())) }
-        site.averageWorkMinutes?.let { DetailLine("평균 작업", formatMinutesKorean(it.toLong())) }
-        site.notes.forEach { note ->
-            Text("“$note”", fontSize = 24.sp, color = TextSub, maxLines = 2, overflow = TextOverflow.Ellipsis, modifier = Modifier.padding(top = 8.dp))
+        SectionTitle(title = if (isPickup) "상차지 정보" else "하차지 정보", note = site.reportedLabel, icon = R.drawable.ic_site_info)
+        heightNote(site.heightWarning)?.let {
+            Text(it, fontSize = 24.sp, fontWeight = FontWeight.Bold, color = IeoStatus.colors.warning, modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp))
         }
-        if (site.isEmpty) {
-            Text("아직 남겨진 정보가 없어요", fontSize = 24.sp, color = TextSub)
+        Row(Modifier.padding(horizontal = 12.dp), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+            SiteTile(R.drawable.ic_site_height, "높이 제한", site.heightLimitMeters?.let { "${it.toString().removeSuffix(".0")}m" }, Modifier.weight(1f))
+            SiteTile(R.drawable.ic_site_wait, "평균 대기", site.averageWaitMinutes?.let { formatMinutesKorean(it.toLong()) }, Modifier.weight(1f), unknown = "기록 부족")
+        }
+        Row(Modifier.padding(horizontal = 12.dp), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+            SiteTile(R.drawable.ic_site_forklift, "지게차", site.forklift?.let { if (it) "있어요" else "없어요" }, Modifier.weight(1f))
+            SiteTile(R.drawable.ic_site_parking, "주차", site.parking?.let { if (it) "있어요" else "없어요" }, Modifier.weight(1f))
+        }
+        if (site.notes.isNotEmpty()) {
+            Text("기사님들의 메모", fontSize = 24.sp, fontWeight = FontWeight.Bold, color = TextStrong, modifier = Modifier.padding(start = 12.dp, top = 16.dp))
+        }
+        site.notes.forEach { note ->
+            Text("“$note”", fontSize = 24.sp, fontWeight = FontWeight.Medium, color = TextSub, maxLines = 2, overflow = TextOverflow.Ellipsis, modifier = Modifier.padding(horizontal = 12.dp).padding(top = 8.dp))
         }
     }
 }
 
+/** 색 아이콘 + 이름 + 값 한 칸. 값을 모르면 회색 [unknown] */
+@Composable
+private fun SiteTile(@DrawableRes icon: Int, label: String, value: String?, modifier: Modifier = Modifier, unknown: String = "몰라요") {
+    Column(modifier.padding(vertical = 12.dp)) {
+        Image(painterResource(icon), contentDescription = null, modifier = Modifier.size(40.dp))
+        Spacer(Modifier.height(8.dp))
+        Text(label, fontSize = 24.sp, fontWeight = FontWeight.Medium, color = TextSub)
+        Text(value ?: unknown, fontSize = 28.sp, fontWeight = if (value != null) FontWeight.ExtraBold else FontWeight.Medium, color = if (value != null) TextStrong else TextSub)
+    }
+}
+
+/** 못 들어가는 곳은 색만이 아니라 말로 먼저 알린다 (휴대폰 현장 정보와 같은 문구) */
 private fun heightNote(warning: HeightWarning) = when (warning) {
-    HeightWarning.BLOCKED -> " · 내 차는 못 들어가요"
-    HeightWarning.CAUTION -> " · 여유 0.2m 미만"
-    HeightWarning.OK, HeightWarning.UNKNOWN -> ""
+    HeightWarning.BLOCKED -> "내 차는 높아서 못 들어가요"
+    HeightWarning.CAUTION -> "높이 여유가 20cm도 안 돼요"
+    HeightWarning.OK, HeightWarning.UNKNOWN -> null
 }
 
 // ───────────────────────── 주행 중 ─────────────────────────
