@@ -1,5 +1,7 @@
 package com.ieo.app.ui.orders
 
+import com.ieo.app.domain.recommendation.ExcludedCargoStore
+import com.ieo.app.domain.recommendation.PreferenceExcludedCargoStore
 import android.os.SystemClock
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
@@ -148,6 +150,8 @@ class OrdersViewModel(
     private val elapsedRealtime: () -> Long = SystemClock::elapsedRealtime,
     /** 배차 확정·마감·만료 알림이 오면 내 요청 상태가 바뀌었으니 목록을 새로 받는다 */
     private val notifications: Flow<AppNotification> = emptyFlow(),
+    /** 제외할 화물은 배차 추천 설정과 같이 쓴다 */
+    private val excludedCargo: ExcludedCargoStore = ExcludedCargoStore.None,
 ) : ViewModel(), OrdersActions {
 
     private val mapper = OrderUiMapper(DayTimeFormatter(clock))
@@ -173,6 +177,8 @@ class OrdersViewModel(
         }
         _state.update { it.copy(isLoading = true) }
         viewModelScope.launch {
+            // 설정 탭(배차 추천)에서 바꾼 제외할 화물도 이때 다시 읽는다
+            excludedCargo.load()?.let { saved -> _state.update { it.copy(conditions = it.conditions.copy(excluded = saved)) } }
             reload()
             _state.update { it.copy(isLoading = false) }
         }
@@ -217,8 +223,17 @@ class OrdersViewModel(
         countJob?.cancel()
         refreshPending = false
         newIds = emptySet()
+        val excludedChanged = draft.excluded != _state.value.conditions.excluded
         _state.update { it.copy(conditions = draft, draft = null, draftCount = null) }
-        refresh()
+        if (excludedChanged) {
+            // 저장한 뒤에 다시 받아야 refresh가 옛 값으로 되돌리지 않는다
+            viewModelScope.launch {
+                excludedCargo.save(draft.excluded)
+                refresh()
+            }
+        } else {
+            refresh()
+        }
     }
 
     private fun runPendingRefresh() {
@@ -368,7 +383,12 @@ class OrdersViewModel(
         val Factory: ViewModelProvider.Factory = viewModelFactory {
             initializer {
                 val container = appContainer()
-                OrdersViewModel(container.orderRepository, container.vehicleSensors, notifications = container.notifications.received)
+                OrdersViewModel(
+                    container.orderRepository,
+                    container.vehicleSensors,
+                    notifications = container.notifications.received,
+                    excludedCargo = PreferenceExcludedCargoStore(container.recommendationRepository),
+                )
             }
         }
     }

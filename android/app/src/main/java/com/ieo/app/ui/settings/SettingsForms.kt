@@ -103,8 +103,8 @@ fun ColumnScope.VehicleForm(
 
 /**
  * 다음 배차 추천 설정 창. 키보드 없이 고치도록 반경은 ± 5km, 최소 실수익은 고르기로 한다.
- * 빼는 화물은 여러 개를 눌러 켜고 끈다 (REC-004).
- * 추천을 끄면 반경·실수익·빼는 화물 칸을 숨긴다 (값은 그대로 저장)
+ * 제외할 화물은 여러 개를 눌러 켜고 끈다 (REC-004). 오더 탭 조건의 제외할 화물과 같은 설정이다.
+ * 추천을 끄면 반경·실수익·제외할 화물 칸을 숨긴다 (값은 그대로 저장)
  */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
@@ -150,13 +150,13 @@ fun ColumnScope.RecommendationForm(
             }
         }
         Spacer(Modifier.height(20.dp))
-        FieldLabel("빼고 싶은 화물")
+        FieldLabel("제외할 화물")
         FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             EXCLUDABLE_CARGO.forEach { cargo ->
                 FilterChip(cargo.label, selected = cargo in excludedCargo, onClick = { excludedCargo = toggle(excludedCargo, cargo) })
             }
         }
-        Text("고른 화물의 오더는 추천하지 않아요. 오더 탭에서는 그대로 보여요", fontSize = 24.sp, color = TextSub)
+        Text("고른 화물의 오더는 추천하지 않고, 오더 탭 조건에도 똑같이 적용돼요", fontSize = 24.sp, color = TextSub)
     } else {
         Spacer(Modifier.height(12.dp))
         Text("다음 배차를 음성과 카드로 알려 드리지 않아요", fontSize = 24.sp, color = TextSub)
@@ -172,7 +172,7 @@ internal val MIN_NET_PROFIT_CHOICES: List<Long?> = listOf(null, 100_000, 200_000
 
 private fun minNetProfitChip(won: Long?): String = won?.let { "${it / 10_000}만 원" } ?: "조건 없음"
 
-/** 빼는 화물로 고를 수 있는 종류. 일반은 빼면 추천이 거의 사라져서 두지 않는다 */
+/** 제외할 화물로 고를 수 있는 종류. 일반은 빼면 추천이 거의 사라져서 두지 않는다 */
 internal val EXCLUDABLE_CARGO: List<CargoCategory> = CargoCategory.entries.filter { it.excludable }
 
 /** 누르면 넣고, 다시 누르면 뺀다 */

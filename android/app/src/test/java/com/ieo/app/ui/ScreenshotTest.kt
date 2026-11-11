@@ -196,6 +196,7 @@ private object Scenes {
         "orders_detail" to { OrdersScreen(OrdersUiState(nearby = true, rows = listOf(orderRow), detail = orderDetail), noop<OrdersActions>(), false) },
         "orders_unverified" to { OrdersScreen(OrdersUiState(nearby = true, rows = listOf(orderRow), verified = false), noop<OrdersActions>(), false) },
         "orders_detail_unverified" to { OrdersScreen(OrdersUiState(nearby = true, rows = listOf(orderRow), detail = orderDetail.copy(broker = "서류 승인 후 보여요", limited = true, brokerTag = null, pickup = orderDetail.pickup.copy(address = "정확한 주소는 서류 승인 후 보여요"), dropoff = orderDetail.dropoff.copy(address = "정확한 주소는 서류 승인 후 보여요")), verified = false), noop<OrdersActions>(), false) },
+        "orders_pending" to { OrdersScreen(OrdersUiState(nearby = true, rows = listOf(orderRow.copy(requested = true), orderRow.copy(id = 2, day = "오늘")), pending = com.ieo.app.ui.orders.PendingRequest("대전 산업단지 → 부산 신항 CY", android.os.SystemClock.elapsedRealtime() + 597_000), updatedAt = java.time.Instant.now()), noop<OrdersActions>(), false) },
         "orders_report" to { OrdersScreen(OrdersUiState(nearby = true, rows = listOf(orderRow), detail = orderDetail, reporting = true), noop<OrdersActions>(), false) },
         "ledger_entries" to { LedgerScreen(ledger, noop<LedgerActions>()) },
         "ledger_receivables" to { LedgerScreen(ledger.copy(tab = LedgerTab.RECEIVABLES), noop<LedgerActions>()) },

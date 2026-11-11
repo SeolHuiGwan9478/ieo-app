@@ -25,7 +25,7 @@ class RecommendationFormTest {
     }
 
     @Test
-    fun `빼는 화물은 눌러 켜고 다시 눌러 끈다`() {
+    fun `제외할 화물은 눌러 켜고 다시 눌러 끈다`() {
         val once = toggle(emptySet(), CargoCategory.MOVING)
         assertEquals(setOf(CargoCategory.MOVING), once)
         assertEquals(emptySet<CargoCategory>(), toggle(once, CargoCategory.MOVING))
@@ -33,13 +33,13 @@ class RecommendationFormTest {
     }
 
     @Test
-    fun `빼는 화물은 목록 순서로 보여 주고 없으면 없음`() {
+    fun `제외할 화물은 목록 순서로 보여 주고 없으면 없음`() {
         assertEquals("없음", excludedCargoLabel(emptySet()))
         assertEquals("냉동·냉장, 이사", excludedCargoLabel(setOf(CargoCategory.MOVING, CargoCategory.COLD)))
     }
 
     @Test
-    fun `빼는 화물을 다 지워도 빈 목록을 보내고 모르는 종류는 버린다`() {
+    fun `제외할 화물을 다 지워도 빈 목록을 보내고 모르는 종류는 버린다`() {
         val body = RecommendationPreferenceBody.of(RecommendationPreference(excludedCargo = emptySet()))
         assertEquals(emptyList<String>(), body.excludedCargoCategories)
 

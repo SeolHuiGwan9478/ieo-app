@@ -193,7 +193,7 @@ private fun ConditionsSheet(draft: OrderConditions, count: Int?, actions: Orders
     ConditionGroup("결제 방식") {
         OrderPayment.entries.forEach { p -> ConditionChip(p.label, draft.payment == p) { actions.editDraft { it.copy(payment = p) } } }
     }
-    ConditionGroup("제외할 화물") {
+    ConditionGroup("제외할 화물", note = "배차 추천에도 똑같이 적용돼요") {
         CargoCategory.entries.filter { it.excludable }.forEach { c ->
             ConditionChip(c.label, c in draft.excluded) {
                 actions.editDraft { it.copy(excluded = if (c in it.excluded) it.excluded - c else it.excluded + c) }
@@ -216,9 +216,10 @@ private fun ConditionsSheet(draft: OrderConditions, count: Int?, actions: Orders
 }
 
 @Composable
-private fun ConditionGroup(title: String, chips: @Composable () -> Unit) {
+private fun ConditionGroup(title: String, note: String? = null, chips: @Composable () -> Unit) {
     Column(Modifier.fillMaxWidth().padding(vertical = 12.dp)) {
-        Text(title, fontSize = 24.sp, fontWeight = FontWeight.Bold, color = TextSub, modifier = Modifier.padding(bottom = 10.dp))
+        Text(title, fontSize = 24.sp, fontWeight = FontWeight.Bold, color = TextSub, modifier = Modifier.padding(bottom = if (note == null) 10.dp else 2.dp))
+        note?.let { Text(it, fontSize = 24.sp, fontWeight = FontWeight.Medium, color = TextSub, modifier = Modifier.padding(bottom = 10.dp)) }
         FlowRow(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) { chips() }
     }
 }

@@ -214,7 +214,7 @@ private fun RecommendationSection(preference: RecommendationPreference?, onEdit:
         if (preference.enabled) {
             DetailLine("찾는 범위", "하차지에서 ${preference.radiusKm}km 안")
             DetailLine("최소 실수익", minNetProfitLabel(preference.minNetProfit))
-            DetailLine("빼는 화물", excludedCargoLabel(preference.excludedCargo))
+            DetailLine("제외할 화물", excludedCargoLabel(preference.excludedCargo))
         }
         Spacer(Modifier.height(12.dp))
         IeoTonalButton(text = "수정", onClick = { onEdit(preference) })

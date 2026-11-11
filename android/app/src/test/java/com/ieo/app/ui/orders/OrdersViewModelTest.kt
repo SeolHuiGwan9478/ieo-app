@@ -173,6 +173,26 @@ class OrdersViewModelTest {
     }
 
     @Test
+    fun `제외할 화물은 배차 추천 설정에서 읽고 바꾸면 거기에 저장한다`() = runTest(main.dispatcher) {
+        val store = object : com.ieo.app.domain.recommendation.ExcludedCargoStore {
+            var saved: Set<com.ieo.app.domain.order.CargoCategory> = setOf(com.ieo.app.domain.order.CargoCategory.MOVING)
+            override suspend fun load() = saved
+            override suspend fun save(excluded: Set<com.ieo.app.domain.order.CargoCategory>) { saved = excluded }
+        }
+        val shared = OrdersViewModel(market, sensors, Clock.fixed(NOW, ZoneOffset.UTC), elapsedRealtime = { 1_000_000L }, excludedCargo = store)
+        shared.refresh()
+        advanceUntilIdle()
+        assertEquals(setOf(com.ieo.app.domain.order.CargoCategory.MOVING), shared.state.value.conditions.excluded)
+
+        shared.openConditions()
+        shared.editDraft { it.copy(excluded = setOf(com.ieo.app.domain.order.CargoCategory.HAZARDOUS)) }
+        shared.applyConditions()
+        advanceUntilIdle()
+        assertEquals(setOf(com.ieo.app.domain.order.CargoCategory.HAZARDOUS), store.saved)
+        assertEquals(setOf(com.ieo.app.domain.order.CargoCategory.HAZARDOUS), shared.state.value.conditions.excluded)
+    }
+
+    @Test
     fun `정렬을 누르면 상차 시간순과 운임 높은 순을 오간다`() = runTest(main.dispatcher) {
         market.orders = mutableListOf(
             TripFixtures.order(id = 1, pickupFrom = Instant.parse("2026-11-03T08:00:00Z")).copy(fare = 300_000),

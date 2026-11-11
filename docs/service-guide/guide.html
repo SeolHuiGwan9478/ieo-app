@@ -180,6 +180,9 @@ body {
           <li>서류 올리기</li>
           <li>내 정보</li>
           <li>내 차량과 연비</li>
+          <li>오더 찾기와 조건</li>
+          <li>오더 상세와 실수익</li>
+          <li>배차 요청에서 확정까지</li>
           <li class="later">나머지는 차량 앱 확인 뒤에 채워요</li>
         </ol>
       </div>
@@ -252,7 +255,7 @@ body {
           <div class="chip"><i style="background:#F2F4F6"></i><div><b>Canvas Gray</b><small>화면 바탕, 보조 버튼</small></div><code>#F2F4F6</code></div>
           <div class="chip"><i style="background:#191F28"></i><div><b>Text Strong</b><small>제목, 금액</small></div><code>#191F28</code></div>
           <div class="chip"><i style="background:#4E5968"></i><div><b>Text Mid</b><small>보조 글자</small></div><code>#4E5968</code></div>
-          <div class="chip"><i style="background:#8B95A1"></i><div><b>Text Sub</b><small>설명 글자</small></div><code>#8B95A1</code></div>
+          <div class="chip"><i style="background:#8B95A1"></i><div><b>Text Sub</b><small>설명 글자 (웹). 앱은 잘 보이게 Text Mid를 써요</small></div><code>#8B95A1</code></div>
         </div>
       </div>
       <div>
@@ -384,6 +387,88 @@ body {
       <li><b>어느 차에 들어왔는지 보여요</b>휴대폰 내 정보의 로그인된 차량에서 확인하고 끊을 수 있어요.</li>
     </ul>
     <div class="foot"><img src="assets/ieo_wordmark_orange.svg" alt="ieo"><span>계정과 차량 · 차량 로그인</span></div>
+  </section>
+
+
+  <section class="page sheet" aria-label="오더 찾기">
+    <div class="eyebrow">DISPATCH · 01</div>
+    <div class="twocol">
+      <div class="text-col">
+        <h2>내 차로 실을 수 있는<br>오더만 보여요</h2>
+        <p class="lead">주선사가 올린 오더 가운데 내 차의 톤수와 차종으로 실을 수 있는 것만 골라, 지금 있는 곳에서 가까운 50km 안을 먼저 보여 줘요.</p>
+        <ul class="facts">
+          <li><b>상차지까지 약 15km</b><br>지도에서 잰 직선거리에 1.3을 곱한 도로 거리 어림이에요. 반경도 같은 값으로 걸러서, 50km를 골랐는데 60km가 섞여 나오는 일은 없어요.</li>
+          <li><b>실수익 약 28만 원</b><br>운임에서 상차지까지 빈 차로 가는 길과 운송 구간의 기름값을 뺀 어림이에요. 통행료까지 뺀 정확한 금액은 상세에서 봐요.</li>
+          <li><b>태그</b><br>차량은 남색, 선불은 청록, 인수증은 모래색이에요. 주선사 태그는 지급까지 평균 며칠 걸렸는지 보여 주고, 기록이 모자라면 '거래 기록 적음'이라고 써요.</li>
+          <li><b>1분마다 새로 받아요</b><br>목록 위에 몇 분 전에 받았는지 나오고, 그사이 새로 올라온 오더에는 표시가 붙어요. 차에서는 달리는 동안 목록을 숨겨요.</li>
+        </ul>
+      </div>
+      <div class="shots" style="--h: 50cqw; --cap: 24cqw">
+        <figure class="shot"><img src="assets/m_O_list.jpg" alt="휴대폰 오더 찾기 목록"><figcaption>휴대폰. 위 화살표 핀이 상차지, 아래 화살표 핀이 하차지예요.</figcaption></figure>
+        <figure class="shot car"><img src="assets/c_orders_list.jpg" alt="차량 오더 목록"><figcaption>차량. 같은 줄 모양을 큰 글씨로 보여 줘요.</figcaption></figure>
+      </div>
+    </div>
+    <div class="foot"><img src="assets/ieo_wordmark_orange.svg" alt="ieo"><span>배차 · 오더 찾기</span></div>
+  </section>
+
+  <section class="page sheet" aria-label="오더 조건">
+    <div class="eyebrow">DISPATCH · 02</div>
+    <div class="twocol">
+      <div class="text-col">
+        <h2>조건은 한 번에 고르고<br>건수를 보고 적용해요</h2>
+        <p class="lead">[조건]을 누르면 거리, 상차 날짜, 최소 운임, 결제 방식, 제외할 화물을 한 창에서 골라요. 고르는 동안 아래 버튼에 '오더 3건 보기'처럼 결과 건수가 먼저 나와서, 0건이 되는 조건은 누르기 전에 알 수 있어요.</p>
+        <ul class="facts">
+          <li><b>기본값</b> 내 주변 50km, 나머지는 모두 전체예요. 바꾼 조건 수가 [조건] 버튼 옆에 숫자로 붙고, 목록 위에 '이사 제외'처럼 남아요.</li>
+          <li><b>제외할 화물은 배차 추천과 같이 써요</b> 냉동·냉장, 이사, 위험물을 여기서 빼면 운송 중에 받는 다음 배차 추천에서도 빠져요. 추천 설정에서 바꿔도 여기에 그대로 들어와요.</li>
+          <li><b>정렬</b> 상차 시간이 빠른 순과 운임이 높은 순을 눌러서 바꿔요.</li>
+        </ul>
+      </div>
+      <div class="shots" style="--h: 50cqw; --cap: 24cqw">
+        <figure class="shot"><img src="assets/m_O_conditions.jpg" alt="휴대폰 조건 설정 창"><figcaption>휴대폰 조건 창</figcaption></figure>
+        <figure class="shot car"><img src="assets/c_orders_conditions.jpg" alt="차량 조건 설정 창"><figcaption>차량 조건 창. 칸과 순서가 휴대폰과 같아요.</figcaption></figure>
+      </div>
+    </div>
+    <div class="foot"><img src="assets/ieo_wordmark_orange.svg" alt="ieo"><span>배차 · 조건</span></div>
+  </section>
+
+  <section class="page sheet" aria-label="오더 상세와 실수익">
+    <div class="eyebrow">DISPATCH · 03</div>
+    <div class="twocol">
+      <div class="text-col">
+        <h2>상세에서 실제 길로<br>다시 계산해요</h2>
+        <p class="lead">오더를 누르면 TMAP 화물차 경로로 지금 위치에서 상차지, 상차지에서 하차지까지를 다시 재요. 그 거리로 기름값과 통행료를 내서 운임에서 뺀 금액이 실수익이에요.</p>
+        <ul class="facts">
+          <li><b>순서</b> 운임 → 실수익과 그 내역 → 상차·하차 → 화물 → 주선사. 휴대폰과 차량이 같은 순서예요.</li>
+          <li><b>연비</b> 차가 잰 연비, 기사님이 적은 연비, 톤수별 평균 순서로 찾아 기름값을 내요.</li>
+          <li><b>이 노선 평균 운임</b> 같은 시·구끼리 오간 운행이 최근 90일에 10건 이상 끝났을 때만 보여요. 운임이 싼지 비싼지 견줘 볼 수 있어요.</li>
+          <li><b>현장 정보</b> 상하차지 이름 아래를 누르면 다른 기사님들이 남긴 높이 제한, 지게차, 주차, 평균 대기를 볼 수 있어요.</li>
+        </ul>
+      </div>
+      <div class="shots" style="--h: 50cqw; --cap: 24cqw">
+        <figure class="shot"><img src="assets/m_O_detail_top.jpg" alt="휴대폰 오더 상세"><figcaption>휴대폰. 이사처럼 일반이 아닌 화물은 제목 아래 태그로 보여요.</figcaption></figure>
+        <figure class="shot car"><img src="assets/c_orders_detail.jpg" alt="차량 오더 상세"><figcaption>차량. 가로 화면이라 왼쪽에 돈, 오른쪽에 길을 나눠 놓았어요.</figcaption></figure>
+      </div>
+    </div>
+    <div class="foot"><img src="assets/ieo_wordmark_orange.svg" alt="ieo"><span>배차 · 상세와 실수익</span></div>
+  </section>
+
+  <section class="page sheet" aria-label="배차 요청에서 확정까지">
+    <div class="eyebrow">DISPATCH · 04</div>
+    <h2>요청하고 10분 안에 주선사가 고르면 배차가 잡혀요</h2>
+    <p class="lead">같은 오더에 여러 기사님이 요청할 수 있고, 주선사는 요청한 사람들의 완료 운행 수와 직전 취소 횟수를 보고 한 명을 골라요. 바로 확정되는 오더는 요청하자마자 배차가 잡혀요.</p>
+    <div class="shots" style="--h: 29cqw">
+      <figure class="shot" style="--cap: 13.9cqw"><img src="assets/m_O_requested.jpg" alt="배차 요청한 오더 상세"><figcaption><b><span class="step">1</span>요청</b>결과는 버튼 바로 위에 잠깐 떠요. 버튼은 [요청 철회]로 바뀌어요.</figcaption></figure>
+      <figure class="shot car" style="--cap: 17.5cqw"><img src="assets/c_orders_pending.jpg" alt="차량 요청 중 띠"><figcaption><b><span class="step">2</span>기다리기</b>차에서는 목록 위 띠에 남은 시간이 줄어들고, 거기서 바로 철회할 수 있어요.</figcaption></figure>
+      <figure class="shot" style="--cap: 13.9cqw"><img src="assets/m_O_trips.jpg" alt="내 배차 예정 목록"><figcaption><b><span class="step">3</span>확정</b>주선사가 고르면 내 배차의 예정에 들어가고, 오더 목록에서는 빠져요.</figcaption></figure>
+      <figure class="shot" style="--cap: 13.9cqw"><img src="assets/m_O_report.jpg" alt="오더 신고 창"><figcaption><b>신고</b>허위 오더, 과적 요구, 운임 미지급, 정보가 실제와 다름 중에 골라요.</figcaption></figure>
+    </div>
+    <ul class="rules" style="margin-top: auto; margin-bottom: 3.4cqw">
+      <li><b>10분이 지나면 만료</b>확정되지 않은 요청은 끝나고, 같은 오더를 다시 요청할 수 있어요. 철회한 오더도 마찬가지예요.</li>
+      <li><b>한 번에 세 건까지</b>기다리는 요청은 세 건까지 걸어 둘 수 있어요. 1분 안에 다섯 번 넘게 누르면 잠깐 막혀요.</li>
+      <li><b>확정 뒤 취소하면 끝</b>배차를 받고 취소한 오더는 같은 기사님이 다시 요청할 수 없어요.</li>
+      <li><b>신고는 한 번</b>오더마다 한 번만 받아요. 신고한 오더는 버튼이 '신고함'으로 바뀌고 운영팀이 확인해요.</li>
+    </ul>
+    <div class="foot"><img src="assets/ieo_wordmark_orange.svg" alt="ieo"><span>배차 · 요청에서 확정까지</span></div>
   </section>
 
 </div>
