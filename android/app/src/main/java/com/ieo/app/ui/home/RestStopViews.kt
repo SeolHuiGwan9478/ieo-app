@@ -1,6 +1,8 @@
 package com.ieo.app.ui.home
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
@@ -12,8 +14,14 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -30,10 +38,13 @@ import com.ieo.app.ui.component.Tnum
 import com.ieo.app.ui.component.WhiteSection
 import com.ieo.app.ui.theme.IeoStatus
 import com.ieo.app.ui.theme.IeoTag
+import com.ieo.app.ui.theme.Orange50
+import com.ieo.app.ui.theme.Orange500
 import com.ieo.app.ui.theme.TextStrong
 import com.ieo.app.ui.theme.TextSub
 
 private val CardShape = RoundedCornerShape(16.dp)
+private val RowShape = RoundedCornerShape(12.dp)
 
 /** 휴게 안내 문구 (TRIP-031). 1시간 45분은 노랑, 2시간부터 빨강 */
 @Composable
@@ -91,17 +102,21 @@ fun RestStopCard(state: HomeState.Driving) {
 
 /**
  * 세워 두었을 때 가는 길 화물차 라운지 목록과 [경유지로 안내] (TRIP-032). 터치는 세워 두었을 때만 받는다.
- * 휴게 안내에서 말한 곳이 있으면 그곳을, 없으면 가장 가까운 라운지를 경유지로 넣는다
+ * 줄을 눌러 고른 곳을 경유지로 넣는다. 처음에는 휴게 안내에서 말한 곳, 없으면 가장 가까운 라운지가 골라져 있다
  */
 @Composable
 fun RestStopList(state: HomeState.Driving, onAddWaypoint: (RestStop) -> Unit) {
     val lounges = state.restStops.filter { it.isLounge }.take(3)
     if (lounges.isEmpty()) return
-    val target = state.restFocus ?: lounges.first()
+    val suggested = state.restFocus?.takeIf { focus -> lounges.any { it.name == focus.name } } ?: lounges.first()
+    var selectedName by remember(lounges.map { it.name }, suggested.name) { mutableStateOf(suggested.name) }
+    val target = lounges.firstOrNull { it.name == selectedName } ?: suggested
     WhiteSection(contentPadding = 28.dp) {
-        Text("가는 길 화물차 라운지", fontSize = 22.sp, color = TextSub)
+        Text("가는 길 화물차 라운지 · 눌러서 고르기", fontSize = 22.sp, color = TextSub)
         Spacer(Modifier.height(8.dp))
-        lounges.forEach { stop -> LoungeRow(stop) }
+        lounges.forEach { stop ->
+            LoungeRow(stop, selected = stop.name == target.name, enabled = state.parked, onClick = { selectedName = stop.name })
+        }
         Spacer(Modifier.height(16.dp))
         IeoPrimaryButton(
             text = "${josa(target.name, "을", "를")} 경유지로 안내",
@@ -117,8 +132,17 @@ fun RestStopList(state: HomeState.Driving, onAddWaypoint: (RestStop) -> Unit) {
 }
 
 @Composable
-private fun ColumnScope.LoungeRow(stop: RestStop) {
-    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth().padding(vertical = 10.dp)) {
+private fun ColumnScope.LoungeRow(stop: RestStop, selected: Boolean, enabled: Boolean, onClick: () -> Unit) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RowShape)
+            .background(if (selected) Orange50 else Color.Transparent)
+            .border(if (selected) 2.dp else 0.dp, if (selected) Orange500 else Color.Transparent, RowShape)
+            .clickable(enabled = enabled, onClick = onClick)
+            .padding(horizontal = 16.dp, vertical = 12.dp),
+    ) {
         Column(modifier = Modifier.weight(1f)) {
             Text(stop.name, fontSize = 24.sp, fontWeight = FontWeight.Bold, color = TextStrong, maxLines = 1, overflow = TextOverflow.Ellipsis)
             Facilities(stop)
