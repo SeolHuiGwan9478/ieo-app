@@ -42,7 +42,7 @@ data class Keyword(val text: String, val color: TagColor) {
             IeoTag.Gray,
         )
 
-        /** 하차지에서 다음 상차지까지 빈 차로 가는 거리 (배차 추천) */
+        /** 세운 곳에서 상차지까지 빈 차로 가는 거리 (배차 추천) */
         fun emptyRun(meters: Long) = Keyword(
             if (meters < 1_000) "공차 1km 안" else "공차 ${(meters + 500) / 1_000}km",
             IeoTag.Gray,

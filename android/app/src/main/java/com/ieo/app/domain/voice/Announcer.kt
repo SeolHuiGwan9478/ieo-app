@@ -39,7 +39,7 @@ enum class AnnouncementPriority {
     /** 도착, 대기 시작, 출발 */
     TRIP,
 
-    /** 다음 배차 추천 */
+    /** 배차 알림 (확정·마감·만료) */
     RECOMMENDATION,
 
     /** 상하차지 정보 카드, 리포트 */

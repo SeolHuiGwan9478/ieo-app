@@ -1,5 +1,9 @@
 package com.ieo.app.ui.settings
 
+import androidx.compose.foundation.layout.padding
+
+import androidx.compose.ui.draw.scale
+import androidx.compose.material3.Switch
 import com.ieo.app.ui.theme.Orange700
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.ColumnScope
@@ -102,7 +106,7 @@ fun ColumnScope.VehicleForm(
 }
 
 /**
- * 다음 배차 추천 설정 창. 키보드 없이 고치도록 반경은 ± 5km, 최소 실수익은 고르기로 한다.
+ * 배차 추천 설정 창. 키보드 없이 고치도록 반경은 ± 5km, 최소 실수익은 고르기로 한다.
  * 제외할 화물은 여러 개를 눌러 켜고 끈다 (REC-004). 오더 탭 조건의 제외할 화물과 같은 설정이다.
  * 추천을 끄면 반경·실수익·제외할 화물 칸을 숨긴다 (값은 그대로 저장)
  */
@@ -119,16 +123,16 @@ fun ColumnScope.RecommendationForm(
     var minNetProfit by remember(current) { mutableStateOf(current.minNetProfit) }
     var excludedCargo by remember(current) { mutableStateOf(current.excludedCargo) }
 
-    SheetTitle("다음 배차 추천")
+    SheetTitle("배차 추천")
     Spacer(Modifier.height(24.dp))
-    FieldLabel("추천")
-    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-        FilterChip("켬", selected = enabled, onClick = { enabled = true })
-        FilterChip("끔", selected = !enabled, onClick = { enabled = false })
+    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
+        Text("추천 받기", fontSize = 26.sp, fontWeight = FontWeight.Bold, color = TextStrong, modifier = Modifier.weight(1f))
+        // 차량 화면에서는 손가락으로 누르기 쉽게 크게
+        Switch(checked = enabled, onCheckedChange = { enabled = it }, modifier = Modifier.padding(end = 16.dp).scale(1.5f))
     }
     if (enabled) {
         Spacer(Modifier.height(20.dp))
-        FieldLabel("찾는 범위 (하차지에서)")
+        FieldLabel("찾는 범위 (세운 곳에서)")
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             IeoTonalButton(text = "−", onClick = { radiusKm = stepRadius(radiusKm, -RADIUS_STEP_KM) }, modifier = Modifier.width(88.dp))
             Text(

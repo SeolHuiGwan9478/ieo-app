@@ -201,18 +201,18 @@ private fun VehicleRow(vehicle: Vehicle, onClick: () -> Unit) {
     }
 }
 
-/** 다음 배차 추천 설정 (REC-004, 025). 못 받았으면 버튼 없이 안내만 */
+/** 배차 추천 설정 (REC-004, 005). 못 받았으면 버튼 없이 안내만 */
 @Composable
 private fun RecommendationSection(preference: RecommendationPreference?, onEdit: (RecommendationPreference) -> Unit) {
     WhiteSection {
-        SectionTitle(title = "다음 배차 추천", note = "운송 중 음성으로, 하차지에서 카드로 알려 드려요", icon = R.drawable.ic_menu_recommend)
+        SectionTitle(title = "배차 추천", note = "차를 세우면 근처 실수익 Top 3을 보여 드려요", icon = R.drawable.ic_menu_recommend)
         if (preference == null) {
             Text("설정을 불러오지 못했어요", fontSize = 24.sp, color = TextSub, modifier = Modifier.padding(8.dp))
             return@WhiteSection
         }
         DetailLine("추천", if (preference.enabled) "켬" else "끔")
         if (preference.enabled) {
-            DetailLine("찾는 범위", "하차지에서 ${preference.radiusKm}km 안")
+            DetailLine("찾는 범위", "세운 곳에서 ${preference.radiusKm}km 안")
             DetailLine("최소 실수익", minNetProfitLabel(preference.minNetProfit))
             DetailLine("제외할 화물", excludedCargoLabel(preference.excludedCargo))
         }

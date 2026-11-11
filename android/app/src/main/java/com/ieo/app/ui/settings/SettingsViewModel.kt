@@ -39,7 +39,7 @@ data class SettingsUiState(
     val profile: Profile? = null,
     /** 기본 차량이 맨 앞 */
     val vehicles: List<Vehicle> = emptyList(),
-    /** 다음 배차 추천 설정. 못 받았으면 null */
+    /** 배차 추천 설정. 못 받았으면 null */
     val recommendation: RecommendationPreference? = null,
     val appVersion: String = "",
     val form: SettingsForm? = null,
@@ -61,7 +61,7 @@ interface SettingsActions {
 }
 
 /**
- * 설정 탭 (ACC-003, VEH-001·002, REC-004·025): 내 정보, 내 차량, 다음 배차 추천, 로그아웃.
+ * 설정 탭 (ACC-003, VEH-001·002, REC-004·005): 내 정보, 내 차량, 배차 추천, 로그아웃.
  * 차량 추가·삭제와 탈퇴는 휴대폰 앱에서 한다. 차량 화면에서 긴 입력을 하지 않게.
  */
 class SettingsViewModel(
