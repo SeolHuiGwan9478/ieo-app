@@ -165,7 +165,7 @@ body {
           <li>운행 중 화면</li>
           <li>대기 기록과 대기 증빙</li>
           <li>전자 인수증</li>
-          <li>다음 배차 추천</li>
+          <li>배차 추천</li>
           <li>오더 찾기와 실수익</li>
           <li>장부</li>
           <li>다른 앱 배차 등록</li>
@@ -183,6 +183,7 @@ body {
           <li>오더 찾기와 조건</li>
           <li>오더 상세와 실수익</li>
           <li>배차 요청에서 확정까지</li>
+          <li>배차 추천 설정</li>
           <li class="later">나머지는 차량 앱 확인 뒤에 채워요</li>
         </ol>
       </div>
@@ -419,7 +420,7 @@ body {
         <p class="lead">[조건]을 누르면 거리, 상차 날짜, 최소 운임, 결제 방식, 제외할 화물을 한 창에서 골라요. 고르는 동안 아래 버튼에 '오더 3건 보기'처럼 결과 건수가 먼저 나와서, 0건이 되는 조건은 누르기 전에 알 수 있어요.</p>
         <ul class="facts">
           <li><b>기본값</b> 내 주변 50km, 나머지는 모두 전체예요. 바꾼 조건 수가 [조건] 버튼 옆에 숫자로 붙고, 목록 위에 '이사 제외'처럼 남아요.</li>
-          <li><b>제외할 화물은 배차 추천과 같이 써요</b> 냉동·냉장, 이사, 위험물을 여기서 빼면 운송 중에 받는 다음 배차 추천에서도 빠져요. 추천 설정에서 바꿔도 여기에 그대로 들어와요.</li>
+          <li><b>제외할 화물은 배차 추천과 같이 써요</b> 냉동·냉장, 이사, 위험물, 중량물, 장척물, 건자재, 농수산물, 폐기물 가운데 고른 것을 빼면, 차를 세웠을 때 받는 배차 추천에서도 빠져요. 추천 설정에서 바꿔도 여기에 그대로 들어와요.</li>
           <li><b>정렬</b> 상차 시간이 빠른 순과 운임이 높은 순을 눌러서 바꿔요.</li>
         </ul>
       </div>
@@ -469,6 +470,48 @@ body {
       <li><b>신고는 한 번</b>오더마다 한 번만 받아요. 신고한 오더는 버튼이 '신고함'으로 바뀌고 운영팀이 확인해요.</li>
     </ul>
     <div class="foot"><img src="assets/ieo_wordmark_orange.svg" alt="ieo"><span>배차 · 요청에서 확정까지</span></div>
+  </section>
+
+  <section class="page sheet" aria-label="배차 추천">
+    <div class="eyebrow">RECOMMEND · 01</div>
+    <div class="twocol">
+      <div class="text-col">
+        <h2>차를 세우면 근처에서<br>돈 되는 3건을 보여 줘요</h2>
+        <p class="lead">기어를 P에 두거나 주차 브레이크를 채우는 순간, 세운 자리 근처 오더 가운데 실수익이 높은 3건을 골라 가운데 창에 하나씩 띄워요. 운행 전이든, 상차지·하차지에서 기다리든, 휴게소든 같아요.</p>
+        <ul class="facts">
+          <li><b>15초씩 차례로</b><br>1등이 15초 동안 떠 있다가 [넘기기]를 누르거나 시간이 지나면 2등, 3등으로 넘어가요. 넘긴 것은 기록하지 않아요.</li>
+          <li><b>홈에 카드로 남아요</b><br>창이 지나가도 홈의 '근처 추천'에 3건이 남아요. 차에서 내렸다 돌아와 눌러 봐도 돼요. 출발하면 지우고, 다음에 세우면 그 자리 근처로 다시 받아요.</li>
+          <li><b>무엇을 고르나</b><br>세운 곳에서 30km(설정) 안, 내 차에 실을 수 있고 제외한 화물이 아니며 이미 요청해 둔 오더가 아닌 것. 어림으로 10건을 고른 뒤 TMAP 화물차 경로로 기름값·통행료를 다시 내서 3건을 골라요.</li>
+          <li><b>요청은 기사님이</b><br>[배차 요청]을 눌러야 주선사에게 가요. 이 요청에는 '추천에서 눌렀음'이 남아, 추천이 얼마나 쓰이는지 볼 수 있어요. 달리는 동안에는 띄우지 않고 음성으로 말을 걸지도 않아요.</li>
+        </ul>
+      </div>
+      <div class="shots" style="--h: 50cqw; --cap: 24cqw">
+        <figure class="shot car"><img src="assets/c_pick_modal.jpg" alt="차량 배차 추천 창"><figcaption>세우면 뜨는 창. 위 막대가 15초를 세요.</figcaption></figure>
+        <figure class="shot car"><img src="assets/c_pick_home.jpg" alt="차량 홈의 근처 추천 카드"><figcaption>홈의 '근처 추천'. 상차 시각을 보고 맞출 수 있는지 판단해요.</figcaption></figure>
+      </div>
+    </div>
+    <div class="foot"><img src="assets/ieo_wordmark_orange.svg" alt="ieo"><span>배차 추천</span></div>
+  </section>
+
+  <section class="page sheet" aria-label="배차 추천 설정">
+    <div class="eyebrow">RECOMMEND · 02</div>
+    <div class="twocol">
+      <div class="text-col">
+        <h2>추천 설정은 휴대폰과<br>차에서 같이 바꿔요</h2>
+        <p class="lead">휴대폰 [내 정보 → 배차 추천]이나 차량 [설정 → 배차 추천]에서 바꾸면 서버에 하나로 저장돼, 다음에 차를 세울 때부터 바로 적용돼요.</p>
+        <ul class="facts">
+          <li><b>추천 받기</b> 스위치로 켜고 꺼요. 끄면 차를 세워도 추천 창이 뜨지 않아요.</li>
+          <li><b>찾는 범위</b> 세운 곳에서 5km부터 100km까지, 5km씩 늘리고 줄여요. 기본은 30km예요. 넓히면 후보가 늘지만 빈 차로 가는 길도 길어져요.</li>
+          <li><b>최소 실수익</b> 고른 금액보다 실수익이 적은 오더는 추천하지 않아요.</li>
+          <li><b>제외할 화물</b> 냉동·냉장, 이사, 위험물, 중량물, 장척물, 건자재, 농수산물, 폐기물 가운데 여러 개를 골라요. 오더 찾기 조건과 같은 설정이에요.</li>
+        </ul>
+      </div>
+      <div class="shots" style="--h: 50cqw; --cap: 24cqw">
+        <figure class="shot"><img src="assets/m_REC_settings.jpg" alt="휴대폰 배차 추천 설정"><figcaption>휴대폰 설정</figcaption></figure>
+        <figure class="shot car"><img src="assets/c_settings_recommend.jpg" alt="차량 배차 추천 설정"><figcaption>차량 설정. 칸과 순서가 휴대폰과 같아요.</figcaption></figure>
+      </div>
+    </div>
+    <div class="foot"><img src="assets/ieo_wordmark_orange.svg" alt="ieo"><span>배차 추천 · 설정</span></div>
   </section>
 
 </div>
