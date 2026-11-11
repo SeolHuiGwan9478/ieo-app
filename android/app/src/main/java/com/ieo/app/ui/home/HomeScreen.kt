@@ -1,13 +1,11 @@
 package com.ieo.app.ui.home
 
-import androidx.compose.foundation.Image
-import androidx.compose.ui.res.painterResource
+import android.os.SystemClock
 import androidx.annotation.DrawableRes
-import com.ieo.app.R
-import androidx.compose.animation.core.tween
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.animateFloatAsState
-import android.os.SystemClock
+import androidx.compose.animation.core.tween
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -44,6 +42,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.buildAnnotatedString
@@ -55,25 +54,28 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.ieo.app.ui.common.formatDuration
-import com.ieo.app.ui.common.formatMinutesKorean
-import com.ieo.app.ui.common.formatFare
-import com.ieo.app.ui.common.formatWon
+import com.ieo.app.R
 import com.ieo.app.domain.site.HeightWarning
+import com.ieo.app.domain.trip.RestLevel
 import com.ieo.app.domain.wait.WaitPolicy
+import com.ieo.app.ui.common.formatDuration
+import com.ieo.app.ui.common.formatFare
+import com.ieo.app.ui.common.formatMinutesKorean
+import com.ieo.app.ui.common.formatWon
 import com.ieo.app.ui.component.Chevron
 import com.ieo.app.ui.component.DetailLine
 import com.ieo.app.ui.component.IeoPrimaryButton
+import com.ieo.app.ui.component.IeoTonalButton
+import com.ieo.app.ui.component.Keyword
+import com.ieo.app.ui.component.KeywordTag
 import com.ieo.app.ui.component.ListRow
 import com.ieo.app.ui.component.SectionTitle
 import com.ieo.app.ui.component.StatusTag
 import com.ieo.app.ui.component.TagLine
 import com.ieo.app.ui.component.Tnum
 import com.ieo.app.ui.component.WhiteSection
-import com.ieo.app.ui.component.Keyword
-import com.ieo.app.ui.component.KeywordTag
-import com.ieo.app.ui.component.IeoTonalButton
 import com.ieo.app.ui.theme.CanvasGray
+import com.ieo.app.ui.theme.CardSurface
 import com.ieo.app.ui.theme.DrivingPale
 import com.ieo.app.ui.theme.IeoStatus
 import com.ieo.app.ui.theme.IeoTheme
@@ -81,7 +83,6 @@ import com.ieo.app.ui.theme.TextStrong
 import com.ieo.app.ui.theme.TextSub
 import com.ieo.app.ui.theme.WaitingPale
 import com.ieo.app.ui.theme.WarningPale
-import com.ieo.app.ui.theme.CardSurface
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.util.Locale
@@ -505,6 +506,16 @@ private fun DrivingHome(state: HomeState.Driving, onArrive: () -> Unit, onResume
                         fontSize = 24.sp,
                         fontWeight = FontWeight.Bold,
                         color = IeoStatus.colors.waiting,
+                    )
+                }
+                state.rest?.let { rest ->
+                    val now = rest.level == RestLevel.NOW
+                    Spacer(Modifier.height(20.dp))
+                    Text(
+                        "${formatMinutesKorean(rest.drivingFor.toMinutes())}째 운전 중 · ${if (now) "지금 쉬어 가세요" else "15분 안에 쉬어 가세요"}",
+                        fontSize = 24.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = if (now) status.warning else status.waiting,
                     )
                 }
                 if (state.etaShared) {

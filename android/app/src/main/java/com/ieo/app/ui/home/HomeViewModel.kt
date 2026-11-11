@@ -19,6 +19,9 @@ import com.ieo.app.domain.order.OrderRepository
 import com.ieo.app.domain.recommendation.RecommendationRepository
 import com.ieo.app.domain.site.SiteRepository
 import com.ieo.app.domain.trip.LocationTracker
+import com.ieo.app.domain.trip.RestCheck
+import com.ieo.app.domain.trip.RestLevel
+import com.ieo.app.domain.trip.RestTimer
 import com.ieo.app.domain.trip.StopType
 import com.ieo.app.domain.trip.Trip
 import com.ieo.app.domain.trip.TripRepository
@@ -206,9 +209,13 @@ class HomeViewModel(
     private val departureCheck = MutableStateFlow<DepartureCheck>(DepartureCheck.Staying)
     private val departureDetector = DepartureDetector()
 
+    /** 연속 운전 시간 (TRIP-030). 달리고 있지 않으면 null */
+    private val restCheck = MutableStateFlow<RestCheck?>(null)
+    private val restTimer = RestTimer()
+
     val state: StateFlow<HomeState> =
-        combine(snapshot, navigator.progress, arrivalView, departureCheck) { snapshot, navi, arrival, departure ->
-            stateFactory.create(snapshot, navi, arrival.check, departure, arrival.nearStop, arrival.parked)
+        combine(snapshot, navigator.progress, arrivalView, departureCheck, restCheck) { snapshot, navi, arrival, departure, rest ->
+            stateFactory.create(snapshot, navi, arrival.check, departure, arrival.nearStop, arrival.parked, rest)
         }
         .stateIn(viewModelScope, SharingStarted.Eagerly, stateFactory.create(HomeSnapshot(), null))
 
@@ -251,6 +258,7 @@ class HomeViewModel(
         watchEtaShared()
         recommendWhenParked()
         tellNotifications()
+        tellWhenRestIsDue()
     }
 
     override fun refresh() {
@@ -785,6 +793,28 @@ class HomeViewModel(
         }
     }
 
+    /**
+     * 연속 운전이 1시간 45분, 2시간이 되면 한 번씩 쉬라고 말한다 (TRIP-031). 운행이 없어도 잰다.
+     * 15분 넘게 세워 쉬면 처음부터 다시 잰다
+     */
+    private fun tellWhenRestIsDue() {
+        viewModelScope.launch {
+            var told: RestLevel? = null
+            while (true) {
+                val check = restTimer.check(clock.instant(), sensors.motion.value)
+                restCheck.value = check
+                val level = check?.level
+                if (level == null) {
+                    told = null
+                } else if (told == null || level > told) {
+                    told = level
+                    announcer.say(HomeAnnouncements.rest(level))
+                }
+                delay(REST_CHECK_MILLIS)
+            }
+        }
+    }
+
     private fun fenceOf(stop: TripStop) = GeoFence(GeoPoint(stop.latitude, stop.longitude), stop.geofenceRadiusMeters)
 
     /** 내비가 주행 정보를 띄엄띄엄 보내서, 안내 중에만 10초마다 남은 거리·시간을 다시 묻는다 */
@@ -859,6 +889,7 @@ class HomeViewModel(
         private const val NAVI_REFRESH_MILLIS = 10_000L
         private const val ETA_SHARED_CHECK_MILLIS = 60_000L
         private const val SENSOR_CHECK_MILLIS = 1_000L
+        private const val REST_CHECK_MILLIS = 10_000L
 
         /** 상하차지 정보 카드를 읽어 주고 "대기 시작" 버튼을 보여 주는 거리 (SITE-006, WAIT-008) */
         private const val APPROACH_ANNOUNCE_METERS = 3_000.0

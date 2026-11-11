@@ -6,6 +6,7 @@ import com.ieo.app.domain.ledger.Receivables
 import com.ieo.app.domain.navi.NaviProgress
 import com.ieo.app.domain.recommendation.NextOrder
 import com.ieo.app.domain.site.SiteCard
+import com.ieo.app.domain.trip.RestCheck
 import com.ieo.app.domain.trip.StopType
 import com.ieo.app.domain.trip.Trip
 import com.ieo.app.domain.wait.ArrivalCheck
@@ -58,13 +59,15 @@ class HomeStateFactory(
         nearStop: Boolean = false,
         /** 세워 두었다 (기어 P 또는 주차 브레이크) */
         parked: Boolean = false,
+        /** 연속 운전 시간 (TRIP-030). 쉬어야 할 때만 운행 화면에 보여 준다 */
+        rest: RestCheck? = null,
     ): HomeState {
         val picks = snapshot.nextOrders.map(::nextOrderCard)
         val trip = snapshot.current ?: return idle(snapshot, picks)
         val stop = trip.currentStop ?: return idle(snapshot, picks)
         val wait = snapshot.wait?.takeIf { it.stopType == stop }
         // 상하차지에 있는데 대기 기록을 못 받았으면 주행 화면의 "대기 시작"으로 다시 받게 한다 (도착은 여러 번 불러도 같다)
-        if (!trip.status.isAtStop || wait == null) return driving(trip, stop, navi, arrival, nearStop, parked, picks)
+        if (!trip.status.isAtStop || wait == null) return driving(trip, stop, navi, arrival, nearStop, parked, picks, rest)
         val site = snapshot.site?.takeIf { it.id == trip.stop(stop).siteId }
         return waiting(trip, stop, wait, site, departure, picks)
     }
@@ -84,6 +87,7 @@ class HomeStateFactory(
         nearStop: Boolean,
         parked: Boolean,
         picks: List<NextOrderCard>,
+        rest: RestCheck?,
     ): HomeState.Driving {
         val remainSeconds = navi?.remainSeconds
         return HomeState.Driving(
@@ -100,6 +104,7 @@ class HomeStateFactory(
             nearStop = nearStop,
             parked = parked,
             picks = picks,
+            rest = rest?.takeIf { it.level != null },
         )
     }
 

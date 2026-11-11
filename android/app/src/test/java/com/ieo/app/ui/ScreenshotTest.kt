@@ -21,25 +21,27 @@ import com.github.takahirom.roborazzi.captureRoboImage
 import com.ieo.app.domain.account.Profile
 import com.ieo.app.domain.delivery.DeliveryProof
 import com.ieo.app.domain.delivery.DeliveryProofStatus
+import com.ieo.app.domain.ledger.PaymentType
 import com.ieo.app.domain.recommendation.RecommendationPreference
+import com.ieo.app.domain.trip.RestCheck
+import com.ieo.app.domain.trip.RestLevel
 import com.ieo.app.domain.vehicle.BodyType
 import com.ieo.app.domain.vehicle.Tonnage
 import com.ieo.app.domain.vehicle.Vehicle
 import com.ieo.app.domain.wait.WaitProofLink
-import com.ieo.app.domain.ledger.PaymentType
 import com.ieo.app.ui.carlink.CarLinkActions
 import com.ieo.app.ui.carlink.CarLinkSheet
 import com.ieo.app.ui.carlink.CarLinkUiState
 import com.ieo.app.ui.carlink.VehicleChoice
 import com.ieo.app.ui.home.DeliveryProofSheet
+import com.ieo.app.ui.home.FinishTripSheet
 import com.ieo.app.ui.home.HomeScreen
 import com.ieo.app.ui.home.PickModal
+import com.ieo.app.ui.home.SampleHomeData
+import com.ieo.app.ui.home.StartGuidanceSheet
 import com.ieo.app.ui.home.StopConfirmModal
 import com.ieo.app.ui.home.StopQuestion
 import com.ieo.app.ui.home.StopQuestionKind
-import com.ieo.app.ui.home.FinishTripSheet
-import com.ieo.app.ui.home.SampleHomeData
-import com.ieo.app.ui.home.StartGuidanceSheet
 import com.ieo.app.ui.home.WaitProofSheet
 import com.ieo.app.ui.ledger.DayGroup
 import com.ieo.app.ui.ledger.EntryDetail
@@ -77,6 +79,7 @@ import com.ieo.app.ui.settings.SettingsScreen
 import com.ieo.app.ui.settings.SettingsUiState
 import com.ieo.app.ui.theme.IeoTheme
 import java.lang.reflect.Proxy
+import java.time.Duration
 import java.time.Instant
 import org.junit.Rule
 import org.junit.Test
@@ -185,6 +188,8 @@ private object Scenes {
         "home_waiting" to { HomeScreen(SampleHomeData.waiting()) },
         "home_unloading" to { HomeScreen(SampleHomeData.unloading()) },
         "home_driving" to { HomeScreen(SampleHomeData.driving()) },
+        "home_rest_soon" to { HomeScreen(SampleHomeData.driving().copy(rest = RestCheck(Duration.ofMinutes(110), RestLevel.SOON))) },
+        "home_rest_now" to { HomeScreen(SampleHomeData.driving().copy(rest = RestCheck(Duration.ofMinutes(125), RestLevel.NOW))) },
         "sheet_guidance" to { Box(Modifier.fillMaxSize()) { StartGuidanceSheet(trip, {}, {}) } },
         "sheet_wait_proof" to { Box(Modifier.fillMaxSize()) { WaitProofSheet(WaitProofLink("https://ieo.example/w/abc123", Instant.parse("2026-11-12T09:00:00Z")), {}) } },
         "sheet_wait_proof_send" to { Box(Modifier.fillMaxSize()) { WaitProofSheet(WaitProofLink("https://ieo.example/w/abc123", Instant.parse("2026-11-12T09:00:00Z"), canSend = true), {}) } },

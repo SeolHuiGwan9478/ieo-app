@@ -3,6 +3,7 @@ package com.ieo.app.ui.home
 import com.ieo.app.domain.order.BrokerMetrics
 import com.ieo.app.domain.order.CargoCategory
 import com.ieo.app.domain.site.HeightWarning
+import com.ieo.app.domain.trip.RestCheck
 import com.ieo.app.domain.wait.WaitPolicy
 
 /**
@@ -64,6 +65,8 @@ sealed interface HomeState {
         val parked: Boolean = false,
         /** 세운 곳 근처 추천 3건 (03 배차 추천). 세워 두지 않았으면 비어 있다 */
         val picks: List<NextOrderCard> = emptyList(),
+        /** 쉬어야 할 때가 되었으면 연속 운전 시간과 단계 (TRIP-031). 아니면 null */
+        val rest: RestCheck? = null,
     ) : HomeState {
         /** "대기 시작" 버튼을 보여 주나: 상하차지 가까이 왔거나, 길 안내가 꺼졌을 때 */
         val showsStartWait: Boolean get() = nearStop || !naviActive

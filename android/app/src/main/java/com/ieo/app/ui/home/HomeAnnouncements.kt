@@ -4,13 +4,14 @@ import com.ieo.app.domain.notification.AppNotification
 import com.ieo.app.domain.notification.NotificationType
 import com.ieo.app.domain.site.HeightWarning
 import com.ieo.app.domain.site.SiteCard
+import com.ieo.app.domain.trip.RestLevel
 import com.ieo.app.domain.voice.Announcement
 import com.ieo.app.domain.voice.AnnouncementPriority
 import com.ieo.app.domain.wait.WaitPolicy
+import com.ieo.app.ui.common.DayTimeFormatter
 import com.ieo.app.ui.common.formatMinutesKorean
 import com.ieo.app.ui.common.formatWon
 import com.ieo.app.ui.common.josa
-import com.ieo.app.ui.common.DayTimeFormatter
 import java.time.Instant
 
 /**
@@ -101,6 +102,18 @@ object HomeAnnouncements {
     /** 수하인 서명으로 운행이 끝남 (POD-008) */
     fun deliverySigned(signerName: String?): Announcement =
         trip("${signerName?.let { "${it}님이 " } ?: ""}인수증에 서명했어요. 운행을 마쳤어요.")
+
+    /** 쉬어야 할 때 (TRIP-031). 1시간 45분에 한 번, 2시간에 한 번 */
+    fun rest(level: RestLevel): Announcement = Announcement(
+        when (level) {
+            RestLevel.SOON -> "1시간 45분째 운전 중이에요. 15분 안에 휴게소나 졸음쉼터에서 쉬어 가세요."
+            RestLevel.NOW -> "2시간 넘게 쉬지 않고 운전했어요. 가까운 곳에 세우고 15분 이상 쉬어 가세요."
+        },
+        AnnouncementPriority.WARNING,
+        REST_KEY,
+    )
+
+    const val REST_KEY = "rest"
 
     private fun trip(text: String) = Announcement(text, AnnouncementPriority.TRIP)
 
