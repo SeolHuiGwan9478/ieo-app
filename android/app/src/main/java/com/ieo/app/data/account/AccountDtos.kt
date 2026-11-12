@@ -12,3 +12,30 @@ data class UserResponse(val phone: String, val name: String? = null) {
 
 @Serializable
 data class UpdateUserRequest(val name: String)
+
+/** 서버 /api/plans/me 중 차량 앱이 쓰는 칸 */
+@Serializable
+data class DriverPlanResponse(
+    val plan: String,
+    val planLabel: String,
+    val price: Int,
+    val trial: Boolean,
+    val renews: Boolean,
+    val paidUntil: String? = null,
+    val daysLeft: Int? = null,
+    val plans: List<Option> = emptyList(),
+) {
+    @Serializable
+    data class Option(val code: String, val highlights: List<String>)
+
+    fun toDomain() = com.ieo.app.domain.account.DriverPlan(
+        code = plan,
+        label = planLabel,
+        price = price,
+        highlights = plans.firstOrNull { it.code == plan }?.highlights.orEmpty(),
+        trial = trial,
+        renews = renews,
+        daysLeft = daysLeft,
+        paidUntil = paidUntil?.let(java.time.LocalDate::parse),
+    )
+}

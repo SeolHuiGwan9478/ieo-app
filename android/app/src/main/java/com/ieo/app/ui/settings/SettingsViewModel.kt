@@ -11,6 +11,7 @@ import com.ieo.app.core.network.ApiResult
 import com.ieo.app.core.session.SessionManager
 import com.ieo.app.di.appContainer
 import com.ieo.app.domain.account.AccountRepository
+import com.ieo.app.domain.account.DriverPlan
 import com.ieo.app.domain.account.Profile
 import com.ieo.app.domain.recommendation.RecommendationPreference
 import com.ieo.app.domain.recommendation.RecommendationRepository
@@ -48,6 +49,8 @@ data class SettingsUiState(
     val message: String? = null,
     /** 서류 인증과 이행 기록. 못 받으면 null */
     val standing: DriverStanding? = null,
+    /** 지금 플랜 (PLAN-007). 못 받으면 null */
+    val plan: DriverPlan? = null,
 )
 
 interface SettingsActions {
@@ -132,6 +135,7 @@ class SettingsViewModel(
         val vehicles = viewModelScope.async { vehicleRepository.vehicles() }
         val recommendation = viewModelScope.async { recommendationRepository.preference() }
         val standing = viewModelScope.async { accountRepository.standing() }
+        val plan = viewModelScope.async { accountRepository.plan() }
         profile.await().orShow()?.let { me -> _state.update { it.copy(profile = me) } }
         vehicles.await().orShow()?.let { list ->
             _state.update { it.copy(vehicles = list.sortedByDescending(Vehicle::isDefault)) }
@@ -139,6 +143,7 @@ class SettingsViewModel(
         // 추천 설정을 못 받아도 다른 칸은 보여 준다. 메시지를 두 번 띄우지 않게 조용히 넘긴다
         (recommendation.await() as? ApiResult.Success)?.data?.let { pref -> _state.update { it.copy(recommendation = pref) } }
         standing.await()?.let { value -> _state.update { it.copy(standing = value) } }
+        plan.await()?.let { value -> _state.update { it.copy(plan = value) } }
         _state.update { it.copy(isLoading = false) }
     }
 

@@ -5,6 +5,7 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
+import com.ieo.app.core.network.ApiError
 import com.ieo.app.core.network.ApiResult
 import com.ieo.app.di.appContainer
 import com.ieo.app.domain.delivery.DeliveryProofRepository
@@ -76,6 +77,8 @@ data class LedgerUiState(
     val proof: WaitProofLink? = null,
     /** 연 줄의 종이 인수증 사진 (04 인수증). 받는 중이거나 없으면 비어 있다 */
     val receiptPhotos: List<ByteArray> = emptyList(),
+    /** 베이직이라 이 달(지난 달) 장부가 잠겼다 (12장, 서버 PLAN_403_UPGRADE) */
+    val locked: Boolean = false,
 )
 
 interface LedgerActions {
@@ -293,10 +296,19 @@ class LedgerViewModel(
         val monthEntries = viewModelScope.async { ledgerRepository.entries(from, to) }
         val monthExpenses = viewModelScope.async { expenseRepository.expenses(from, to) }
         val owed = viewModelScope.async { ledgerRepository.receivables() }
-        monthEntries.await().orShow()?.let { entries = it }
-        monthExpenses.await().orShow()?.let { expenses = it }
+        val entriesResult = monthEntries.await()
+        val locked = entriesResult is ApiResult.Failure && entriesResult.error.let { it is ApiError.Server && it.code == PLAN_UPGRADE }
+        if (locked) {
+            // 지난 장부는 프로부터: 앞서 본 달의 줄이 남지 않게 비운다
+            entries = emptyList()
+            expenses = emptyList()
+            monthExpenses.cancel()
+        } else {
+            entriesResult.orShow()?.let { entries = it }
+            monthExpenses.await().orShow()?.let { expenses = it }
+        }
         owed.await().orShow()?.let { receivables = it }
-        _state.update { it.copy(isLoading = false) }
+        _state.update { it.copy(isLoading = false, locked = locked) }
         publish()
     }
 
@@ -345,6 +357,7 @@ class LedgerViewModel(
     private fun show(message: String) = _state.update { it.copy(message = message) }
 
     companion object {
+        private const val PLAN_UPGRADE = "PLAN_403_UPGRADE"
         const val AMOUNT_REQUIRED_MESSAGE = "금액을 입력해 주세요"
         const val DESCRIPTION_REQUIRED_MESSAGE = "구간을 입력해 주세요"
 

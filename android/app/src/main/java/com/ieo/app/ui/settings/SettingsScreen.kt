@@ -14,6 +14,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material.icons.filled.Verified
 import androidx.compose.material.icons.Icons
 import androidx.compose.foundation.shape.RoundedCornerShape
+import com.ieo.app.domain.account.DriverPlan
 import com.ieo.app.domain.account.DriverStanding
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -81,6 +82,7 @@ fun SettingsScreen(
                 .widthIn(max = 880.dp),
         ) {
             ProfileSection(state.profile, state.standing, linkCount, onEdit = { actions.openForm(SettingsForm.EditName(state.profile?.name.orEmpty())) })
+            state.plan?.let { PlanSection(it) }
             VehicleSection(state.vehicles, isLoading = state.isLoading, onEdit = { actions.openForm(SettingsForm.EditVehicle(it)) })
             RecommendationSection(state.recommendation, onEdit = { actions.openForm(SettingsForm.EditRecommendation(it)) })
             linksSection()
@@ -172,6 +174,23 @@ private fun RecordStat(value: String, label: String, modifier: Modifier) {
     Column(modifier, horizontalAlignment = Alignment.CenterHorizontally) {
         Text(value, fontSize = 32.sp, fontWeight = FontWeight.ExtraBold, color = TextStrong)
         Text(label, fontSize = 24.sp, color = TextSub)
+    }
+}
+
+/** 내 플랜 티켓 (PLAN-007). 바꾸기는 휴대폰 앱에서 (차에서 결제하지 않는다) */
+@Composable
+private fun PlanSection(plan: DriverPlan) {
+    WhiteSection {
+        SectionTitle(title = "내 플랜", note = "플랜 바꾸기는 휴대폰 앱에서")
+        Spacer(Modifier.height(8.dp))
+        PlanTicket(plan)
+        val status = when {
+            !plan.paid -> null
+            plan.trial -> "무료 체험이 끝나면 베이직으로 돌아가요"
+            plan.renews -> "기간이 끝나면 같은 플랜으로 이어져요"
+            else -> "해지했어요. 기간이 끝나면 베이직으로 바뀌어요"
+        }
+        status?.let { Text(it, fontSize = 24.sp, color = TextSub, modifier = Modifier.padding(horizontal = TextInset, vertical = 10.dp)) }
     }
 }
 

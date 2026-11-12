@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="360" height="150" viewBox="0 0 360 150" role="img" aria-label="이에오 베이직 이용권">
+<path d="M16,0 H251 A11,11 0 0 0 273,0 H344 A16,16 0 0 1 360,16 V134 A16,16 0 0 1 344,150 H273 A11,11 0 0 0 251,150 H16 A16,16 0 0 1 0,134 V16 A16,16 0 0 1 16,0 Z" fill="#FFFFFF" stroke="#E5E8EB" stroke-width="1.5"/>
+<line x1="262" y1="17" x2="262" y2="133" stroke="#D1D6DB" stroke-width="1.5" stroke-dasharray="4 5" stroke-linecap="round" opacity="0.7"/>
+<g font-family="Pretendard, 'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif">
+<text x="24" y="30" font-size="11" font-weight="600" fill="#4E5968" letter-spacing="0.5">이에오 이용권</text>
+<text x="24" y="58" font-size="24" font-weight="700" fill="#191F28">베이직</text>
+<circle cx="28" cy="82" r="2.5" fill="#F25A22"/>
+<text x="38" y="86" font-size="13" fill="#191F28">오더·배차·운행 안내</text>
+<circle cx="28" cy="102" r="2.5" fill="#F25A22"/>
+<text x="38" y="106" font-size="13" fill="#191F28">대기 증빙 30일 3건</text>
+<circle cx="28" cy="122" r="2.5" fill="#F25A22"/>
+<text x="38" y="126" font-size="13" fill="#191F28">세금계산서 월 10장</text>
+<text x="311.0" y="72" text-anchor="middle" font-size="20" font-weight="700" fill="#191F28">무료</text>
+<text x="311.0" y="94" text-anchor="middle" font-size="12" fill="#4E5968">늘 무료</text>
+</g></svg>

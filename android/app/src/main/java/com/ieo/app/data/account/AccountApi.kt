@@ -21,6 +21,9 @@ interface AccountApi {
     @POST("api/users/me/car-sessions/current/sign-out")
     suspend fun endCarSession(): Response<Unit>
 
+    @GET("api/plans/me")
+    suspend fun plan(): Response<DriverPlanResponse>
+
     @GET("api/drivers/me/record")
     suspend fun record(): Response<DriverRecordResponse>
 

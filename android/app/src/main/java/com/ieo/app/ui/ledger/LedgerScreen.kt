@@ -174,7 +174,13 @@ private fun EntriesTab(state: LedgerUiState, actions: LedgerActions) {
         }
     }
     if (state.days.isEmpty()) {
-        EmptySection(if (state.isLoading) "장부를 불러오는 중이에요" else "${state.monthLabel}에는 기록이 없어요")
+        EmptySection(
+            when {
+                state.isLoading -> "장부를 불러오는 중이에요"
+                state.locked -> "지난 장부는 프로 플랜부터 볼 수 있어요. 휴대폰 앱 내 정보에서 플랜을 바꿔 주세요"
+                else -> "${state.monthLabel}에는 기록이 없어요"
+            },
+        )
     }
     state.days.forEach { day ->
         WhiteSection {

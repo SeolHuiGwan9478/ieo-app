@@ -14,6 +14,9 @@ interface AccountRepository {
     /** 서류 인증과 이행 기록. 못 받으면 null (설정 화면에서 그 칸만 숨긴다) */
     suspend fun standing(): DriverStanding? = null
 
+    /** 지금 플랜. 못 받으면 null (설정 칸만 비운다) */
+    suspend fun plan(): DriverPlan? = null
+
     /** 서버의 로그인된 차량 목록에서 이 차를 뺀다 */
     suspend fun endCarSession(): ApiResult<Unit> = ApiResult.Success(Unit)
 }
