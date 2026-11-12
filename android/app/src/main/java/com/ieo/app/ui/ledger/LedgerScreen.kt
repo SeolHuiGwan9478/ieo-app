@@ -302,7 +302,7 @@ private fun ColumnScope.EntrySheet(detail: EntryDetail, receiptPhotos: List<Imag
     Spacer(Modifier.height(32.dp))
     Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
         IeoTonalButton(
-            text = "고치기",
+            text = "수정",
             onClick = { actions.openForm(LedgerForm.EditFare(detail.id, detail.fare, detail.paymentType, detail.distanceKm)) },
             modifier = Modifier.weight(1f),
         )

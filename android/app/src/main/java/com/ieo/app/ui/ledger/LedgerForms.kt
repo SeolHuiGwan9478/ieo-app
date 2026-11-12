@@ -85,7 +85,7 @@ fun ColumnScope.FareForm(form: LedgerForm.EditFare, busy: Boolean, onSubmit: (Lo
     var paymentType by rememberSaveable(form.entryId) { mutableStateOf(form.paymentType) }
     var distance by rememberSaveable(form.entryId) { mutableStateOf(form.distanceKm?.toString().orEmpty()) }
 
-    SheetTitle("장부 고치기")
+    SheetTitle("장부 수정")
     Spacer(Modifier.height(24.dp))
     AmountField(amount, label = "운임", onChange = { amount = it })
     Spacer(Modifier.height(16.dp))

@@ -99,7 +99,7 @@ class SettingsViewModel(
         }
         runAction {
             vehicleRepository.update(vehicle.id, tonnage, bodyType, heightMeters, dimensions).orShow() ?: return@runAction
-            _state.update { it.copy(form = null, message = "${vehicle.plateNumber} 차량 정보를 고쳤어요") }
+            _state.update { it.copy(form = null, message = "${vehicle.plateNumber} 차량 정보를 수정했어요") }
             load()
         }
     }

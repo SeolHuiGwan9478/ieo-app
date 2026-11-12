@@ -263,6 +263,7 @@ private object Scenes {
         "ledger_receipt" to { LedgerScreen(ledger.copy(detail = receiptDetail, receiptPhotos = List(5) { paperJpeg() }), noop<LedgerActions>()) },
         "ledger_add_expense" to { LedgerScreen(ledger.copy(form = LedgerForm.AddExpense), noop<LedgerActions>()) },
         "ledger_add_trip" to { LedgerScreen(ledger.copy(form = LedgerForm.AddTrip), noop<LedgerActions>()) },
+        "ledger_delete" to { LedgerScreen(ledger.copy(form = com.ieo.app.ui.ledger.LedgerForm.ConfirmDelete(com.ieo.app.ui.ledger.DeleteTarget.OfExpense(1), "주유 150만 원을 지울까요?", "11월 5일 (목) · 잘못 넣음")), noop<LedgerActions>()) },
         "ledger_edit_fare" to { LedgerScreen(ledger.copy(detail = detail, form = LedgerForm.EditFare(1, 320_000, PaymentType.RECEIPT)), noop<LedgerActions>()) },
         "settings" to { SettingsScreen(settings, noop<SettingsActions>()) },
         "settings_verified" to { SettingsScreen(settings.copy(standing = com.ieo.app.domain.account.DriverStanding(true, 4, 4, 37, 1)), noop<SettingsActions>(), linkCount = 2) },

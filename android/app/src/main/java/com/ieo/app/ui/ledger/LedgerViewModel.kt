@@ -217,7 +217,7 @@ class LedgerViewModel(
         if (fare <= 0) return show(AMOUNT_REQUIRED_MESSAGE)
         runAction {
             ledgerRepository.update(entry, fare, paymentType, distanceKm).orShow() ?: return@runAction
-            finishForm("장부를 고쳤어요")
+            finishForm("장부를 수정했어요")
         }
     }
 
