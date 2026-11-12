@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="340" height="124" viewBox="0 0 340 124" role="img" aria-label="프로 3일 쿠폰">
+<path d="M14,0 H242 A10,10 0 0 0 262,0 H326 A14,14 0 0 1 340,14 V110 A14,14 0 0 1 326,124 H262 A10,10 0 0 0 242,124 H14 A14,14 0 0 1 0,110 V14 A14,14 0 0 1 14,0 Z" fill="#FFFFFF" stroke="#FFD2C0" stroke-width="1.5"/>
+<line x1="252" y1="16" x2="252" y2="108" stroke="#FFD2C0" stroke-width="1.5" stroke-dasharray="4 4" stroke-linecap="round"/>
+<g font-family="Pretendard, 'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif">
+<rect x="20" y="16" width="62" height="20" rx="10" fill="#FFF3EE"/>
+<text x="51" y="30" text-anchor="middle" font-size="11" font-weight="700" fill="#F25A22">프로 이용권</text>
+<text x="20" y="66" font-size="26" font-weight="800" fill="#F25A22">프로 3일</text>
+<text x="20" y="88" font-size="13" fill="#191F28">주선사 늦은 취소 보상</text>
+<text x="20" y="108" font-size="12" fill="#6B7684">2027.02.11까지 · D-90</text>
+<circle cx="296.0" cy="54.0" r="20" fill="#F25A22"/>
+<path d="M289.0,54.0 l5,5 l9,-10" fill="none" stroke="#FFFFFF" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>
+<text x="296.0" y="92.0" text-anchor="middle" font-size="12" font-weight="700" fill="#F25A22">사용하기</text>
+</g></svg>
