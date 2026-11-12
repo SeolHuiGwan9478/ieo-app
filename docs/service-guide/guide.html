@@ -176,7 +176,7 @@ body {
           <li>운행 중 화면</li>
           <li>휴게 안내와 화물차 라운지</li>
           <li>대기 기록과 대기 증빙</li>
-          <li>전자 인수증</li>
+          <li>인수증 확인</li>
           <li>배차 추천</li>
           <li>오더 찾기와 실수익</li>
           <li>장부</li>
@@ -198,6 +198,7 @@ body {
           <li>배차 추천 설정</li>
           <li>내 배차와 직접 등록</li>
           <li>대기 증빙과 시각 고치기</li>
+          <li>종이 인수증 보내기</li>
           <li class="later">나머지는 차량 앱 확인 뒤에 채워요</li>
         </ol>
       </div>
@@ -649,6 +650,53 @@ body {
       </div>
     </div>
     <div class="foot"><img src="assets/ieo_wordmark_orange.svg" alt="ieo"><span>대기 · 증빙과 고치기</span></div>
+  </section>
+
+  <section class="page sheet" aria-label="종이 인수증 보내기">
+    <div class="eyebrow">POD · 01</div>
+    <div class="twocol">
+      <div class="text-col">
+        <h2>종이 인수증은<br>휴대폰으로 보내요</h2>
+        <p class="lead">결제 방식이 인수증인 운행이면, 하차지에서 받은 종이 인수증을 휴대폰으로 찍어 주선사에게 바로 보내요. 우편으로 원본을 보내는 동안 운임이 늦어지는 일을 줄여요.</p>
+        <ul class="facts">
+          <li><b>찍기와 지우기</b><br>내 배차 → 증빙 → 인수증에서 [종이 인수증 찍기]. 여러 장이면 5장까지 올리고, 잘못 찍은 사진은 눌러서 지워요. 3장이 넘으면 "+N장"으로 묶어 보여요.</li>
+          <li><b>크게 보고 확인</b><br>사진을 누르면 화면 전체로 열려요. 두 번 누르거나 두 손가락으로 벌려 도장과 글씨가 잘 나왔는지 봐요.</li>
+          <li><b>[주선사에게 보내기]</b><br>보내면 주선사 담당자에게 문자가 가고, 콘솔 운행 상세에 사진이 떠요. 보낸 날부터 정산 주기를 세어 장부의 지급 예정일이 다시 잡혀요. 보낸 뒤에는 사진을 바꿀 수 없어요.</li>
+          <li><b>선불·착불 운행</b><br>인수증 칸이 나오지 않아요.</li>
+        </ul>
+      </div>
+      <div class="shots" style="--h: 50cqw; --cap: 24cqw">
+        <figure class="shot"><img src="assets/m_POD_pending.jpg" alt="종이 인수증 사진을 올린 화면"><figcaption>사진 5장, 아직 안 보냄. 3장 넘으면 +N장.</figcaption></figure>
+        <figure class="shot"><img src="assets/m_POD_sent.jpg" alt="주선사에게 보낸 화면"><figcaption>보내면 시각과 장수가 남아요.</figcaption></figure>
+      </div>
+    </div>
+    <div class="foot"><img src="assets/ieo_wordmark_orange.svg" alt="ieo"><span>인수증 · 보내기</span></div>
+  </section>
+
+  <section class="page sheet" aria-label="인수증 확인">
+    <div class="eyebrow">POD · 02</div>
+    <div class="twocol">
+      <div class="text-col">
+        <h2>차에서는<br>보냈는지 확인해요</h2>
+        <p class="lead">차에는 카메라가 없어서 찍고 보내는 건 휴대폰에서 해요. 차량 앱은 운행을 마칠 때 알려 주고, 장부에서 보냈는지와 사진을 보여 줘요.</p>
+        <ul class="facts">
+          <li><b>운행을 마칠 때</b><br>인수증 결제 운행이면 "인수증 사진은 휴대폰으로 보내 주세요"라고 말과 글로 알려요.</li>
+          <li><b>장부</b><br>운행 줄에 '인수증 보냄'(초록) 또는 '인수증 안 보냄'이 붙어요. 줄을 누르면 보낸 시각과 사진이 보여요.</li>
+          <li><b>크게 보기</b><br>사진을 누르면 화면 전체로 열리고, 두 번 누르면 그 자리를 2배로 봐요. 아래에는 [이전]·[다음] 버튼이 있고, 오른쪽 위 X로 닫아요.</li>
+          <li><b>수하인 서명은 하지 않아요</b><br>하차지는 아직 종이 인수증과 도장으로 처리하는 곳이 많아서 QR 서명 대신 종이 사진으로 정했어요.</li>
+        </ul>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 1.6cqw">
+        <div class="shots" style="--h: 30cqw; --cap: 18cqw">
+          <figure class="shot car"><img src="assets/c_pod_ledger.jpg" alt="장부의 인수증 표시"><figcaption>보냄·안 보냄 태그.</figcaption></figure>
+          <figure class="shot car"><img src="assets/c_pod_detail.jpg" alt="장부 상세의 인수증 사진"><figcaption>상세에 사진. 3장 넘으면 +N장.</figcaption></figure>
+        </div>
+        <div class="shots" style="--h: 14cqw; --cap: 18cqw">
+          <figure class="shot car"><img src="assets/c_pod_zoom.jpg" alt="인수증 사진 크게 보기"><figcaption>화면 전체로 크게 보기. 두 번 누르면 2배.</figcaption></figure>
+        </div>
+      </div>
+    </div>
+    <div class="foot"><img src="assets/ieo_wordmark_orange.svg" alt="ieo"><span>인수증 · 확인</span></div>
   </section>
 
   <section class="page sheet" aria-label="외부 API와 데이터 출처">
