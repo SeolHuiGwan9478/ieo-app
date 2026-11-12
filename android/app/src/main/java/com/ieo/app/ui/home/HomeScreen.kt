@@ -62,6 +62,7 @@ import com.ieo.app.ui.common.formatDuration
 import com.ieo.app.ui.common.formatFare
 import com.ieo.app.ui.common.formatMinutesKorean
 import com.ieo.app.ui.common.formatWon
+import com.ieo.app.ui.component.TextInset
 import com.ieo.app.ui.component.Chevron
 import com.ieo.app.ui.component.DetailLine
 import com.ieo.app.ui.component.IeoPrimaryButton
@@ -108,7 +109,6 @@ fun HomeScreen(
     onStartWork: () -> Unit = {},
     onDepart: () -> Unit = {},
     onSendWaitProof: () -> Unit = {},
-    onRequestDeliveryProof: () -> Unit = {},
     onArrive: () -> Unit = {},
     onResumeGuidance: () -> Unit = {},
     onPickClick: (NextOrderCard) -> Unit = {},
@@ -119,7 +119,7 @@ fun HomeScreen(
         val compact = maxWidth < WideLayoutMinWidth
         when (state) {
             is HomeState.Idle -> IdleHome(state, compact, onTripClick, onPickClick, onUnpaidClick, onRegisterTrip)
-            is HomeState.Waiting -> WaitingHome(state, compact, WaitActions(onStartWork, onDepart, onSendWaitProof, onRequestDeliveryProof, onPickClick))
+            is HomeState.Waiting -> WaitingHome(state, compact, WaitActions(onStartWork, onDepart, onSendWaitProof, onPickClick))
             is HomeState.Driving -> DrivingHome(state, onArrive, onResumeGuidance, onPickClick, onAddRestStopWaypoint)
         }
     }
@@ -236,7 +236,6 @@ private fun MyTrips(trips: List<AssignedTrip>, onTripClick: (AssignedTrip) -> Un
         IeoTonalButton(
             text = "다른 앱에서 받은 배차 등록",
             onClick = onRegisterTrip,
-            modifier = Modifier.padding(horizontal = 8.dp),
         )
     }
 }
@@ -248,7 +247,6 @@ private class WaitActions(
     val onStartWork: () -> Unit,
     val onDepart: () -> Unit,
     val onSendWaitProof: () -> Unit,
-    val onRequestDeliveryProof: () -> Unit,
     val onPickClick: (NextOrderCard) -> Unit,
 )
 
@@ -270,7 +268,7 @@ private fun WaitingHome(state: HomeState.Waiting, compact: Boolean, actions: Wai
             verticalArrangement = Arrangement.spacedBy(16.dp),
             modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(ScreenPadding),
         ) {
-            WaitTimer(state, timerSeconds, chargeableMinutes, actions, compact = true)
+            WaitTimer(state, timerSeconds, chargeableMinutes, actions)
             WaitDetails(state, actions.onPickClick)
         }
     } else {
@@ -279,7 +277,7 @@ private fun WaitingHome(state: HomeState.Waiting, compact: Boolean, actions: Wai
             verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier.fillMaxSize().padding(ScreenPadding),
         ) {
-            Box(modifier = Modifier.weight(0.55f)) { WaitTimer(state, timerSeconds, chargeableMinutes, actions, compact = false) }
+            Box(modifier = Modifier.weight(0.55f)) { WaitTimer(state, timerSeconds, chargeableMinutes, actions) }
             Box(modifier = Modifier.weight(0.45f).fillMaxHeight().verticalScroll(rememberScrollState())) {
                 WaitDetails(state, actions.onPickClick)
             }
@@ -288,7 +286,7 @@ private fun WaitingHome(state: HomeState.Waiting, compact: Boolean, actions: Wai
 }
 
 @Composable
-private fun WaitTimer(state: HomeState.Waiting, timerSeconds: Long, chargeableMinutes: Long, actions: WaitActions, compact: Boolean) {
+private fun WaitTimer(state: HomeState.Waiting, timerSeconds: Long, chargeableMinutes: Long, actions: WaitActions) {
     val waiting = IeoStatus.colors.waiting
     val work = if (state.isPickup) "상차" else "하차"
     WhiteSection(contentPadding = 36.dp) {
@@ -314,31 +312,13 @@ private fun WaitTimer(state: HomeState.Waiting, timerSeconds: Long, chargeableMi
             )
         }
         Spacer(Modifier.height(36.dp))
-        // 반 화면에서 버튼 3개를 한 줄에 두면 글자가 깨지므로 하차지에서는 주 버튼을 아랫줄로 내린다
-        val stacked = compact && !state.isPickup
-        val proofButtons: @Composable RowScope.() -> Unit = {
+        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             IeoTonalButton(text = "대기 증빙 보내기", onClick = actions.onSendWaitProof, modifier = Modifier.weight(1f))
-            // 인수증은 하차지에서만 받는다 (POD-003)
-            if (!state.isPickup) {
-                IeoTonalButton(text = "인수증 받기", onClick = actions.onRequestDeliveryProof, modifier = Modifier.weight(1f))
-            }
-        }
-        val mainButton: @Composable (Modifier) -> Unit = { modifier ->
             when {
-                !state.isWorking -> IeoPrimaryButton(text = "$work 시작", onClick = actions.onStartWork, modifier = modifier)
+                !state.isWorking -> IeoPrimaryButton(text = "$work 시작", onClick = actions.onStartWork, modifier = Modifier.weight(1f))
                 // 하차지를 떠나면 운행이 끝난다
-                state.isPickup -> IeoPrimaryButton(text = "상차 끝, 출발", onClick = actions.onDepart, modifier = modifier)
-                else -> IeoPrimaryButton(text = "운행 완료", onClick = actions.onDepart, modifier = modifier)
-            }
-        }
-        if (stacked) {
-            Row(horizontalArrangement = Arrangement.spacedBy(12.dp), content = proofButtons)
-            Spacer(Modifier.height(12.dp))
-            mainButton(Modifier)
-        } else {
-            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                proofButtons()
-                mainButton(Modifier.weight(1f))
+                state.isPickup -> IeoPrimaryButton(text = "상차 끝, 출발", onClick = actions.onDepart, modifier = Modifier.weight(1f))
+                else -> IeoPrimaryButton(text = "운행 완료", onClick = actions.onDepart, modifier = Modifier.weight(1f))
             }
         }
     }

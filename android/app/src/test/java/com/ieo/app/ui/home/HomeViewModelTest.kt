@@ -2,7 +2,6 @@ package com.ieo.app.ui.home
 
 import androidx.lifecycle.viewModelScope
 import com.ieo.app.core.network.ApiResult
-import com.ieo.app.domain.delivery.DeliveryProofStatus
 import com.ieo.app.domain.navi.NaviProgress
 import com.ieo.app.domain.notification.AppNotification
 import com.ieo.app.domain.notification.NotificationType
@@ -89,7 +88,6 @@ class HomeViewModelTest {
             ledgerRepository = server,
             orderRepository = server,
             siteRepository = server,
-            deliveryProofRepository = server,
             navigator = navigator,
             sensors = sensors,
             announcer = announcer,
@@ -251,33 +249,17 @@ class HomeViewModelTest {
     }
 
     @Test
-    fun `하차지에서 인수증 QR을 띄우고 수하인이 서명하면 운행을 마친다`() = homeTest(TripStatus.IN_TRANSIT) { vm ->
+    fun `선불 운행을 마치면 인수증 이야기를 하지 않는다`() = homeTest(TripStatus.IN_TRANSIT, prepare = {
+        server.trip = server.trip.copy(paymentTypeLabel = "선불")
+    }) { vm ->
         vm.arrive()
         runCurrent()
-
-        vm.requestDeliveryProof()
-        runCurrent()
-        assertEquals(DeliveryProofStatus.PENDING, vm.status.value.deliveryProof?.status)
-
-        server.signDelivery()
-        advanceTimeBy(3_001)
+        vm.depart()
+        vm.finishTrip(makeProof = false)
         runCurrent()
 
-        assertEquals("김수하", vm.status.value.deliveryProof?.signerName)
-        assertEquals(HomeViewModel.DELIVERY_SIGNED_MESSAGE, vm.status.value.message)
-        assertTrue(vm.state.value is HomeState.Idle)
-    }
-
-    @Test
-    fun `상차지에서는 인수증을 만들지 않는다`() = homeTest(TripStatus.TO_PICKUP) { vm ->
-        vm.arrive()
-        runCurrent()
-
-        vm.requestDeliveryProof()
-        runCurrent()
-
-        assertTrue("delivery proof" !in server.calls)
-        assertNull(vm.status.value.deliveryProof)
+        assertEquals(HomeViewModel.TRIP_COMPLETED_MESSAGE, vm.status.value.message)
+        assertEquals("운행을 마쳤어요. 장부에 45만 원을 기록했어요.", announcer.texts.last())
     }
 
     @Test
@@ -339,7 +321,8 @@ class HomeViewModelTest {
         runCurrent()
 
         assertTrue(vm.state.value is HomeState.Idle)
-        assertEquals(HomeViewModel.TRIP_COMPLETED_MESSAGE, vm.status.value.message)
+        // 인수증 결제라 종이 인수증을 휴대폰으로 보내라고 함께 알린다
+        assertEquals(HomeViewModel.RECEIPT_REMINDER_MESSAGE, vm.status.value.message)
     }
 
     @Test
@@ -671,7 +654,7 @@ class HomeViewModelTest {
         vm.depart()
         vm.finishTrip(makeProof = false)
         runCurrent()
-        assertEquals("운행을 마쳤어요. 장부에 45만 원을 기록했어요.", announcer.texts.last())
+        assertEquals("운행을 마쳤어요. 장부에 45만 원을 기록했어요. 인수증 사진은 휴대폰으로 보내 주세요.", announcer.texts.last())
     }
 
     @Test

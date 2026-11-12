@@ -26,6 +26,8 @@ data class EntryRow(
     val amount: String,
     /** "+ 대기비 1만 원 청구 예정". 대기비가 없으면 null */
     val waitFeeNote: String?,
+    /** 인수증 결제 운행이면 종이 인수증을 보냈는지. 아니면 null */
+    val receiptSent: Boolean? = null,
 )
 
 /** 경비 한 줄 */
@@ -52,6 +54,8 @@ data class EntryDetail(
     val paymentType: PaymentType,
     /** 운행이 끝나 생긴 줄이라 대기 증빙을 만들 수 있다 (WAIT-020) */
     val canMakeWaitProof: Boolean = false,
+    /** 인수증 결제 운행이라 종이 인수증 사진을 보여 준다 */
+    val showsReceipt: Boolean = false,
 )
 
 data class WaitFeeRow(val id: Long, val label: String, val amount: String, val paid: Boolean)
@@ -93,6 +97,7 @@ class LedgerUiMapper(private val labels: DayTimeFormatter) {
             payState = state,
             amount = formatWon(entry.fare),
             waitFeeNote = waitFeeNote(entry),
+            receiptSent = if (entry.needsReceipt) entry.receiptSentAt != null else null,
         )
     }
 
@@ -118,7 +123,9 @@ class LedgerUiMapper(private val labels: DayTimeFormatter) {
             },
             entry.distanceKm?.let { "거리" to "${it}km" },
             entry.waitMinutes?.takeIf { it > 0 }?.let { "대기" to formatMinutesKorean(it) },
+            if (entry.needsReceipt) "인수증" to (entry.receiptSentAt?.let { "${labels.dayTime(it)} 보냄" } ?: "아직 안 보냈어요 · 휴대폰 증빙에서 보내요") else null,
         ),
+        showsReceipt = entry.needsReceipt,
         paid = entry.paid,
         waitFees = entry.extraIncomes.map {
             WaitFeeRow(

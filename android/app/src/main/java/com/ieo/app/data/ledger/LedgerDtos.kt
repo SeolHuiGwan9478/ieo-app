@@ -7,6 +7,7 @@ import com.ieo.app.domain.ledger.ManualEntry
 import com.ieo.app.domain.ledger.PaymentType
 import com.ieo.app.domain.ledger.Receivables
 import com.ieo.app.domain.trip.StopType
+import java.time.Instant
 import java.time.LocalDate
 import kotlinx.serialization.Serializable
 
@@ -49,6 +50,7 @@ data class LedgerEntryResponse(
     val paid: Boolean = false,
     val overdue: Boolean = false,
     val extraIncomes: List<ExtraIncomeResponse> = emptyList(),
+    val receiptSentAt: String? = null,
 ) {
     fun toDomain() = LedgerEntry(
         id = id,
@@ -65,6 +67,7 @@ data class LedgerEntryResponse(
         paid = paid,
         overdue = overdue,
         extraIncomes = extraIncomes.map(ExtraIncomeResponse::toDomain),
+        receiptSentAt = receiptSentAt?.let(Instant::parse),
     )
 }
 

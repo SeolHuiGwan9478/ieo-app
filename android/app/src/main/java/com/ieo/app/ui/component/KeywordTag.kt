@@ -33,6 +33,9 @@ data class Keyword(val text: String, val color: TagColor) {
             },
         )
 
+        /** 인수증 결제 운행: 종이 인수증을 주선사에게 보냈는지 (04 인수증) */
+        fun receipt(sent: Boolean) = Keyword(if (sent) "인수증 보냄" else "인수증 안 보냄", if (sent) IeoTag.Sage else IeoTag.Sand)
+
         /** 지금 위치에서 상차지까지 직선거리. 1km보다 가까우면 "1km 안" */
         /** 서버가 주는 거리는 도로 거리 어림이라 "약"을 붙인다. 상세는 실제 경로로 다시 잰다 */
         fun distanceText(meters: Long): String = if (meters < 1_000) "1km 안" else "약 ${(meters + 500) / 1_000}km"

@@ -29,9 +29,6 @@ import com.ieo.app.domain.trip.TripRepository
 import com.ieo.app.domain.trip.TripStatus
 import com.ieo.app.domain.wait.WaitMark
 import com.ieo.app.domain.wait.WaitRecord
-import com.ieo.app.domain.delivery.DeliveryProof
-import com.ieo.app.domain.delivery.DeliveryProofRepository
-import com.ieo.app.domain.delivery.DeliveryProofStatus
 import com.ieo.app.domain.site.SiteCard
 import com.ieo.app.domain.site.SiteRepository
 import com.ieo.app.domain.wait.WaitProofLink
@@ -46,7 +43,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
  * 장부와 오더는 고정된 값을 준다.
  */
 class FakeTripServer(var trip: Trip) :
-    TripRepository, WaitRepository, LedgerRepository, OrderRepository, SiteRepository, DeliveryProofRepository,
+    TripRepository, WaitRepository, LedgerRepository, OrderRepository, SiteRepository,
     RecommendationRepository {
 
     val calls = mutableListOf<String>()
@@ -164,28 +161,6 @@ class FakeTripServer(var trip: Trip) :
         trip = trip.copy(status = if (stop == StopType.PICKUP) TripStatus.AT_PICKUP else TripStatus.AT_DROPOFF)
         return ApiResult.Success(records.getOrPut(stop) { TripFixtures.wait(stop) })
     }
-
-    private var deliveryStatus = DeliveryProofStatus.PENDING
-
-    /** 수하인이 서명한다. 서버처럼 운행을 끝낸다 (POD-008) */
-    fun signDelivery() {
-        deliveryStatus = DeliveryProofStatus.SIGNED
-        trip = trip.copy(status = TripStatus.COMPLETED)
-    }
-
-    private fun deliveryProof() = DeliveryProof(
-        url = "http://localhost/api/public/delivery-proofs/token",
-        status = deliveryStatus,
-        signerName = if (deliveryStatus == DeliveryProofStatus.SIGNED) "김수하" else null,
-        signedAt = if (deliveryStatus == DeliveryProofStatus.SIGNED) TripFixtures.NOW else null,
-    )
-
-    override suspend fun issue(tripId: Long): ApiResult<DeliveryProof> {
-        calls += "delivery proof"
-        return ApiResult.Success(deliveryProof())
-    }
-
-    override suspend fun get(tripId: Long): ApiResult<DeliveryProof> = ApiResult.Success(deliveryProof())
 
     override suspend fun card(siteId: Long): ApiResult<SiteCard> {
         siteRequests += siteId

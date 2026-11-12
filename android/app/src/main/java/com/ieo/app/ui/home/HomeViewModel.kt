@@ -8,8 +8,6 @@ import androidx.lifecycle.viewmodel.viewModelFactory
 import com.ieo.app.core.network.ApiError
 import com.ieo.app.core.network.ApiResult
 import com.ieo.app.di.appContainer
-import com.ieo.app.domain.delivery.DeliveryProof
-import com.ieo.app.domain.delivery.DeliveryProofRepository
 import com.ieo.app.domain.ledger.LedgerRepository
 import com.ieo.app.domain.navi.Destination
 import com.ieo.app.domain.navi.Navigator
@@ -96,8 +94,6 @@ data class HomeStatus(
     val listening: Boolean = false,
     /** 대기 증빙 링크 창. 닫으면 null ([HomeViewModel.proofShown]) */
     val proof: WaitProofLink? = null,
-    /** 인수증 QR 창. 닫으면 null ([HomeViewModel.closeDeliveryProof]) */
-    val deliveryProof: DeliveryProof? = null,
     /** 도착·떠남 확인 창 (WAIT-007, 005). 대답하거나 시간이 지나면 null */
     val stopQuestion: StopQuestion? = null,
     /** "운행 완료"를 누르고 대기 증빙을 만들지 고르는 창 (WAIT-020) */
@@ -139,9 +135,6 @@ interface HomeActions {
     fun sendWaitProof()
     fun sendProofToBroker()
 
-    /** 하차지에서 "인수증 받기": QR을 보여 주고 수하인 서명을 기다린다 (POD-003) */
-    fun requestDeliveryProof()
-
     /** 추천 카드를 눌러 그 오더를 가운데 창에 연다 (03 배차 추천) */
     fun openPick(orderId: Long)
 
@@ -166,7 +159,7 @@ interface HomeActions {
  * 상하차지 도착: 반경 안에서 3분 세워 두거나(WAIT-001) 차량 내비가 "목적지 도착"을 알리면 음성과 창으로 묻고,
  * 차주가 맞다고 하면 감지한 때부터 대기를 시작한다 (WAIT-007). "대기 시작" 버튼은 묻지 않고 바로 시작한다 (WAIT-008).
  * 떠남은 반경을 벗어나거나 시속 20km 이상으로 1분 달린 때(WAIT-005), 또는 "출발"·"운행 완료" 버튼.
- * 상하차지 3km 전, 도착, 대기비 시작, 떠남, 인수증 서명은 음성으로도 알린다 (문장은 [HomeAnnouncements]).
+ * 상하차지 3km 전, 도착, 대기비 시작, 떠남은 음성으로도 알린다 (문장은 [HomeAnnouncements]).
  * 배차 추천: 차를 세우면 세운 자리 근처에서 실수익 높은 3건을 받아 보여 준다 (03 배차 추천).
  */
 class HomeViewModel(
@@ -175,7 +168,6 @@ class HomeViewModel(
     private val ledgerRepository: LedgerRepository,
     private val orderRepository: OrderRepository,
     private val siteRepository: SiteRepository,
-    private val deliveryProofRepository: DeliveryProofRepository,
     private val navigator: Navigator,
     private val sensors: VehicleSensors,
     private val announcer: Announcer,
@@ -485,10 +477,10 @@ class HomeViewModel(
                 guideTo(trip.dropoff)
             }
             StopType.DROPOFF -> {
-                announcer.say(HomeAnnouncements.tripCompleted(trip.fare))
-                closeDeliveryProof()
+                // 인수증 결제면 종이 인수증을 휴대폰으로 보내라고 함께 알린다 (04 인수증)
+                announcer.say(HomeAnnouncements.tripCompleted(trip.fare, trip.paysOnReceipt))
                 snapshot.update { it.copy(current = null, wait = null, site = null) }
-                show(TRIP_COMPLETED_MESSAGE)
+                show(if (trip.paysOnReceipt) RECEIPT_REMINDER_MESSAGE else TRIP_COMPLETED_MESSAGE)
                 load()
             }
         }
@@ -515,45 +507,6 @@ class HomeViewModel(
         val tripId = proofTripId ?: currentAtStop()?.first?.id ?: return@runAction
         val link = waitRepository.sendProof(tripId).orShow() ?: return@runAction
         _status.update { it.copy(proof = link) }
-    }
-
-    private var signatureWatch: Job? = null
-
-    override fun requestDeliveryProof() = runAction {
-        val (trip, stop) = currentAtStop() ?: return@runAction
-        if (stop != StopType.DROPOFF) return@runAction
-        val proof = deliveryProofRepository.issue(trip.id).orShow() ?: return@runAction
-        _status.update { it.copy(deliveryProof = proof) }
-        if (proof.isConfirmed) onDeliveryConfirmed(proof) else watchSignature(trip.id)
-    }
-
-    /** 창을 닫으면 서명 확인도 멈춘다. 다시 누르면 같은 링크로 이어서 기다린다 */
-    fun closeDeliveryProof() {
-        signatureWatch?.cancel()
-        _status.update { it.copy(deliveryProof = null) }
-    }
-
-    /** 수하인 서명을 몇 초마다 확인한다. 통신이 잠깐 끊겨도 계속 기다린다 */
-    private fun watchSignature(tripId: Long) {
-        signatureWatch?.cancel()
-        signatureWatch = viewModelScope.launch {
-            while (true) {
-                delay(SIGNATURE_POLL_MILLIS)
-                val proof = (deliveryProofRepository.get(tripId) as? ApiResult.Success)?.data ?: continue
-                _status.update { it.copy(deliveryProof = proof) }
-                if (proof.isConfirmed) {
-                    onDeliveryConfirmed(proof)
-                    return@launch
-                }
-            }
-        }
-    }
-
-    /** 서명하면 서버가 운행을 끝낸다 (POD-008). 창은 그대로 두고 뒤의 홈을 새로 받는다 */
-    private suspend fun onDeliveryConfirmed(proof: DeliveryProof) {
-        announcer.say(HomeAnnouncements.deliverySigned(proof.signerName))
-        show(DELIVERY_SIGNED_MESSAGE)
-        load()
     }
 
     /** 세웠을 때 1등부터 차례로 띄우는 중이다. 카드를 눌러 연 것이면 false */
@@ -995,8 +948,7 @@ class HomeViewModel(
         private const val OUTBOX_RETRY_MILLIS = 15_000L
         const val NAVI_FAILED_MESSAGE = "차량 내비에 연결하지 못했습니다"
         const val NEXT_ORDER_REQUESTED_MESSAGE = "배차 요청을 보냈어요. 주선사가 확정하면 내 배차에 들어와요"
-        const val DELIVERY_SIGNED_MESSAGE = "인수증 서명을 받았어요. 운행을 마쳤어요"
-        private const val SIGNATURE_POLL_MILLIS = 3_000L
+        const val RECEIPT_REMINDER_MESSAGE = "운행을 마쳤어요. 인수증 사진은 휴대폰 증빙에서 보내 주세요"
         private const val NAVI_REFRESH_MILLIS = 10_000L
         private const val ETA_SHARED_CHECK_MILLIS = 60_000L
         private const val SENSOR_CHECK_MILLIS = 1_000L
@@ -1026,7 +978,6 @@ class HomeViewModel(
                     ledgerRepository = container.ledgerRepository,
                     orderRepository = container.orderRepository,
                     siteRepository = container.siteRepository,
-                    deliveryProofRepository = container.deliveryProofRepository,
                     navigator = container.navigator,
                     sensors = container.vehicleSensors,
                     announcer = container.announcer,

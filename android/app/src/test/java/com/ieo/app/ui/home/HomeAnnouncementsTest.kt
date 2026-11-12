@@ -38,8 +38,8 @@ class HomeAnnouncementsTest {
     }
 
     @Test
-    fun `서명한 사람 이름이 없으면 빼고 말한다`() {
-        assertEquals("김수하님이 인수증에 서명했어요. 운행을 마쳤어요.", HomeAnnouncements.deliverySigned("김수하").text)
-        assertEquals("인수증에 서명했어요. 운행을 마쳤어요.", HomeAnnouncements.deliverySigned(null).text)
+    fun `인수증 결제 운행을 마치면 종이 인수증을 휴대폰으로 보내라고 한다`() {
+        assertEquals("운행을 마쳤어요. 장부에 45만 원을 기록했어요.", HomeAnnouncements.tripCompleted(450_000).text)
+        assertEquals("운행을 마쳤어요. 장부에 45만 원을 기록했어요. 인수증 사진은 휴대폰으로 보내 주세요.", HomeAnnouncements.tripCompleted(450_000, receipt = true).text)
     }
 }

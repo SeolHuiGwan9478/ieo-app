@@ -43,6 +43,7 @@ import com.ieo.app.domain.vehicle.BodyType
 import com.ieo.app.domain.vehicle.Tonnage
 import com.ieo.app.domain.vehicle.Vehicle
 import com.ieo.app.domain.vehicle.VehicleDimensions
+import com.ieo.app.ui.component.TextInset
 import com.ieo.app.ui.component.DetailLine
 import com.ieo.app.ui.component.IeoBottomSheet
 import com.ieo.app.ui.component.IeoTonalButton
@@ -110,7 +111,7 @@ fun SettingsScreen(
 @Composable
 private fun ProfileSection(profile: Profile?, standing: DriverStanding?, linkCount: Int, onEdit: () -> Unit) {
     WhiteSection {
-        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(start = 8.dp, end = 8.dp, bottom = 16.dp)) {
+        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(start = TextInset, end = TextInset, bottom = 16.dp)) {
             Image(painterResource(R.drawable.ic_avatar_driver), contentDescription = null, modifier = Modifier.size(88.dp))
             Spacer(Modifier.width(18.dp))
             Column {
@@ -132,8 +133,9 @@ private fun ProfileSection(profile: Profile?, standing: DriverStanding?, linkCou
 @Composable
 private fun RecordCard(standing: DriverStanding, linkCount: Int) {
     Column(
+        // 테두리 칸은 아래 버튼과 같은 너비로 둔다
         Modifier
-            .padding(horizontal = 8.dp)
+            .fillMaxWidth()
             .border(2.dp, CanvasGray, RoundedCornerShape(18.dp))
             .padding(20.dp),
     ) {
@@ -180,7 +182,7 @@ private fun VehicleSection(vehicles: List<Vehicle>, isLoading: Boolean, onEdit: 
         SectionTitle(title = "내 차량", note = "번호 변경은 휴대폰 앱에서", icon = R.drawable.ic_menu_truck)
         val vehicle = vehicles.firstOrNull { it.isDefault } ?: vehicles.firstOrNull()
         if (vehicle == null) {
-            Text(if (isLoading) "불러오는 중…" else "휴대폰 앱에서 내 차를 등록해 주세요", fontSize = 24.sp, color = TextSub, modifier = Modifier.padding(8.dp))
+            Text(if (isLoading) "불러오는 중…" else "휴대폰 앱에서 내 차를 등록해 주세요", fontSize = 24.sp, color = TextSub, modifier = Modifier.padding(horizontal = TextInset, vertical = 8.dp))
         } else {
             VehicleRow(vehicle, onClick = { onEdit(vehicle) })
         }
@@ -190,12 +192,13 @@ private fun VehicleSection(vehicles: List<Vehicle>, isLoading: Boolean, onEdit: 
 @Composable
 private fun VehicleRow(vehicle: Vehicle, onClick: () -> Unit) {
     Column(modifier = Modifier.padding(vertical = 8.dp)) {
-        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+        // 글자는 다른 칸(제목·이름 · 값 줄)과 같은 안쪽 여백, 버튼은 칸 너비 그대로
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.padding(horizontal = TextInset)) {
             Text(vehicle.plateNumber, fontSize = 24.sp, fontWeight = FontWeight.Bold, color = TextStrong)
             if (vehicle.pleosLinked) StatusTag(text = "이 차와 연결됨", color = TextSub, background = CanvasGray)
         }
         Spacer(Modifier.height(4.dp))
-        Text(vehicleSummary(vehicle), fontSize = 24.sp, color = TextSub)
+        Text(vehicleSummary(vehicle), fontSize = 24.sp, color = TextSub, modifier = Modifier.padding(horizontal = TextInset))
         Spacer(Modifier.height(10.dp))
         IeoTonalButton(text = "수정", onClick = onClick)
     }
@@ -207,7 +210,7 @@ private fun RecommendationSection(preference: RecommendationPreference?, onEdit:
     WhiteSection {
         SectionTitle(title = "배차 추천", note = "차를 세우면 근처 실수익 Top 3을 보여 드려요", icon = R.drawable.ic_menu_recommend)
         if (preference == null) {
-            Text("설정을 불러오지 못했어요", fontSize = 24.sp, color = TextSub, modifier = Modifier.padding(8.dp))
+            Text("설정을 불러오지 못했어요", fontSize = 24.sp, color = TextSub, modifier = Modifier.padding(horizontal = TextInset, vertical = 8.dp))
             return@WhiteSection
         }
         DetailLine("추천", if (preference.enabled) "켬" else "끔")

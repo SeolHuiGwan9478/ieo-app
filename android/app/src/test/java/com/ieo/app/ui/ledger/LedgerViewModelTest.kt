@@ -1,5 +1,9 @@
 package com.ieo.app.ui.ledger
 
+import com.ieo.app.core.network.ApiResult
+import com.ieo.app.domain.delivery.DeliveryProof
+import com.ieo.app.domain.delivery.DeliveryProofRepository
+import com.ieo.app.domain.delivery.DeliveryProofStatus
 import com.ieo.app.domain.expense.Expense
 import com.ieo.app.domain.expense.ExpenseCategory
 import com.ieo.app.domain.ledger.PaymentType
@@ -131,5 +135,44 @@ class LedgerViewModelTest {
 
         assertTrue("update 1 480000 PREPAID" in books.calls)
         assertNull(viewModel.state.value.form)
+    }
+
+    @Test
+    fun `인수증 결제 운행은 보냈는지 보여 주고 열면 사진을 받는다`() = runTest(main.dispatcher) {
+        val sentAt = NOW.minusSeconds(3_600)
+        val receiptBooks = FakeBooks(
+            entries = mutableListOf(
+                TripFixtures.entry(id = 1).copy(tripId = 21, receiptSentAt = sentAt),
+                TripFixtures.entry(id = 2).copy(tripId = 22),
+            ),
+        )
+        val proofs = object : DeliveryProofRepository {
+            val asked = mutableListOf<String>()
+            override suspend fun get(tripId: Long): ApiResult<DeliveryProof> {
+                asked += "get $tripId"
+                return ApiResult.Success(DeliveryProof(true, DeliveryProofStatus.SENT, sentAt, listOf(5L, 6L)))
+            }
+            override suspend fun photo(tripId: Long, photoId: Long): ApiResult<ByteArray> {
+                asked += "photo $photoId"
+                return ApiResult.Success(byteArrayOf(photoId.toByte()))
+            }
+        }
+        val vm = LedgerViewModel(receiptBooks, receiptBooks, deliveryProofRepository = proofs, clock = Clock.fixed(NOW, ZoneOffset.UTC))
+        vm.refresh()
+        advanceUntilIdle()
+
+        val rows = vm.state.value.days.single().entries
+        assertEquals(listOf(true, false), rows.map { it.receiptSent })
+
+        vm.openEntry(1)
+        advanceUntilIdle()
+        assertEquals(listOf("get 21", "photo 5", "photo 6"), proofs.asked)
+        assertEquals(listOf<Byte>(5, 6), vm.state.value.receiptPhotos.map { it[0] })
+        assertTrue(vm.state.value.detail!!.showsReceipt)
+        assertTrue(vm.state.value.detail!!.lines.any { it.first == "인수증" && it.second.endsWith("보냄") })
+
+        vm.openEntry(2)
+        advanceUntilIdle()
+        assertEquals("아직 안 보냈어요 · 휴대폰 증빙에서 보내요", vm.state.value.detail!!.lines.single { it.first == "인수증" }.second)
     }
 }

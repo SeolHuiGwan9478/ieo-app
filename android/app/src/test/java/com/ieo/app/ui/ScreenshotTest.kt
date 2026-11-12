@@ -19,8 +19,6 @@ import androidx.compose.ui.test.performClick
 import androidx.compose.ui.unit.dp
 import com.github.takahirom.roborazzi.captureRoboImage
 import com.ieo.app.domain.account.Profile
-import com.ieo.app.domain.delivery.DeliveryProof
-import com.ieo.app.domain.delivery.DeliveryProofStatus
 import com.ieo.app.domain.ledger.PaymentType
 import com.ieo.app.domain.recommendation.RecommendationPreference
 import com.ieo.app.domain.trip.RestCheck
@@ -33,7 +31,6 @@ import com.ieo.app.ui.carlink.CarLinkActions
 import com.ieo.app.ui.carlink.CarLinkSheet
 import com.ieo.app.ui.carlink.CarLinkUiState
 import com.ieo.app.ui.carlink.VehicleChoice
-import com.ieo.app.ui.home.DeliveryProofSheet
 import com.ieo.app.ui.home.FinishTripSheet
 import com.ieo.app.ui.home.HomeScreen
 import com.ieo.app.ui.home.PickModal
@@ -142,13 +139,14 @@ private object Scenes {
     private val trip = SampleHomeData.myTrips[0]
     private val vehicle = Vehicle(1, "경기80바1234", Tonnage.values().first { it.label == "5톤" }, BodyType.values().first(), 3.6, null, true, true)
     private val preference = RecommendationPreference()
-    private val row = EntryRow(1, "평택 물류센터 → 대전 산업단지", "인수증", "한빛물류 · 12월 5일 지급 예정", PayState.OVERDUE, "32만 원", "+ 대기비 1만 원 청구 예정")
+    private val row = EntryRow(1, "평택 물류센터 → 대전 산업단지", "인수증", "한빛물류 · 12월 5일 지급 예정", PayState.OVERDUE, "32만 원", "+ 대기비 1만 원 청구 예정", receiptSent = false)
+    private val sentRow = EntryRow(2, "평택 포승 → 대구 성서", "인수증", "○○물류 · 12월 12일 지급 예정", PayState.WAITING, "45만 원", null, receiptSent = true)
     private val expense = ExpenseRow(1, "주유", "11월 5일", "12만 원")
     private val ledger = LedgerUiState(
         monthLabel = "11월",
         summary = MonthSummary("1,250만 원", "210만 원", "1,040만 원"),
         receivable = ReceivableSummary("92만 원", "60만 원", "3만 원"),
-        days = listOf(DayGroup("11월 5일 (목) · 1건", listOf(row), listOf(expense))),
+        days = listOf(DayGroup("11월 5일 (목) · 2건", listOf(row, sentRow), listOf(expense))),
         receivableRows = listOf(row),
         expenseRows = listOf(expense),
     )
@@ -157,6 +155,23 @@ private object Scenes {
         listOf("주선사" to "한빛물류", "운임" to "32만 원 · 인수증", "지급 예정" to "12월 5일"),
         false, listOf(WaitFeeRow(1, "상차 대기 1시간", "1만 원", false)), 320_000, PaymentType.RECEIPT,
     )
+    private val receiptDetail = EntryDetail(
+        2, "평택 포승 → 대구 성서 · 45만 원",
+        listOf("주선사" to "○○물류", "결제" to "인수증", "지급" to "12월 12일 예정", "인수증" to "오늘 17:20 보냄"),
+        false, emptyList(), 450_000, PaymentType.RECEIPT, canMakeWaitProof = true, showsReceipt = true,
+    )
+
+    /** 종이 인수증처럼 보이는 사진 (흰 종이에 줄 몇 개와 빨간 도장) */
+    private fun paperJpeg(): ByteArray {
+        val bitmap = android.graphics.Bitmap.createBitmap(300, 400, android.graphics.Bitmap.Config.ARGB_8888)
+        val canvas = android.graphics.Canvas(bitmap)
+        canvas.drawColor(android.graphics.Color.rgb(250, 248, 240))
+        val ink = android.graphics.Paint().apply { color = android.graphics.Color.rgb(90, 90, 90) }
+        for (i in 0 until 9) canvas.drawRect(30f, 50f + i * 34, if (i % 3 == 2) 180f else 270f, 58f + i * 34, ink)
+        canvas.drawCircle(225f, 340f, 34f, android.graphics.Paint().apply { color = android.graphics.Color.rgb(210, 50, 40); style = android.graphics.Paint.Style.STROKE; strokeWidth = 6f })
+        return java.io.ByteArrayOutputStream().also { bitmap.compress(android.graphics.Bitmap.CompressFormat.JPEG, 90, it) }.toByteArray()
+    }
+
     private val orderRow = OrderRow(
         1, "17:03", "11월 12일", "대전 산업단지 → 부산 신항 CY", "5톤 카고", "인수증", "한빛물류", "58만 원",
         requested = false, distanceMeters = 4_000, netProfit = "실수익 약 50만 원",
@@ -203,7 +218,6 @@ private object Scenes {
         "sheet_wait_proof" to { Box(Modifier.fillMaxSize()) { WaitProofSheet(WaitProofLink("https://ieo.example/w/abc123", Instant.parse("2026-11-12T09:00:00Z")), {}) } },
         "sheet_wait_proof_send" to { Box(Modifier.fillMaxSize()) { WaitProofSheet(WaitProofLink("https://ieo.example/w/abc123", Instant.parse("2026-11-12T09:00:00Z"), canSend = true), {}) } },
         "sheet_wait_proof_sent" to { Box(Modifier.fillMaxSize()) { WaitProofSheet(WaitProofLink("https://ieo.example/w/abc123", Instant.parse("2026-11-12T09:00:00Z"), canSend = true, sent = true), {}) } },
-        "sheet_delivery_proof" to { Box(Modifier.fillMaxSize()) { DeliveryProofSheet(DeliveryProof("https://ieo.example/d/abc123", DeliveryProofStatus.PENDING, null, null), {}) } },
         "modal_pick" to { Box(Modifier.fillMaxSize()) { HomeScreen(SampleHomeData.unloading()); PickModal(pick, busy = false, onRequest = {}, onNext = {}) } },
         "home_arriving" to { HomeScreen(SampleHomeData.driving().copy(arrivingInSeconds = 161, nearStop = true, parked = true)) },
         "modal_arrival" to {
@@ -246,6 +260,7 @@ private object Scenes {
         "ledger_receivables" to { LedgerScreen(ledger.copy(tab = LedgerTab.RECEIVABLES), noop<LedgerActions>()) },
         "ledger_expenses" to { LedgerScreen(ledger.copy(tab = LedgerTab.EXPENSES), noop<LedgerActions>()) },
         "ledger_detail" to { LedgerScreen(ledger.copy(detail = detail), noop<LedgerActions>()) },
+        "ledger_receipt" to { LedgerScreen(ledger.copy(detail = receiptDetail, receiptPhotos = List(5) { paperJpeg() }), noop<LedgerActions>()) },
         "ledger_add_expense" to { LedgerScreen(ledger.copy(form = LedgerForm.AddExpense), noop<LedgerActions>()) },
         "ledger_add_trip" to { LedgerScreen(ledger.copy(form = LedgerForm.AddTrip), noop<LedgerActions>()) },
         "ledger_edit_fare" to { LedgerScreen(ledger.copy(detail = detail, form = LedgerForm.EditFare(1, 320_000, PaymentType.RECEIPT)), noop<LedgerActions>()) },

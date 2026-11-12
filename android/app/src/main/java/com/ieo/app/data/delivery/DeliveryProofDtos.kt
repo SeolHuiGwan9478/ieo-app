@@ -7,18 +7,20 @@ import kotlinx.serialization.Serializable
 
 // 서버 domain/delivery/dto와 같은 모양. 쓰지 않는 필드는 뺐다
 
-/** path는 서버 주소 뒤에 붙이는 수하인 링크 */
+@Serializable
+data class ProofPhotoResponse(val id: Long)
+
 @Serializable
 data class DeliveryProofResponse(
-    val path: String,
+    val required: Boolean,
     val status: String,
-    val signerName: String? = null,
-    val signedAt: String? = null,
+    val sentAt: String? = null,
+    val photos: List<ProofPhotoResponse> = emptyList(),
 ) {
-    fun toDomain(baseUrl: String) = DeliveryProof(
-        url = baseUrl.trimEnd('/') + path,
+    fun toDomain() = DeliveryProof(
+        required = required,
         status = DeliveryProofStatus.valueOf(status),
-        signerName = signerName,
-        signedAt = signedAt?.let(Instant::parse),
+        sentAt = sentAt?.let(Instant::parse),
+        photoIds = photos.map { it.id },
     )
 }

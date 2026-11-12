@@ -107,11 +107,9 @@ object HomeAnnouncements {
         trip("${josa(pickupName, "을", "를")} 떠났어요. ${josa(dropoffName, "으로", "로")} 안내할게요.")
 
     /** 하차지를 떠나 운행이 끝남. 장부에 운임이 기록된다 */
-    fun tripCompleted(fare: Long): Announcement = trip("운행을 마쳤어요. 장부에 ${formatWon(fare)}을 기록했어요.")
-
-    /** 수하인 서명으로 운행이 끝남 (POD-008) */
-    fun deliverySigned(signerName: String?): Announcement =
-        trip("${signerName?.let { "${it}님이 " } ?: ""}인수증에 서명했어요. 운행을 마쳤어요.")
+    /** [receipt]: 인수증 결제라 종이 인수증을 휴대폰으로 보내야 한다 (04 인수증) */
+    fun tripCompleted(fare: Long, receipt: Boolean = false): Announcement =
+        trip("운행을 마쳤어요. 장부에 ${formatWon(fare)}을 기록했어요." + if (receipt) " 인수증 사진은 휴대폰으로 보내 주세요." else "")
 
     /**
      * 쉬어야 할 때 (TRIP-031). 단계마다 한 번. [advice]가 있으면 경로 위 쉴 곳을 함께 말한다 (TRIP-032).

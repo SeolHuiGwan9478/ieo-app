@@ -1,6 +1,7 @@
 package com.ieo.app.domain.ledger
 
 import com.ieo.app.domain.trip.StopType
+import java.time.Instant
 import java.time.LocalDate
 import java.time.temporal.ChronoUnit
 
@@ -35,7 +36,12 @@ data class LedgerEntry(
     val overdue: Boolean,
     /** 대기비 */
     val extraIncomes: List<ExtraIncome>,
+    /** 종이 인수증을 주선사에게 보낸 시각. 안 보냈으면 null (04 인수증) */
+    val receiptSentAt: Instant? = null,
 ) {
+    /** 인수증 결제 운행이라 종이 인수증을 보내야 한다. 직접 넣은 줄은 보낼 곳이 없다 */
+    val needsReceipt: Boolean get() = paymentType == PaymentType.RECEIPT && tripId != null
+
     /** 운임 + 대기비 */
     val total: Long get() = fare + extraIncomes.sumOf { it.amount }
 }

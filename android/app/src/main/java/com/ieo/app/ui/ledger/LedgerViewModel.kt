@@ -7,6 +7,7 @@ import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import com.ieo.app.core.network.ApiResult
 import com.ieo.app.di.appContainer
+import com.ieo.app.domain.delivery.DeliveryProofRepository
 import com.ieo.app.domain.expense.Expense
 import com.ieo.app.domain.expense.ExpenseCategory
 import com.ieo.app.domain.expense.ExpenseRepository
@@ -19,6 +20,7 @@ import com.ieo.app.domain.ledger.Receivables
 import com.ieo.app.ui.common.DayTimeFormatter
 import java.time.Clock
 import java.time.YearMonth
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -62,6 +64,8 @@ data class LedgerUiState(
     val message: String? = null,
     /** 운행 기록에서 만든 대기 증빙 링크 창. 닫으면 null */
     val proof: WaitProofLink? = null,
+    /** 연 줄의 종이 인수증 사진 (04 인수증). 받는 중이거나 없으면 비어 있다 */
+    val receiptPhotos: List<ByteArray> = emptyList(),
 )
 
 interface LedgerActions {
@@ -90,6 +94,7 @@ class LedgerViewModel(
     private val ledgerRepository: LedgerRepository,
     private val expenseRepository: ExpenseRepository,
     private val waitRepository: WaitRepository? = null,
+    private val deliveryProofRepository: DeliveryProofRepository? = null,
     clock: Clock = Clock.system(DayTimeFormatter.KOREA),
 ) : ViewModel(), LedgerActions {
 
@@ -124,13 +129,30 @@ class LedgerViewModel(
         if (month < thisMonth) moveMonth(month.plusMonths(1))
     }
 
+    private var receiptLoad: Job? = null
+
     override fun openEntry(entryId: Long) {
         selectedId = entryId
+        _state.update { it.copy(receiptPhotos = emptyList()) }
         publish()
+        loadReceiptPhotos(selected())
+    }
+
+    /** 인수증 결제 운행이면 휴대폰으로 올린 종이 인수증 사진을 받는다. 못 받으면 사진 없이 보여 준다 */
+    private fun loadReceiptPhotos(entry: LedgerEntry?) {
+        receiptLoad?.cancel()
+        val repository = deliveryProofRepository ?: return
+        val tripId = entry?.takeIf { it.needsReceipt }?.tripId ?: return
+        receiptLoad = viewModelScope.launch {
+            val proof = (repository.get(tripId) as? ApiResult.Success)?.data ?: return@launch
+            val photos = proof.photoIds.mapNotNull { id -> (repository.photo(tripId, id) as? ApiResult.Success)?.data }
+            if (selectedId == entry.id) _state.update { it.copy(receiptPhotos = photos) }
+        }
     }
 
     override fun close() {
         selectedId = null
+        receiptLoad?.cancel()
         _state.update { it.copy(form = null) }
         publish()
     }
@@ -281,7 +303,7 @@ class LedgerViewModel(
         val Factory: ViewModelProvider.Factory = viewModelFactory {
             initializer {
                 val container = appContainer()
-                LedgerViewModel(container.ledgerRepository, container.expenseRepository, container.waitRepository)
+                LedgerViewModel(container.ledgerRepository, container.expenseRepository, container.waitRepository, container.deliveryProofRepository)
             }
         }
     }

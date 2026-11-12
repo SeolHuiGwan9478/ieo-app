@@ -1,6 +1,26 @@
 package com.ieo.app.ui.ledger
 
+import android.graphics.BitmapFactory
+import androidx.activity.compose.BackHandler
+import androidx.compose.foundation.layout.BoxScope
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material.icons.outlined.Close
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.graphics.ImageBitmap
+import com.ieo.app.ui.component.ZoomableImage
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.layout.size
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -59,6 +79,11 @@ private val ScreenPadding = 28.dp
  */
 @Composable
 fun LedgerScreen(state: LedgerUiState, actions: LedgerActions) {
+    val receiptBitmaps = remember(state.receiptPhotos) {
+        state.receiptPhotos.mapNotNull { BitmapFactory.decodeByteArray(it, 0, it.size)?.asImageBitmap() }
+    }
+    // 크게 보는 인수증 사진. 다른 줄을 열거나 상세를 닫으면 함께 닫는다
+    var viewing by remember(state.detail?.id, receiptBitmaps) { mutableStateOf<Int?>(null) }
     Box(modifier = Modifier.fillMaxSize().background(CanvasGray)) {
         Column(
             verticalArrangement = Arrangement.spacedBy(16.dp),
@@ -76,7 +101,7 @@ fun LedgerScreen(state: LedgerUiState, actions: LedgerActions) {
             }
         }
         IeoBottomSheet(item = state.detail, onDismiss = actions::close) { detail ->
-            EntrySheet(detail, actions)
+            EntrySheet(detail, receiptBitmaps, onOpenPhoto = { viewing = it }, actions = actions)
         }
         IeoBottomSheet(item = state.form, onDismiss = actions::close) { form ->
             when (form) {
@@ -84,6 +109,9 @@ fun LedgerScreen(state: LedgerUiState, actions: LedgerActions) {
                 LedgerForm.AddTrip -> TripForm(busy = state.isBusy, onSubmit = actions::addTrip, onCancel = actions::close)
                 is LedgerForm.EditFare -> FareForm(form, busy = state.isBusy, onSubmit = actions::editFare, onCancel = actions::close)
             }
+        }
+        viewing?.takeIf { state.detail != null && it in receiptBitmaps.indices }?.let { index ->
+            ReceiptViewer(receiptBitmaps, index, onMove = { viewing = it }, onClose = { viewing = null })
         }
     }
 }
@@ -171,7 +199,7 @@ private fun EntryListRow(row: EntryRow, onClick: () -> Unit) {
         time = null,
         day = null,
         title = row.title,
-        tags = listOf(Keyword.payment(row.paymentType)),
+        tags = listOfNotNull(Keyword.payment(row.paymentType), row.receiptSent?.let(Keyword::receipt)),
         subtitle = row.status,
         subtitleColor = when (row.payState) {
             PayState.PAID -> status.done
@@ -244,10 +272,11 @@ private fun EmptySection(text: String) {
 // ───────────────────────── 상세 ─────────────────────────
 
 @Composable
-private fun ColumnScope.EntrySheet(detail: EntryDetail, actions: LedgerActions) {
+private fun ColumnScope.EntrySheet(detail: EntryDetail, receiptPhotos: List<ImageBitmap>, onOpenPhoto: (Int) -> Unit, actions: LedgerActions) {
     SheetTitle(detail.title)
     Spacer(Modifier.height(24.dp))
     detail.lines.forEach { (label, value) -> SheetLine(label, value) }
+    if (detail.showsReceipt && receiptPhotos.isNotEmpty()) ReceiptPhotos(receiptPhotos, onOpenPhoto)
     detail.waitFees.forEach { fee ->
         Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp)) {
             Text(fee.label, fontSize = 24.sp, color = TextSub, modifier = Modifier.weight(1f))
@@ -275,6 +304,74 @@ private fun ColumnScope.EntrySheet(detail: EntryDetail, actions: LedgerActions) 
             IeoSecondaryButton(text = "받지 않음으로 되돌리기", onClick = { actions.setPaid(false) }, modifier = Modifier.weight(2f))
         } else {
             IeoPrimaryButton(text = "받음으로 표시", onClick = { actions.setPaid(true) }, modifier = Modifier.weight(2f))
+        }
+    }
+}
+
+/** 썸네일은 이만큼까지. 더 많으면 마지막 칸에 "+N장" */
+private const val RECEIPT_THUMBS = 3
+
+/** 휴대폰으로 올린 종이 인수증 사진. 누르면 화면 전체로 크게 본다 */
+@Composable
+private fun ReceiptPhotos(bitmaps: List<ImageBitmap>, onOpen: (Int) -> Unit) {
+    Spacer(Modifier.height(12.dp))
+    val more = bitmaps.size - RECEIPT_THUMBS
+    Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+        bitmaps.take(RECEIPT_THUMBS).forEachIndexed { index, bitmap ->
+            val last = index == RECEIPT_THUMBS - 1 && more > 0
+            Box(
+                contentAlignment = Alignment.Center,
+                modifier = Modifier.size(180.dp, 240.dp).clip(RoundedCornerShape(16.dp)).background(CanvasGray)
+                    .clickable { onOpen(index) },
+            ) {
+                Image(bitmap, contentDescription = "종이 인수증 사진 ${index + 1}", contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize())
+                if (last) {
+                    // 남은 사진 수: 이 칸까지 합쳐 아직 못 본 장수
+                    Box(Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.55f)), contentAlignment = Alignment.Center) {
+                        Text("+${more + 1}장", fontSize = 36.sp, fontWeight = FontWeight.ExtraBold, color = Color.White)
+                    }
+                }
+            }
+        }
+    }
+}
+
+/**
+ * 화면 전체로 크게 보기. 두 번 누르면 2배, 아래 버튼으로 넘긴다 (끝에서 다음은 처음으로).
+ * 오른쪽 위 X나 뒤로 가기로 닫는다. 창을 하나 더 띄우지 않고 장부 화면 위에 그린다
+ */
+@Composable
+private fun BoxScope.ReceiptViewer(bitmaps: List<ImageBitmap>, index: Int, onMove: (Int) -> Unit, onClose: () -> Unit) {
+    BackHandler(onBack = onClose)
+    Column(
+        modifier = Modifier.matchParentSize().background(Color.Black)
+            // 뒤의 장부가 눌리지 않게 막는다
+            .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null, onClick = {})
+            .padding(24.dp),
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text(
+                if (bitmaps.size > 1) "종이 인수증 ${index + 1} / ${bitmaps.size}" else "종이 인수증",
+                fontSize = 28.sp, fontWeight = FontWeight.Bold, color = Color.White, modifier = Modifier.weight(1f),
+            )
+            Text("두 번 누르면 크게 보여요", fontSize = 22.sp, color = Color(0xFFBDBDBD))
+            Spacer(Modifier.width(24.dp))
+            Box(
+                contentAlignment = Alignment.Center,
+                modifier = Modifier.size(64.dp).clip(CircleShape).background(Color.White.copy(alpha = 0.15f))
+                    .clickable(onClick = onClose).semantics { contentDescription = "닫기" },
+            ) {
+                Icon(Icons.Outlined.Close, contentDescription = null, tint = Color.White, modifier = Modifier.size(36.dp))
+            }
+        }
+        Spacer(Modifier.height(16.dp))
+        ZoomableImage(bitmaps[index], contentDescription = "종이 인수증 사진 ${index + 1} 크게", modifier = Modifier.weight(1f).fillMaxWidth())
+        if (bitmaps.size > 1) {
+            Spacer(Modifier.height(16.dp))
+            Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+                IeoTonalButton(text = "이전", onClick = { onMove((index - 1 + bitmaps.size) % bitmaps.size) }, modifier = Modifier.weight(1f))
+                IeoTonalButton(text = "다음", onClick = { onMove((index + 1) % bitmaps.size) }, modifier = Modifier.weight(1f))
+            }
         }
     }
 }

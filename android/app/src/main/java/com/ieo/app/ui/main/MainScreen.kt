@@ -7,7 +7,6 @@ import com.ieo.app.ui.component.ShowMessage
 import com.ieo.app.ui.home.PickModal
 import com.ieo.app.ui.home.StopConfirmModal
 import com.ieo.app.ui.home.FinishTripSheet
-import com.ieo.app.ui.home.DeliveryProofSheet
 import com.ieo.app.ui.home.StartGuidanceSheet
 import com.ieo.app.ui.home.WaitProofSheet
 import androidx.compose.ui.draw.clip
@@ -142,7 +141,6 @@ fun MainScreen(
                         onStartWork = homeViewModel::startWork,
                         onDepart = homeViewModel::depart,
                         onSendWaitProof = homeViewModel::sendWaitProof,
-                        onRequestDeliveryProof = homeViewModel::requestDeliveryProof,
                         onArrive = homeViewModel::arrive,
                         onResumeGuidance = homeViewModel::resumeGuidance,
                         onPickClick = { homeViewModel.openPick(it.orderId) },
@@ -172,7 +170,6 @@ fun MainScreen(
         )
         WaitProofSheet(link = status.proof, onDismiss = homeViewModel::proofShown, onSend = homeViewModel::sendProofToBroker, busy = status.isBusy)
         RegisterTripSheet(visible = registering, state = registerState, actions = registerViewModel, onDismiss = { registering = false })
-        DeliveryProofSheet(proof = status.deliveryProof, onDismiss = homeViewModel::closeDeliveryProof)
         CarLinkSheet(state = carLinkState, actions = carLinkViewModel)
         LinkInvitationSheet(invitation = linksState.prompt?.takeUnless { isDriving }, busy = linksState.isBusy, actions = linksViewModel)
         UnlinkSheet(link = linksState.unlinking, busy = linksState.isBusy, actions = linksViewModel)

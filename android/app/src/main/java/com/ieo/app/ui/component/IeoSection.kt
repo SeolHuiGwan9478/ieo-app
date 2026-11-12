@@ -52,6 +52,9 @@ val Tnum = TextStyle(fontFeatureSettings = "tnum")
 private val SectionShape = RoundedCornerShape(24.dp)
 
 /** 흰 묶음 */
+/** 흰 칸 안 글자의 왼쪽·오른쪽 여백. 제목, 이름 · 값 줄, 안내 글이 모두 이 선에 맞는다. 버튼과 테두리 칸은 칸 너비 그대로 */
+val TextInset = 12.dp
+
 @Composable
 fun WhiteSection(contentPadding: Dp = 16.dp, content: @Composable ColumnScope.() -> Unit) {
     Column(
@@ -70,7 +73,7 @@ fun SectionTitle(title: String, count: Int? = null, note: String? = null, @Drawa
     FlowRow(
         horizontalArrangement = Arrangement.SpaceBetween,
         itemVerticalAlignment = Alignment.Bottom,
-        modifier = Modifier.fillMaxWidth().padding(start = 12.dp, end = 12.dp, bottom = 10.dp),
+        modifier = Modifier.fillMaxWidth().padding(start = TextInset, end = TextInset, bottom = 10.dp),
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             // 휴대폰 앱 내 정보와 같은 색 아이콘을 회색 칸에 담는다
@@ -113,7 +116,7 @@ fun ListRow(
         modifier = Modifier
             .fillMaxWidth()
             .clickable(onClick = onClick)
-            .padding(horizontal = 8.dp, vertical = 16.dp),
+            .padding(horizontal = TextInset, vertical = 16.dp),
     ) {
         if (time != null) {
             Column(
@@ -160,7 +163,7 @@ fun TagLine(tags: List<Keyword>, text: String? = null, textColor: Color = TextSu
 /** 이름 · 값 한 줄 */
 @Composable
 fun DetailLine(label: String, value: String) {
-    Row(modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 10.dp)) {
+    Row(modifier = Modifier.fillMaxWidth().padding(horizontal = TextInset, vertical = 10.dp)) {
         Text(label, fontSize = 24.sp, color = TextSub, modifier = Modifier.width(170.dp))
         Text(value, fontSize = 24.sp, fontWeight = FontWeight.Medium, color = TextStrong)
     }

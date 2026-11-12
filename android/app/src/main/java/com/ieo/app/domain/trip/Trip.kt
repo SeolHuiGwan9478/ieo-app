@@ -22,9 +22,14 @@ data class Trip(
         StopType.DROPOFF -> dropoff
     }
 
+    /** 인수증 결제: 종이 인수증을 주선사에게 보내야 운임을 받는다 (04 인수증) */
+    val paysOnReceipt: Boolean get() = paymentTypeLabel == RECEIPT_LABEL
+
     /** 지금 향하고 있거나 머무는 곳. 출발 전이거나 끝난 운행이면 null */
     val currentStop: StopType? get() = status.currentStop
 }
+
+private const val RECEIPT_LABEL = "인수증"
 
 enum class StopType { PICKUP, DROPOFF }
 

@@ -17,7 +17,16 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Close
+import androidx.compose.material3.Icon
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
+import com.ieo.app.ui.theme.CanvasGray
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -70,16 +79,35 @@ fun <T : Any> BoxScope.IeoBottomSheet(
         modifier = Modifier.align(Alignment.BottomCenter),
     ) {
         shown?.let { value ->
-            Column(
+            Box(
                 modifier = Modifier
                     .fillMaxWidth()
                     .background(CardSurface, RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp))
                     // 시트 안을 눌러도 뒤의 어두운 바탕이 눌리지 않게 막는다
-                    .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null, onClick = {})
-                    .verticalScroll(rememberScrollState())
-                    .padding(start = 36.dp, top = 40.dp, end = 36.dp, bottom = 32.dp),
+                    .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null, onClick = {}),
             ) {
-                content(value)
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .verticalScroll(rememberScrollState())
+                        .padding(start = 36.dp, top = 40.dp, end = 36.dp, bottom = 32.dp),
+                ) {
+                    content(value)
+                }
+                // 아래로 끌어내리지 않아도 닫을 수 있게 오른쪽 위에 둔다. 스크롤해도 그 자리에 있다
+                Box(
+                    contentAlignment = Alignment.Center,
+                    modifier = Modifier
+                        .align(Alignment.TopEnd)
+                        .padding(top = 20.dp, end = 20.dp)
+                        .size(CloseSize)
+                        .clip(CircleShape)
+                        .background(CanvasGray)
+                        .clickable(onClick = onDismiss)
+                        .semantics { contentDescription = "닫기" },
+                ) {
+                    Icon(Icons.Outlined.Close, contentDescription = null, tint = TextStrong, modifier = Modifier.size(36.dp))
+                }
             }
         }
     }
@@ -94,8 +122,11 @@ fun SheetLine(label: String, value: String) {
     }
 }
 
-/** 시트 제목 */
+/** 닫기 버튼 크기. 운전석에서 누르기 쉽게 64dp */
+private val CloseSize = 64.dp
+
+/** 시트 제목. 오른쪽 위 닫기 버튼과 겹치지 않게 비워 둔다 */
 @Composable
 fun SheetTitle(text: String) {
-    Text(text, fontSize = 32.sp, lineHeight = 44.sp, fontWeight = FontWeight.ExtraBold, color = TextStrong)
+    Text(text, fontSize = 32.sp, lineHeight = 44.sp, fontWeight = FontWeight.ExtraBold, color = TextStrong, modifier = Modifier.padding(end = CloseSize))
 }

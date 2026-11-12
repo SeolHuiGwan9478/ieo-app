@@ -161,11 +161,7 @@ class DefaultAppContainer(context: Context) : AppContainer {
     }
 
     override val deliveryProofRepository: DeliveryProofRepository by lazy {
-        DefaultDeliveryProofRepository(
-            api = network.authenticated.create(DeliveryProofApi::class.java),
-            caller = network.caller,
-            publicBaseUrl = BuildConfig.API_BASE_URL,
-        )
+        DefaultDeliveryProofRepository(network.authenticated.create(DeliveryProofApi::class.java), network.caller)
     }
 
     override val accountRepository: AccountRepository by lazy {

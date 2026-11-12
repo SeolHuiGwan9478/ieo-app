@@ -3,29 +3,25 @@ package com.ieo.app.domain.delivery
 import java.time.Instant
 
 /**
- * 전자인수증 (04 인수증). 하차지에서 수하인이 QR로 링크를 열어 서명한다 (POD-003, 004).
- * 서명하면 서버가 운행을 끝내고 장부의 지급 예정일 계산을 시작한다 (POD-008).
+ * 종이 인수증 (04 인수증). 결제 방식이 인수증인 운행만 [required].
+ * 차주가 휴대폰으로 사진을 찍어 주선사에게 보낸다. 차량 앱은 보냈는지와 사진을 보기만 한다
  */
 data class DeliveryProof(
-    /** 수하인에게 보여 줄 링크. 차량 화면 QR에 넣는다 */
-    val url: String,
+    val required: Boolean,
     val status: DeliveryProofStatus,
-    val signerName: String?,
-    val signedAt: Instant?,
+    val sentAt: Instant?,
+    val photoIds: List<Long>,
 ) {
-    /** 서명이나 종이 인수증 사진으로 인수가 확인됐다 */
-    val isConfirmed: Boolean
-        get() = status != DeliveryProofStatus.PENDING
+    val isSent: Boolean get() = status == DeliveryProofStatus.SENT
 }
 
 enum class DeliveryProofStatus {
-    /** 서명 전 */
+    /** 사진이 없다 */
+    NONE,
+
+    /** 사진을 올렸고 아직 안 보냈다 */
     PENDING,
-    SIGNED,
 
-    /** 서명 대신 종이 인수증 사진 (POD-009) */
-    PHOTO,
-
-    /** 주선사에게 전달됨 */
-    DELIVERED,
+    /** 주선사에게 보냈다 */
+    SENT,
 }
