@@ -83,7 +83,10 @@ data class ExtraIncomeResponse(
 }
 
 @Serializable
-data class UpdateLedgerEntryRequest(val fare: Long, val paymentType: String, val expectedPaymentDate: String)
+data class UpdateLedgerEntryRequest(val fare: Long, val paymentType: String, val expectedPaymentDate: String, val distanceKm: Int?)
+
+@Serializable
+data class DistanceRequest(val distanceKm: Int)
 
 @Serializable
 data class CreateLedgerEntryRequest(
@@ -92,6 +95,7 @@ data class CreateLedgerEntryRequest(
     val fare: Long,
     val paymentType: String,
     val brokerName: String? = null,
+    val distanceKm: Int? = null,
 ) {
     companion object {
         fun from(entry: ManualEntry) = CreateLedgerEntryRequest(
@@ -100,6 +104,7 @@ data class CreateLedgerEntryRequest(
             fare = entry.fare,
             paymentType = entry.paymentType.name,
             brokerName = entry.brokerName,
+            distanceKm = entry.distanceKm,
         )
     }
 }

@@ -296,8 +296,8 @@ private fun ColumnScope.EntrySheet(detail: EntryDetail, receiptPhotos: List<Imag
     Spacer(Modifier.height(32.dp))
     Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
         IeoTonalButton(
-            text = "운임 고치기",
-            onClick = { actions.openForm(LedgerForm.EditFare(detail.id, detail.fare, detail.paymentType)) },
+            text = "고치기",
+            onClick = { actions.openForm(LedgerForm.EditFare(detail.id, detail.fare, detail.paymentType, detail.distanceKm)) },
             modifier = Modifier.weight(1f),
         )
         if (detail.paid) {
@@ -408,8 +408,8 @@ private object PreviewLedgerActions : LedgerActions {
     override fun setWaitFeePaid(extraIncomeId: Long, paid: Boolean) = Unit
     override fun openForm(form: LedgerForm) = Unit
     override fun addExpense(category: ExpenseCategory, amount: Long, memo: String?) = Unit
-    override fun addTrip(description: String, fare: Long, paymentType: PaymentType, brokerName: String?) = Unit
-    override fun editFare(fare: Long, paymentType: PaymentType) = Unit
+    override fun addTrip(description: String, fare: Long, paymentType: PaymentType, brokerName: String?, distanceKm: Int?) = Unit
+    override fun editFare(fare: Long, paymentType: PaymentType, distanceKm: Int?) = Unit
     override fun makeWaitProof() = Unit
     override fun refresh() = Unit
 }

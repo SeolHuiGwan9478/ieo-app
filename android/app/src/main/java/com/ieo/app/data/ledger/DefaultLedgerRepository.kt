@@ -33,12 +33,15 @@ class DefaultLedgerRepository(
             if (paid) api.markExtraIncomePaid(extraIncomeId) else api.unmarkExtraIncomePaid(extraIncomeId)
         }.mapResponse { }
 
-    override suspend fun update(entry: LedgerEntry, fare: Long, paymentType: PaymentType): ApiResult<LedgerEntry> {
+    override suspend fun update(entry: LedgerEntry, fare: Long, paymentType: PaymentType, distanceKm: Int?): ApiResult<LedgerEntry> {
         // 서버는 지급 예정일도 함께 받는다. 고치지 않았으면 지금 값을, 없으면 운행일을 보낸다
         val paymentDate = entry.expectedPaymentDate ?: entry.workDate
-        val body = UpdateLedgerEntryRequest(fare, paymentType.name, paymentDate.toString())
+        val body = UpdateLedgerEntryRequest(fare, paymentType.name, paymentDate.toString(), distanceKm)
         return caller.call { api.update(entry.id, body) }.mapResponse { it.toDomain() }
     }
+
+    override suspend fun setDistance(tripId: Long, distanceKm: Int): ApiResult<Unit> =
+        caller.call { api.setDistance(tripId, DistanceRequest(distanceKm)) }.mapResponse { }
 
     override suspend fun addManual(entry: ManualEntry): ApiResult<LedgerEntry> =
         caller.call { api.addManual(CreateLedgerEntryRequest.from(entry)) }.mapResponse { it.toDomain() }

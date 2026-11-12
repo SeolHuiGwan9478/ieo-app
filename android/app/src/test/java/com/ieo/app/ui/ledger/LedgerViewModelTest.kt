@@ -125,15 +125,15 @@ class LedgerViewModelTest {
     }
 
     @Test
-    fun `운임 고치기는 고른 줄의 운임과 결제 방식을 보낸다`() = runTest(main.dispatcher) {
+    fun `고치기는 고른 줄의 운임과 결제 방식과 주행거리를 보낸다`() = runTest(main.dispatcher) {
         viewModel.refresh()
         advanceUntilIdle()
         viewModel.openForm(LedgerForm.EditFare(1, 450_000, PaymentType.RECEIPT))
 
-        viewModel.editFare(480_000, PaymentType.PREPAID)
+        viewModel.editFare(480_000, PaymentType.PREPAID, 312)
         advanceUntilIdle()
 
-        assertTrue("update 1 480000 PREPAID" in books.calls)
+        assertTrue("update 1 480000 PREPAID 312" in books.calls)
         assertNull(viewModel.state.value.form)
     }
 
@@ -174,5 +174,14 @@ class LedgerViewModelTest {
         vm.openEntry(2)
         advanceUntilIdle()
         assertEquals("아직 안 보냈어요 · 휴대폰 증빙에서 보내요", vm.state.value.detail!!.lines.single { it.first == "인수증" }.second)
+    }
+
+    @Test
+    fun `직접 추가할 때 주행거리도 넣을 수 있다`() = runTest(main.dispatcher) {
+        viewModel.refresh()
+        advanceUntilIdle()
+        viewModel.addTrip("인천 → 광주", 420_000, PaymentType.RECEIPT, "대한운송", 330)
+        advanceUntilIdle()
+        assertTrue("manual 인천 → 광주 420000 330" in books.calls)
     }
 }

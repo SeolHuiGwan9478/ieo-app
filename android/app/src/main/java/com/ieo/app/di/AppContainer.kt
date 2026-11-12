@@ -37,6 +37,8 @@ import com.ieo.app.data.trip.TripApi
 import com.ieo.app.data.vehicle.CarSensors
 import com.ieo.app.data.vehicle.DefaultVehicleRepository
 import com.ieo.app.data.vehicle.PleosCarIdentity
+import com.ieo.app.data.ledger.PrefsRouteMarks
+import com.ieo.app.domain.ledger.TripDistanceRecorder
 import com.ieo.app.data.vehicle.VehicleApi
 import com.ieo.app.data.voice.PleosSpeechRecognizer
 import com.ieo.app.data.voice.ServerAnswerClassifier
@@ -98,6 +100,7 @@ interface AppContainer {
     val naviPlaces: NaviPlaceSource
     val vehicleSensors: VehicleSensors
     val carIdentity: CarIdentity
+    val tripDistance: TripDistanceRecorder
     val announcer: Announcer
     val speechRecognizer: SpeechRecognizer
     val answerClassifier: AnswerClassifier
@@ -186,6 +189,8 @@ class DefaultAppContainer(context: Context) : AppContainer {
     override val vehicleSensors: VehicleSensors by lazy { CarSensors(appContext) }
 
     override val carIdentity: CarIdentity by lazy { PleosCarIdentity(appContext) }
+
+    override val tripDistance: TripDistanceRecorder by lazy { TripDistanceRecorder(PrefsRouteMarks(appContext), ledgerRepository) }
 
     override val announcer: Announcer by lazy { TtsAnnouncer(appContext) }
 

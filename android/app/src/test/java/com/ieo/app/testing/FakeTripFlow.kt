@@ -115,7 +115,15 @@ class FakeTripServer(var trip: Trip) :
 
     override suspend fun setExtraIncomePaid(extraIncomeId: Long, paid: Boolean): ApiResult<Unit> = error("홈에서는 쓰지 않음")
 
-    override suspend fun update(entry: LedgerEntry, fare: Long, paymentType: PaymentType): ApiResult<LedgerEntry> = error("홈에서는 쓰지 않음")
+    override suspend fun update(entry: LedgerEntry, fare: Long, paymentType: PaymentType, distanceKm: Int?): ApiResult<LedgerEntry> = error("홈에서는 쓰지 않음")
+
+    /** 운행을 마칠 때 보낸 거리 (운행 id → km) */
+    val distances = mutableMapOf<Long, Int>()
+
+    override suspend fun setDistance(tripId: Long, distanceKm: Int): ApiResult<Unit> {
+        distances[tripId] = distanceKm
+        return ApiResult.Success(Unit)
+    }
 
     override suspend fun addManual(entry: ManualEntry): ApiResult<LedgerEntry> = error("홈에서는 쓰지 않음")
 

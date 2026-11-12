@@ -40,7 +40,7 @@ enum class LedgerTab(val label: String) {
 sealed interface LedgerForm {
     data object AddExpense : LedgerForm
     data object AddTrip : LedgerForm
-    data class EditFare(val entryId: Long, val fare: Long, val paymentType: PaymentType) : LedgerForm
+    data class EditFare(val entryId: Long, val fare: Long, val paymentType: PaymentType, val distanceKm: Int? = null) : LedgerForm
 }
 
 data class LedgerUiState(
@@ -78,8 +78,8 @@ interface LedgerActions {
     fun setWaitFeePaid(extraIncomeId: Long, paid: Boolean)
     fun openForm(form: LedgerForm)
     fun addExpense(category: ExpenseCategory, amount: Long, memo: String?)
-    fun addTrip(description: String, fare: Long, paymentType: PaymentType, brokerName: String?)
-    fun editFare(fare: Long, paymentType: PaymentType)
+    fun addTrip(description: String, fare: Long, paymentType: PaymentType, brokerName: String?, distanceKm: Int?)
+    fun editFare(fare: Long, paymentType: PaymentType, distanceKm: Int?)
 
     /** 고른 운행의 대기 증빙 링크를 만들어 보여 준다. 운행 완료 때 만들지 않았어도 여기서 만든다 (WAIT-020) */
     fun makeWaitProof()
@@ -184,23 +184,23 @@ class LedgerViewModel(
         }
     }
 
-    override fun addTrip(description: String, fare: Long, paymentType: PaymentType, brokerName: String?) {
+    override fun addTrip(description: String, fare: Long, paymentType: PaymentType, brokerName: String?, distanceKm: Int?) {
         if (description.isBlank()) return show(DESCRIPTION_REQUIRED_MESSAGE)
         if (fare <= 0) return show(AMOUNT_REQUIRED_MESSAGE)
         runAction {
-            val entry = ManualEntry(labels.today(), description.trim(), fare, paymentType, brokerName?.trim()?.ifEmpty { null })
+            val entry = ManualEntry(labels.today(), description.trim(), fare, paymentType, brokerName?.trim()?.ifEmpty { null }, distanceKm)
             ledgerRepository.addManual(entry).orShow() ?: return@runAction
             finishForm("장부에 운행을 추가했어요")
         }
     }
 
-    override fun editFare(fare: Long, paymentType: PaymentType) {
+    override fun editFare(fare: Long, paymentType: PaymentType, distanceKm: Int?) {
         val form = _state.value.form as? LedgerForm.EditFare ?: return
         val entry = entries.firstOrNull { it.id == form.entryId } ?: receivables?.entries?.firstOrNull { it.id == form.entryId } ?: return
         if (fare <= 0) return show(AMOUNT_REQUIRED_MESSAGE)
         runAction {
-            ledgerRepository.update(entry, fare, paymentType).orShow() ?: return@runAction
-            finishForm("운임을 고쳤어요")
+            ledgerRepository.update(entry, fare, paymentType, distanceKm).orShow() ?: return@runAction
+            finishForm("장부를 고쳤어요")
         }
     }
 

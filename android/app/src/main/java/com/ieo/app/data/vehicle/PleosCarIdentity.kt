@@ -12,6 +12,7 @@ import kotlinx.coroutines.withTimeoutOrNull
 /**
  * Pleos Vehicle SDK로 이 트럭 정보를 읽는다.
  * 차대번호는 CarInfo.getVINInfo (권한 CAR_INFO), 누적 연비는 Fuel.getCumulativeFuelEconomy (권한 CAR_ENERGY).
+ * 주행거리계(Odometer)는 CAR_MILEAGE 권한이 시스템 앱 전용이라 읽지 않는다.
  * SDK는 차량 서비스에 비동기로 붙어서, 붙기 전에 물으면 실패한다. 그래서 몇 번 다시 묻는다.
  * 차대번호를 모르는 차(에뮬레이터 포함)는 "invalid" 같은 글자를 준다. 이런 값은 차대번호로 보지 않는다.
  * 그대로 보내면 서버가 차대번호를 모르는 차들을 모두 한 트럭으로 묶어 버린다.

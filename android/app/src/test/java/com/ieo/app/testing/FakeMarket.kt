@@ -84,13 +84,18 @@ class FakeBooks(var entries: MutableList<LedgerEntry>, var expenses: MutableList
 
     override suspend fun setExtraIncomePaid(extraIncomeId: Long, paid: Boolean) = ApiResult.Success(Unit)
 
-    override suspend fun update(entry: LedgerEntry, fare: Long, paymentType: PaymentType): ApiResult<LedgerEntry> {
-        calls += "update ${entry.id} $fare $paymentType"
-        return ApiResult.Success(entry.copy(fare = fare, paymentType = paymentType))
+    override suspend fun update(entry: LedgerEntry, fare: Long, paymentType: PaymentType, distanceKm: Int?): ApiResult<LedgerEntry> {
+        calls += "update ${entry.id} $fare $paymentType $distanceKm"
+        return ApiResult.Success(entry.copy(fare = fare, paymentType = paymentType, distanceKm = distanceKm))
+    }
+
+    override suspend fun setDistance(tripId: Long, distanceKm: Int): ApiResult<Unit> {
+        calls += "distance $tripId $distanceKm"
+        return ApiResult.Success(Unit)
     }
 
     override suspend fun addManual(entry: ManualEntry): ApiResult<LedgerEntry> {
-        calls += "manual ${entry.description} ${entry.fare}"
+        calls += "manual ${entry.description} ${entry.fare} ${entry.distanceKm}"
         return ApiResult.Success(TripFixtures.entry(id = 77))
     }
 

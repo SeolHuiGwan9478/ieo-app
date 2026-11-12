@@ -8,6 +8,7 @@ import androidx.lifecycle.viewmodel.viewModelFactory
 import com.ieo.app.core.network.ApiError
 import com.ieo.app.core.network.ApiResult
 import com.ieo.app.di.appContainer
+import com.ieo.app.domain.ledger.TripDistanceRecorder
 import com.ieo.app.domain.ledger.LedgerRepository
 import com.ieo.app.domain.navi.Destination
 import com.ieo.app.domain.navi.Navigator
@@ -182,6 +183,8 @@ class HomeViewModel(
     private val answerClassifier: AnswerClassifier = NoAnswerClassifier,
     /** 통신이 끊겨 보내지 못한 대기 요청. 앱이 꺼져도 남는다 */
     pendingWaits: PendingWaitStore = MemoryPendingWaitStore(),
+    /** 운행 거리를 재서 장부에 넣는다 (LEDG-001). 없으면 재지 않는다 */
+    private val tripDistance: TripDistanceRecorder? = null,
     private val clock: Clock = Clock.systemUTC(),
     private val stateFactory: HomeStateFactory = HomeStateFactory(),
 ) : ViewModel(), HomeActions {
@@ -267,6 +270,19 @@ class HomeViewModel(
         tellNotifications()
         tellWhenRestIsDue()
         keepRouteStopsFresh()
+        rememberDropoffRoute()
+    }
+
+    /** 하차지로 처음 안내받은 경로 거리를 적어 둔다. 운행을 마칠 때 장부의 주행거리로 쓴다 (LEDG-001) */
+    private fun rememberDropoffRoute() {
+        val recorder = tripDistance ?: return
+        viewModelScope.launch {
+            navigator.progress.collect { progress ->
+                val trip = snapshot.value.current ?: return@collect
+                val total = progress?.totalMeters ?: return@collect
+                if (trip.currentStop == StopType.DROPOFF) recorder.routeToDropoff(trip.id, total)
+            }
+        }
     }
 
     override fun refresh() {
@@ -479,6 +495,8 @@ class HomeViewModel(
             StopType.DROPOFF -> {
                 // 인수증 결제면 종이 인수증을 휴대폰으로 보내라고 함께 알린다 (04 인수증)
                 announcer.say(HomeAnnouncements.tripCompleted(trip.fare, trip.paysOnReceipt))
+                // 장부 줄이 생긴 뒤라 거리를 바로 넣을 수 있다. 경로를 모르면 기사님이 장부에서 넣는다
+                tripDistance?.let { recorder -> viewModelScope.launch { recorder.completed(trip.id) } }
                 snapshot.update { it.copy(current = null, wait = null, site = null) }
                 show(if (trip.paysOnReceipt) RECEIPT_REMINDER_MESSAGE else TRIP_COMPLETED_MESSAGE)
                 load()
@@ -988,6 +1006,7 @@ class HomeViewModel(
                     recognizer = container.speechRecognizer,
                     answerClassifier = container.answerClassifier,
                     pendingWaits = container.pendingWaits,
+                    tripDistance = container.tripDistance,
                 )
             }
         }

@@ -57,11 +57,12 @@ fun ColumnScope.ExpenseForm(busy: Boolean, onSubmit: (ExpenseCategory, Long, Str
 
 /** Ieo로 등록하지 않은 운행 추가 (LEDG-004). 운행일은 오늘 */
 @Composable
-fun ColumnScope.TripForm(busy: Boolean, onSubmit: (String, Long, PaymentType, String?) -> Unit, onCancel: () -> Unit) {
+fun ColumnScope.TripForm(busy: Boolean, onSubmit: (String, Long, PaymentType, String?, Int?) -> Unit, onCancel: () -> Unit) {
     var description by rememberSaveable { mutableStateOf("") }
     var amount by rememberSaveable { mutableStateOf("") }
     var paymentType by rememberSaveable { mutableStateOf(PaymentType.RECEIPT) }
     var broker by rememberSaveable { mutableStateOf("") }
+    var distance by rememberSaveable { mutableStateOf("") }
 
     SheetTitle("오늘 운행 직접 추가")
     Spacer(Modifier.height(24.dp))
@@ -72,21 +73,42 @@ fun ColumnScope.TripForm(busy: Boolean, onSubmit: (String, Long, PaymentType, St
     PaymentTypePicker(paymentType, onSelect = { paymentType = it })
     Spacer(Modifier.height(16.dp))
     TextField(broker, label = "주선사 (선택)", onChange = { broker = it.take(50) })
-    FormButtons(busy, onCancel) { onSubmit(description, amount.toLongOrNull() ?: 0, paymentType, broker) }
+    Spacer(Modifier.height(12.dp))
+    DistanceField(distance, onChange = { distance = it })
+    FormButtons(busy, onCancel) { onSubmit(description, amount.toLongOrNull() ?: 0, paymentType, broker, distance.toIntOrNull()) }
 }
 
-/** 운임·결제 방식 고치기 (LEDG-003) */
+/** 운임·결제 방식·주행거리 고치기 (LEDG-003). 거리는 운행을 마칠 때 자동으로 재지만 틀리거나 비었으면 여기서 고친다 */
 @Composable
-fun ColumnScope.FareForm(form: LedgerForm.EditFare, busy: Boolean, onSubmit: (Long, PaymentType) -> Unit, onCancel: () -> Unit) {
+fun ColumnScope.FareForm(form: LedgerForm.EditFare, busy: Boolean, onSubmit: (Long, PaymentType, Int?) -> Unit, onCancel: () -> Unit) {
     var amount by rememberSaveable(form.entryId) { mutableStateOf(form.fare.toString()) }
     var paymentType by rememberSaveable(form.entryId) { mutableStateOf(form.paymentType) }
+    var distance by rememberSaveable(form.entryId) { mutableStateOf(form.distanceKm?.toString().orEmpty()) }
 
-    SheetTitle("운임 고치기")
+    SheetTitle("장부 고치기")
     Spacer(Modifier.height(24.dp))
     AmountField(amount, label = "운임", onChange = { amount = it })
     Spacer(Modifier.height(16.dp))
     PaymentTypePicker(paymentType, onSelect = { paymentType = it })
-    FormButtons(busy, onCancel) { onSubmit(amount.toLongOrNull() ?: 0, paymentType) }
+    Spacer(Modifier.height(16.dp))
+    DistanceField(distance, onChange = { distance = it })
+    FormButtons(busy, onCancel) { onSubmit(amount.toLongOrNull() ?: 0, paymentType, distance.toIntOrNull()) }
+}
+
+/** 주행거리(km). 숫자만, 비워 두면 모르는 것으로 */
+@Composable
+private fun DistanceField(value: String, onChange: (String) -> Unit) {
+    OutlinedTextField(
+        value = value,
+        onValueChange = { input -> onChange(input.filter(Char::isDigit).take(4)) },
+        label = { Text("주행거리 (선택)", fontSize = 24.sp) },
+        suffix = { Text("km", fontSize = 24.sp, color = TextSub) },
+        textStyle = TextStyle(fontSize = 26.sp, fontWeight = FontWeight.Bold, color = TextStrong),
+        singleLine = true,
+        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+        shape = RoundedCornerShape(16.dp),
+        modifier = Modifier.fillMaxWidth(),
+    )
 }
 
 @Composable

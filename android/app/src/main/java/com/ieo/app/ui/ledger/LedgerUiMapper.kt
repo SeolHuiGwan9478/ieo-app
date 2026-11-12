@@ -52,6 +52,8 @@ data class EntryDetail(
     /** 운임 고치기의 처음 값 */
     val fare: Long,
     val paymentType: PaymentType,
+    /** 고치기의 처음 거리 */
+    val distanceKm: Int? = null,
     /** 운행이 끝나 생긴 줄이라 대기 증빙을 만들 수 있다 (WAIT-020) */
     val canMakeWaitProof: Boolean = false,
     /** 인수증 결제 운행이라 종이 인수증 사진을 보여 준다 */
@@ -137,6 +139,7 @@ class LedgerUiMapper(private val labels: DayTimeFormatter) {
         },
         fare = entry.fare,
         paymentType = entry.paymentType,
+        distanceKm = entry.distanceKm,
     )
 
     private fun payState(entry: LedgerEntry) = when {

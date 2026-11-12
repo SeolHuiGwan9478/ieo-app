@@ -6,6 +6,7 @@ import retrofit2.http.DELETE
 import retrofit2.http.GET
 import retrofit2.http.PATCH
 import retrofit2.http.POST
+import retrofit2.http.PUT
 import retrofit2.http.Path
 import retrofit2.http.Query
 
@@ -24,6 +25,9 @@ interface LedgerApi {
 
     @POST("api/ledger")
     suspend fun addManual(@Body body: CreateLedgerEntryRequest): Response<LedgerEntryResponse>
+
+    @PUT("api/trips/{tripId}/distance")
+    suspend fun setDistance(@Path("tripId") tripId: Long, @Body body: DistanceRequest): Response<LedgerEntryResponse>
 
     @PATCH("api/ledger/{entryId}")
     suspend fun update(@Path("entryId") entryId: Long, @Body body: UpdateLedgerEntryRequest): Response<LedgerEntryResponse>
