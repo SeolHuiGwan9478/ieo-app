@@ -197,6 +197,7 @@ body {
           <li>배차 요청에서 확정까지</li>
           <li>배차 추천 설정</li>
           <li>내 배차와 직접 등록</li>
+          <li>대기 증빙과 시각 고치기</li>
           <li class="later">나머지는 차량 앱 확인 뒤에 채워요</li>
         </ol>
       </div>
@@ -586,6 +587,68 @@ body {
       </div>
     </div>
     <div class="foot"><img src="assets/ieo_wordmark_orange.svg" alt="ieo"><span>운행 · 휴게 안내</span></div>
+  </section>
+
+  <section class="page sheet" aria-label="도착과 대기">
+    <div class="eyebrow">WAIT · 01</div>
+    <div class="twocol">
+      <div class="text-col">
+        <h2>도착하면 묻고,<br>멈춘 때부터 재요</h2>
+        <p class="lead">상하차지 반지름 200m 안에서 3분 세워 두거나(P·주차 브레이크) 내비가 목적지 도착을 알리면, 음성과 15초 창으로 도착했는지 물어요. 맞다고 하면 멈춘 때부터 대기로 기록해요.</p>
+        <ul class="facts">
+          <li><b>대답은 말로</b><br>"응", "맞아"처럼 자유롭게 말하면 알아들어요. 달리는 중에는 버튼이 잠기고, 세워 두었으면 눌러도 돼요. 대답이 없으면 창을 닫고 같은 정차에서는 다시 묻지 않아요.</li>
+          <li><b>직접 [대기 시작]</b><br>상하차지 3km 안에 들어오면 버튼이 보이고, 세워 둔 상태에서 누른 때부터 재요. 정문 밖 도로에서 줄을 서도 돼요.</li>
+          <li><b>통신이 끊겨도</b><br>차에 쌓아 두었다가 이어지면 누른 시각 그대로 보내요.</li>
+        </ul>
+      </div>
+      <div class="shots" style="--h: 36cqw; --cap: 16cqw">
+        <figure class="shot car"><img src="assets/c_wait_arriving.jpg" alt="반경 안에서 멈춤"><figcaption>멈추면 3분을 세요.</figcaption></figure>
+        <figure class="shot car"><img src="assets/c_wait_confirm.jpg" alt="도착 확인 창"><figcaption>15초 동안 묻고 음성으로도 물어요.</figcaption></figure>
+        <figure class="shot car"><img src="assets/c_wait_waiting.jpg" alt="대기 중 화면"><figcaption>노란 타이머와 대기비가 붙기까지 남은 시간.</figcaption></figure>
+      </div>
+    </div>
+    <div class="foot"><img src="assets/ieo_wordmark_orange.svg" alt="ieo"><span>대기 · 도착</span></div>
+  </section>
+
+  <section class="page sheet" aria-label="떠남과 대기 증빙">
+    <div class="eyebrow">WAIT · 02</div>
+    <div class="twocol">
+      <div class="text-col">
+        <h2>떠날 때도 묻고,<br>운행을 마치면 증빙을 물어요</h2>
+        <p class="lead">반경을 30초 넘게 벗어나거나 시속 20km로 1분 달리면 "끝내고 출발할까요?"라고 물어요. 하차지에서 마치면 이어서 대기 증빙을 만들지 물어요.</p>
+        <ul class="facts">
+          <li><b>대기와 작업</b><br>[상차 시작]·[하차 시작]을 누르면 대기가 끝나고 작업 시간이 시작돼요. 대기비는 도착부터 작업 시작까지로 계산해요.</li>
+          <li><b>대기비 기준은 주선사가</b><br>무료 시간, 단위 시간, 단위 금액, 상한을 콘솔에서 정해요. 무료 시간이 끝나는 순간 "지금부터 대기비가 붙어요"라고 말해요.</li>
+          <li><b>증빙은 운행 하나에 링크 하나</b><br>상차지와 하차지 기록을 함께 담아요. QR을 찍어 휴대폰으로 받거나, 주선사에게 바로 문자로 보내요. 지나서도 장부에서 만들 수 있어요.</li>
+        </ul>
+      </div>
+      <div class="shots" style="--h: 36cqw; --cap: 16cqw">
+        <figure class="shot car"><img src="assets/c_wait_depart.jpg" alt="떠남 확인 창"><figcaption>떠난 때로 기록해요.</figcaption></figure>
+        <figure class="shot car"><img src="assets/c_wait_proof_ask.jpg" alt="대기 증빙 묻기"><figcaption>운행을 마치면 바로 물어요.</figcaption></figure>
+        <figure class="shot car"><img src="assets/c_wait_proof_sheet.jpg" alt="대기 증빙 QR"><figcaption>QR과 링크. 24시간 열려요.</figcaption></figure>
+      </div>
+    </div>
+    <div class="foot"><img src="assets/ieo_wordmark_orange.svg" alt="ieo"><span>대기 · 떠남과 증빙</span></div>
+  </section>
+
+  <section class="page sheet" aria-label="대기 증빙 보기와 시각 고치기">
+    <div class="eyebrow">WAIT · 03</div>
+    <div class="twocol">
+      <div class="text-col">
+        <h2>링크로 보내고,<br>틀린 시각은 고쳐요</h2>
+        <p class="lead">증빙 링크에는 상하차지마다 대기 시간과 청구 대기비, 기사님이 확인하거나 누른 순간이 그때 위치와 함께 남아요. 위치는 계속 쌓지 않고 그 순간만 기록해요.</p>
+        <ul class="facts">
+          <li><b>휴대폰에서 보내기</b><br>내 배차 → 증빙에서 [대기 증빙 보내기]를 누르면 공유 창으로 링크 하나가 나가요.</li>
+          <li><b>시각 고치기</b><br>도착·작업 시작·출발을 "14:05"처럼 고쳐요. 앞 시각보다 이르면 다음 날로 봐요. 고치면 증빙에 '수정됨'과 처음 기록이 함께 남아요.</li>
+          <li><b>장부와 통계</b><br>대기비는 그 운행의 받을 돈(청구 예정)으로 장부에 들어가고, 상하차지 평균 대기에도 쓰여요.</li>
+        </ul>
+      </div>
+      <div class="shots" style="--h: 50cqw; --cap: 24cqw">
+        <figure class="shot"><img src="assets/m_PF_pending.jpg" alt="휴대폰 증빙 화면"><figcaption>휴대폰 증빙. 카드마다 [시각 고치기].</figcaption></figure>
+        <figure class="shot"><img src="assets/m_W_public.jpg" alt="주선사가 여는 증빙 페이지"><figcaption>주선사가 여는 링크. 고친 시각과 처음 기록이 함께 보여요.</figcaption></figure>
+      </div>
+    </div>
+    <div class="foot"><img src="assets/ieo_wordmark_orange.svg" alt="ieo"><span>대기 · 증빙과 고치기</span></div>
   </section>
 
   <section class="page sheet" aria-label="외부 API와 데이터 출처">
