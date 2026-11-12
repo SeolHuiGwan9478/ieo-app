@@ -26,6 +26,9 @@ interface LedgerApi {
     @POST("api/ledger")
     suspend fun addManual(@Body body: CreateLedgerEntryRequest): Response<LedgerEntryResponse>
 
+    @DELETE("api/ledger/{entryId}")
+    suspend fun deleteEntry(@Path("entryId") entryId: Long): Response<Unit>
+
     @PUT("api/trips/{tripId}/distance")
     suspend fun setDistance(@Path("tripId") tripId: Long, @Body body: DistanceRequest): Response<LedgerEntryResponse>
 

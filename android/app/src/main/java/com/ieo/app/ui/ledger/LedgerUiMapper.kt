@@ -37,7 +37,8 @@ data class ExpenseRow(val id: Long, val title: String, val date: String, val amo
 data class DayGroup(val title: String, val entries: List<EntryRow>, val expenses: List<ExpenseRow>)
 
 /** 이번 달 요약 */
-data class MonthSummary(val revenue: String, val expense: String, val netProfit: String)
+/** [loss]: 경비가 더 많아 실수익이 마이너스 */
+data class MonthSummary(val revenue: String, val expense: String, val netProfit: String, val loss: Boolean = false)
 
 /** 받을 돈 요약 */
 data class ReceivableSummary(val total: String, val overdue: String?, val waitFee: String?)
@@ -54,6 +55,8 @@ data class EntryDetail(
     val paymentType: PaymentType,
     /** 고치기의 처음 거리 */
     val distanceKm: Int? = null,
+    /** 직접 추가한 줄이라 지울 수 있다. 운행이 끝나 생긴 줄은 지우지 않는다 */
+    val canDelete: Boolean = false,
     /** 운행이 끝나 생긴 줄이라 대기 증빙을 만들 수 있다 (WAIT-020) */
     val canMakeWaitProof: Boolean = false,
     /** 인수증 결제 운행이라 종이 인수증 사진을 보여 준다 */
@@ -69,6 +72,7 @@ class LedgerUiMapper(private val labels: DayTimeFormatter) {
         revenue = formatWon(month.revenue),
         expense = formatWon(month.expenseTotal),
         netProfit = formatWon(month.netProfit),
+        loss = month.netProfit < 0,
     )
 
     fun receivableSummary(receivables: Receivables) = ReceivableSummary(
@@ -140,6 +144,7 @@ class LedgerUiMapper(private val labels: DayTimeFormatter) {
         fare = entry.fare,
         paymentType = entry.paymentType,
         distanceKm = entry.distanceKm,
+        canDelete = !entry.auto,
     )
 
     private fun payState(entry: LedgerEntry) = when {

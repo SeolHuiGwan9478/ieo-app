@@ -184,4 +184,42 @@ class LedgerViewModelTest {
         advanceUntilIdle()
         assertTrue("manual 인천 → 광주 420000 330" in books.calls)
     }
+
+    @Test
+    fun `경비 줄을 누르면 묻고 지운다`() = runTest(main.dispatcher) {
+        viewModel.refresh()
+        advanceUntilIdle()
+        viewModel.askDeleteExpense(1)
+        val form = viewModel.state.value.form as LedgerForm.ConfirmDelete
+        assertEquals("주유 15만 원을 지울까요?", form.title)
+        viewModel.close()
+        assertTrue(books.calls.none { it.startsWith("delete") })
+
+        viewModel.askDeleteExpense(1)
+        viewModel.confirmDelete()
+        advanceUntilIdle()
+        assertTrue("delete expense 1" in books.calls)
+        assertNull(viewModel.state.value.form)
+        assertEquals("경비를 지웠어요", viewModel.state.value.message)
+    }
+
+    @Test
+    fun `직접 추가한 운행만 지우고 지우면 상세를 닫는다`() = runTest(main.dispatcher) {
+        books.entries.add(TripFixtures.entry(id = 5).copy(auto = false))
+        viewModel.refresh()
+        advanceUntilIdle()
+
+        viewModel.openEntry(1)
+        assertFalse(viewModel.state.value.detail!!.canDelete)
+        viewModel.askDeleteEntry()
+        assertNull(viewModel.state.value.form)
+
+        viewModel.openEntry(5)
+        assertTrue(viewModel.state.value.detail!!.canDelete)
+        viewModel.askDeleteEntry()
+        viewModel.confirmDelete()
+        advanceUntilIdle()
+        assertTrue("delete entry 5" in books.calls)
+        assertNull(viewModel.state.value.detail)
+    }
 }

@@ -18,6 +18,7 @@ import com.ieo.app.domain.ledger.MonthlyLedger
 import com.ieo.app.domain.ledger.PaymentType
 import com.ieo.app.domain.ledger.Receivables
 import com.ieo.app.ui.common.DayTimeFormatter
+import com.ieo.app.ui.common.formatWon
 import java.time.Clock
 import java.time.YearMonth
 import kotlinx.coroutines.Job
@@ -41,6 +42,15 @@ sealed interface LedgerForm {
     data object AddExpense : LedgerForm
     data object AddTrip : LedgerForm
     data class EditFare(val entryId: Long, val fare: Long, val paymentType: PaymentType, val distanceKm: Int? = null) : LedgerForm
+
+    /** "지울까요?" 확인. [detail]은 무엇을 지우는지 한 줄 */
+    data class ConfirmDelete(val target: DeleteTarget, val title: String, val detail: String) : LedgerForm
+}
+
+/** 지울 것: 경비 한 건 또는 직접 추가한 운행 줄 */
+sealed interface DeleteTarget {
+    data class OfExpense(val expenseId: Long) : DeleteTarget
+    data class OfEntry(val entryId: Long) : DeleteTarget
 }
 
 data class LedgerUiState(
@@ -80,6 +90,13 @@ interface LedgerActions {
     fun addExpense(category: ExpenseCategory, amount: Long, memo: String?)
     fun addTrip(description: String, fare: Long, paymentType: PaymentType, brokerName: String?, distanceKm: Int?)
     fun editFare(fare: Long, paymentType: PaymentType, distanceKm: Int?)
+
+    /** 경비 줄을 누르면 지울지 묻는다 */
+    fun askDeleteExpense(expenseId: Long)
+
+    /** 열어 둔 운행 줄을 지울지 묻는다. 직접 추가한 줄만 */
+    fun askDeleteEntry()
+    fun confirmDelete()
 
     /** 고른 운행의 대기 증빙 링크를 만들어 보여 준다. 운행 완료 때 만들지 않았어도 여기서 만든다 (WAIT-020) */
     fun makeWaitProof()
@@ -201,6 +218,37 @@ class LedgerViewModel(
         runAction {
             ledgerRepository.update(entry, fare, paymentType, distanceKm).orShow() ?: return@runAction
             finishForm("장부를 고쳤어요")
+        }
+    }
+
+    override fun askDeleteExpense(expenseId: Long) {
+        val expense = expenses.firstOrNull { it.id == expenseId } ?: return
+        val detail = labels.date(expense.spentOn) + (expense.memo?.let { " · $it" } ?: "")
+        _state.update {
+            it.copy(form = LedgerForm.ConfirmDelete(DeleteTarget.OfExpense(expenseId), "${expense.category.label} ${formatWon(expense.amount)}을 지울까요?", detail))
+        }
+    }
+
+    override fun askDeleteEntry() {
+        val entry = selected()?.takeIf { !it.auto } ?: return
+        val detail = "${labels.date(entry.workDate)} · ${entry.description} · ${formatWon(entry.fare)}"
+        _state.update { it.copy(form = LedgerForm.ConfirmDelete(DeleteTarget.OfEntry(entry.id), "이 운행을 장부에서 지울까요?", detail)) }
+    }
+
+    override fun confirmDelete() {
+        val form = _state.value.form as? LedgerForm.ConfirmDelete ?: return
+        runAction {
+            when (val target = form.target) {
+                is DeleteTarget.OfExpense -> {
+                    expenseRepository.delete(target.expenseId).orShow() ?: return@runAction
+                    finishForm("경비를 지웠어요")
+                }
+                is DeleteTarget.OfEntry -> {
+                    ledgerRepository.deleteEntry(target.entryId).orShow() ?: return@runAction
+                    selectedId = null
+                    finishForm("운행을 지웠어요")
+                }
+            }
         }
     }
 

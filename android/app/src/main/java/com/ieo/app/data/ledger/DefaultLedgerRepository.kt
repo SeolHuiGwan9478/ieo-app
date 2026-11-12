@@ -40,6 +40,8 @@ class DefaultLedgerRepository(
         return caller.call { api.update(entry.id, body) }.mapResponse { it.toDomain() }
     }
 
+    override suspend fun deleteEntry(entryId: Long): ApiResult<Unit> = caller.callNoContent { api.deleteEntry(entryId) }
+
     override suspend fun setDistance(tripId: Long, distanceKm: Int): ApiResult<Unit> =
         caller.call { api.setDistance(tripId, DistanceRequest(distanceKm)) }.mapResponse { }
 

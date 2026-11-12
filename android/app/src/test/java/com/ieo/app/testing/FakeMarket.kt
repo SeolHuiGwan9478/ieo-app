@@ -89,6 +89,18 @@ class FakeBooks(var entries: MutableList<LedgerEntry>, var expenses: MutableList
         return ApiResult.Success(entry.copy(fare = fare, paymentType = paymentType, distanceKm = distanceKm))
     }
 
+    override suspend fun deleteEntry(entryId: Long): ApiResult<Unit> {
+        calls += "delete entry $entryId"
+        entries.removeAll { it.id == entryId }
+        return ApiResult.Success(Unit)
+    }
+
+    override suspend fun delete(expenseId: Long): ApiResult<Unit> {
+        calls += "delete expense $expenseId"
+        expenses.removeAll { it.id == expenseId }
+        return ApiResult.Success(Unit)
+    }
+
     override suspend fun setDistance(tripId: Long, distanceKm: Int): ApiResult<Unit> {
         calls += "distance $tripId $distanceKm"
         return ApiResult.Success(Unit)

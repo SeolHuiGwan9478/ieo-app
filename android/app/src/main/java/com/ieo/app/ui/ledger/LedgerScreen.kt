@@ -93,7 +93,7 @@ fun LedgerScreen(state: LedgerUiState, actions: LedgerActions) {
             when (state.tab) {
                 LedgerTab.ENTRIES -> EntriesTab(state, actions)
                 LedgerTab.RECEIVABLES -> ReceivablesTab(state, actions)
-                LedgerTab.EXPENSES -> ExpensesTab(state)
+                LedgerTab.EXPENSES -> ExpensesTab(state, actions)
             }
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 IeoTonalButton(text = "경비 추가", onClick = { actions.openForm(LedgerForm.AddExpense) }, modifier = Modifier.weight(1f))
@@ -108,6 +108,7 @@ fun LedgerScreen(state: LedgerUiState, actions: LedgerActions) {
                 LedgerForm.AddExpense -> ExpenseForm(busy = state.isBusy, onSubmit = actions::addExpense, onCancel = actions::close)
                 LedgerForm.AddTrip -> TripForm(busy = state.isBusy, onSubmit = actions::addTrip, onCancel = actions::close)
                 is LedgerForm.EditFare -> FareForm(form, busy = state.isBusy, onSubmit = actions::editFare, onCancel = actions::close)
+                is LedgerForm.ConfirmDelete -> DeleteForm(form, busy = state.isBusy, onConfirm = actions::confirmDelete, onCancel = actions::close)
             }
         }
         viewing?.takeIf { state.detail != null && it in receiptBitmaps.indices }?.let { index ->
@@ -158,7 +159,7 @@ private fun EntriesTab(state: LedgerUiState, actions: LedgerActions) {
             Row {
                 Metric("운임·대기비", summary.revenue, TextStrong)
                 Metric("경비", summary.expense, TextStrong)
-                Metric("실수익", summary.netProfit, IeoStatus.colors.done)
+                Metric("실수익", summary.netProfit, if (summary.loss) IeoStatus.colors.warning else IeoStatus.colors.done)
             }
             state.receivable?.let { owed ->
                 Spacer(Modifier.height(16.dp))
@@ -179,7 +180,7 @@ private fun EntriesTab(state: LedgerUiState, actions: LedgerActions) {
         WhiteSection {
             Text(day.title, fontSize = 24.sp, fontWeight = FontWeight.Medium, color = TextSub, modifier = Modifier.padding(horizontal = 12.dp))
             day.entries.forEach { EntryListRow(it, onClick = { actions.openEntry(it.id) }) }
-            day.expenses.forEach { ExpenseListRow(it, showDate = false) }
+            day.expenses.forEach { ExpenseListRow(it, showDate = false, onClick = { actions.askDeleteExpense(it.id) }) }
         }
     }
 }
@@ -215,7 +216,8 @@ private fun EntryListRow(row: EntryRow, onClick: () -> Unit) {
 }
 
 @Composable
-private fun ExpenseListRow(row: ExpenseRow, showDate: Boolean) {
+/** 경비 한 줄. 누르면 지울지 묻는다 (잘못 넣은 경비) */
+private fun ExpenseListRow(row: ExpenseRow, showDate: Boolean, onClick: () -> Unit) {
     ListRow(
         time = null,
         day = null,
@@ -223,7 +225,7 @@ private fun ExpenseListRow(row: ExpenseRow, showDate: Boolean) {
         subtitle = if (showDate) row.date else "경비",
         amount = row.amount,
         amountColor = TextSub,
-        onClick = {},
+        onClick = onClick,
     )
 }
 
@@ -252,13 +254,13 @@ private fun ReceivablesTab(state: LedgerUiState, actions: LedgerActions) {
 // ───────────────────────── 경비 ─────────────────────────
 
 @Composable
-private fun ExpensesTab(state: LedgerUiState) {
+private fun ExpensesTab(state: LedgerUiState, actions: LedgerActions) {
     WhiteSection {
         SectionTitle(title = "${state.monthLabel} 경비", count = state.expenseRows.size, note = state.summary?.expense)
         if (state.expenseRows.isEmpty()) {
             Text("기록한 경비가 없어요", fontSize = 24.sp, color = TextSub, modifier = Modifier.padding(horizontal = 12.dp, vertical = 16.dp))
         }
-        state.expenseRows.forEach { ExpenseListRow(it, showDate = true) }
+        state.expenseRows.forEach { ExpenseListRow(it, showDate = true, onClick = { actions.askDeleteExpense(it.id) }) }
     }
 }
 
@@ -288,6 +290,10 @@ private fun ColumnScope.EntrySheet(detail: EntryDetail, receiptPhotos: List<Imag
                 modifier = Modifier.width(160.dp),
             )
         }
+    }
+    if (detail.canDelete) {
+        Spacer(Modifier.height(16.dp))
+        IeoSecondaryButton(text = "이 운행 지우기", onClick = actions::askDeleteEntry, modifier = Modifier.fillMaxWidth())
     }
     if (detail.canMakeWaitProof) {
         Spacer(Modifier.height(16.dp))
@@ -410,6 +416,9 @@ private object PreviewLedgerActions : LedgerActions {
     override fun addExpense(category: ExpenseCategory, amount: Long, memo: String?) = Unit
     override fun addTrip(description: String, fare: Long, paymentType: PaymentType, brokerName: String?, distanceKm: Int?) = Unit
     override fun editFare(fare: Long, paymentType: PaymentType, distanceKm: Int?) = Unit
+    override fun askDeleteExpense(expenseId: Long) = Unit
+    override fun askDeleteEntry() = Unit
+    override fun confirmDelete() = Unit
     override fun makeWaitProof() = Unit
     override fun refresh() = Unit
 }

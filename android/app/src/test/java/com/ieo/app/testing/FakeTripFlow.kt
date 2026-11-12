@@ -117,6 +117,8 @@ class FakeTripServer(var trip: Trip) :
 
     override suspend fun update(entry: LedgerEntry, fare: Long, paymentType: PaymentType, distanceKm: Int?): ApiResult<LedgerEntry> = error("홈에서는 쓰지 않음")
 
+    override suspend fun deleteEntry(entryId: Long): ApiResult<Unit> = error("홈에서는 쓰지 않음")
+
     /** 운행을 마칠 때 보낸 거리 (운행 id → km) */
     val distances = mutableMapOf<Long, Int>()
 

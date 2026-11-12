@@ -22,6 +22,9 @@ interface LedgerRepository {
     /** 운임·결제 방식·주행거리 고치기 (LEDG-003). 지급 예정일은 그대로 둔다. 거리를 비우면 지운다 */
     suspend fun update(entry: LedgerEntry, fare: Long, paymentType: PaymentType, distanceKm: Int?): ApiResult<LedgerEntry>
 
+    /** 직접 추가한 줄 지우기. 운행이 끝나 생긴 줄은 서버가 거절한다 (409) */
+    suspend fun deleteEntry(entryId: Long): ApiResult<Unit>
+
     /** 운행을 마칠 때 잰 주행거리를 그 운행의 장부 줄에 넣는다 (LEDG-001) */
     suspend fun setDistance(tripId: Long, distanceKm: Int): ApiResult<Unit>
 

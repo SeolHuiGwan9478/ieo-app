@@ -156,3 +156,18 @@ private fun FormButtons(busy: Boolean, onCancel: () -> Unit, onSave: () -> Unit)
         IeoPrimaryButton(text = if (busy) "저장 중…" else "저장", onClick = { if (!busy) onSave() }, modifier = Modifier.weight(2f))
     }
 }
+
+/** "지울까요?" 확인. 되돌릴 수 없어서 한 번 더 묻는다 */
+@Composable
+fun ColumnScope.DeleteForm(form: LedgerForm.ConfirmDelete, busy: Boolean, onConfirm: () -> Unit, onCancel: () -> Unit) {
+    SheetTitle(form.title)
+    Spacer(Modifier.height(12.dp))
+    Text(form.detail, fontSize = 24.sp, color = TextSub)
+    Spacer(Modifier.height(8.dp))
+    Text("지우면 되돌릴 수 없어요.", fontSize = 24.sp, color = TextSub)
+    Spacer(Modifier.height(32.dp))
+    Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+        IeoTonalButton(text = "취소", onClick = onCancel, modifier = Modifier.weight(1f))
+        IeoPrimaryButton(text = if (busy) "지우는 중…" else "지우기", onClick = { if (!busy) onConfirm() }, modifier = Modifier.weight(2f))
+    }
+}
