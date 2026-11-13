@@ -14,7 +14,7 @@ import com.ieo.app.ui.links.DriverLinksViewModel
 fun SettingsRoute(
     onMessage: (String) -> Unit,
     viewModel: SettingsViewModel = viewModel(factory = SettingsViewModel.Factory),
-    // 홈의 요청 창과 같은 ViewModel (Activity 범위). 메시지는 MainScreen이 띄운다
+    // 단골 주선사는 보여 주기만 한다 (관리는 휴대폰에서)
     linksViewModel: DriverLinksViewModel = viewModel(factory = DriverLinksViewModel.Factory),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -28,6 +28,6 @@ fun SettingsRoute(
         state = state,
         actions = viewModel,
         linkCount = linksState.links.size,
-        linksSection = { DriverLinksSection(linksState, linksViewModel) },
+        linksSection = { DriverLinksSection(linksState) },
     )
 }

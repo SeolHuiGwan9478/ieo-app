@@ -53,10 +53,9 @@ import com.ieo.app.ui.ledger.MonthSummary
 import com.ieo.app.ui.ledger.PayState
 import com.ieo.app.ui.ledger.ReceivableSummary
 import com.ieo.app.ui.ledger.WaitFeeRow
-import com.ieo.app.ui.links.DriverLinksActions
-import com.ieo.app.ui.links.LinkInvitationSheet
+import com.ieo.app.ui.links.DriverLinksSection
+import com.ieo.app.ui.links.DriverLinksUiState
 import com.ieo.app.ui.links.LinkRow
-import com.ieo.app.ui.links.UnlinkSheet
 import com.ieo.app.ui.login.LoginScreen
 import com.ieo.app.ui.login.PhoneLoginActions
 import com.ieo.app.ui.login.PhoneLoginUiState
@@ -195,7 +194,10 @@ private object Scenes {
         requested = false,
     )
     private val settings = SettingsUiState(Profile("김기사", "01012345678"), listOf(vehicle), preference, "0.1.0")
-    private val link = LinkRow(1, "한빛물류", "연결 요청 11월 9일")
+    private val linkState = DriverLinksUiState(
+        invitations = listOf(LinkRow(1, "한빛물류", "11월 16일까지 휴대폰에서 답할 수 있어요")),
+        links = listOf(LinkRow(2, "○○물류", "11월 5일부터 연결")),
+    )
     private val pick by lazy { SampleHomeData.picks.first() }
 
     val all: Map<String, @Composable () -> Unit> = linkedMapOf(
@@ -247,8 +249,6 @@ private object Scenes {
         },
         "sheet_register" to { Box(Modifier.fillMaxSize()) { RegisterTripSheet(true, RegisterTripUiState(), noop<RegisterTripActions>(), {}) } },
         "sheet_car_link" to { Box(Modifier.fillMaxSize()) { CarLinkSheet(CarLinkUiState(listOf(VehicleChoice(1, "경기80바1234", "5톤 카고"), VehicleChoice(2, "서울90사5678", "11톤 윙바디"))), noop<CarLinkActions>()) } },
-        "sheet_link_invite" to { Box(Modifier.fillMaxSize()) { LinkInvitationSheet(link, false, noop<DriverLinksActions>()) } },
-        "sheet_unlink" to { Box(Modifier.fillMaxSize()) { UnlinkSheet(link, false, noop<DriverLinksActions>()) } },
         "orders_list" to { OrdersScreen(OrdersUiState(nearby = true, rows = listOf(orderRow.copy(isNew = true), orderRow.copy(id = 2, day = "오늘")), conditions = com.ieo.app.ui.orders.OrderConditions(minFare = com.ieo.app.ui.orders.OrderMinFare.OVER_30), updatedAt = java.time.Instant.now()), noop<OrdersActions>(), false) },
         "orders_conditions" to { OrdersScreen(OrdersUiState(nearby = true, rows = listOf(orderRow), draft = com.ieo.app.ui.orders.OrderConditions(minFare = com.ieo.app.ui.orders.OrderMinFare.OVER_30), draftCount = 3), noop<OrdersActions>(), false) },
         "orders_detail" to { OrdersScreen(OrdersUiState(nearby = true, rows = listOf(orderRow), detail = orderDetail), noop<OrdersActions>(), false) },
@@ -266,6 +266,7 @@ private object Scenes {
         "ledger_delete" to { LedgerScreen(ledger.copy(form = com.ieo.app.ui.ledger.LedgerForm.ConfirmDelete(com.ieo.app.ui.ledger.DeleteTarget.OfExpense(1), "주유 150만 원을 지울까요?", "11월 5일 (목) · 잘못 넣음")), noop<LedgerActions>()) },
         "ledger_edit_fare" to { LedgerScreen(ledger.copy(detail = detail, form = LedgerForm.EditFare(1, 320_000, PaymentType.RECEIPT)), noop<LedgerActions>()) },
         "settings" to { SettingsScreen(settings, noop<SettingsActions>()) },
+        "settings_links" to { DriverLinksSection(linkState) },
         "settings_verified" to { SettingsScreen(settings.copy(standing = com.ieo.app.domain.account.DriverStanding(true, 4, 4, 37, 1)), noop<SettingsActions>(), linkCount = 2) },
         "settings_unverified" to { SettingsScreen(settings.copy(standing = com.ieo.app.domain.account.DriverStanding(false, 2, 4, 0, 0)), noop<SettingsActions>()) },
         "settings_name" to { SettingsScreen(settings.copy(form = SettingsForm.EditName("김기사")), noop<SettingsActions>()) },

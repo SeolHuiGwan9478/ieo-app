@@ -227,7 +227,7 @@ private fun VehicleRow(vehicle: Vehicle, onClick: () -> Unit) {
 @Composable
 private fun RecommendationSection(preference: RecommendationPreference?, onEdit: (RecommendationPreference) -> Unit) {
     WhiteSection {
-        SectionTitle(title = "배차 추천", note = "차를 세우면 근처 실수익 Top 3을 보여 드려요", icon = R.drawable.ic_menu_recommend)
+        SectionTitle(title = "배차 추천", note = "상하차지에서 세우면 근처 실수익 1등을 보여 드려요", icon = R.drawable.ic_menu_recommend)
         if (preference == null) {
             Text("설정을 불러오지 못했어요", fontSize = 24.sp, color = TextSub, modifier = Modifier.padding(horizontal = TextInset, vertical = 8.dp))
             return@WhiteSection

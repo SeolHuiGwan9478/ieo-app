@@ -4,7 +4,8 @@ import com.ieo.app.core.network.ApiResult
 import java.time.Instant
 
 /**
- * 단골 주선사 연결 (BRK-002). 주선사가 내 번호로 요청하고, 내가 수락하면 연결된다.
+ * 단골 주선사 연결 (BRK-002). 주선사가 내 번호로 요청하고, 내가 휴대폰에서 수락하면 연결된다.
+ * 차량 앱은 받은 요청과 연결된 회사를 보여 주기만 한다 (2026-11-13, 관리는 휴대폰에서만).
  * 수락은 "그 회사 일을 하는 동안 위치·도착 예정 시각을 그 회사에 공유"하는 동의다.
  * 연결된 회사는 나에게만 보이는 지정 배차를 보낼 수 있다.
  */
@@ -23,16 +24,9 @@ enum class DriverLinkStatus { PENDING, LINKED, DECLINED, CANCELED, UNLINKED, EXP
 
 interface DriverLinkRepository {
 
-    /** 내 번호로 온 요청 (대기 중인 것만) */
+    /** 내 번호로 온 요청 (대기 중인 것만). 차량에서는 보여 주기만 하고 수락·거절은 휴대폰에서 한다 */
     suspend fun invitations(): ApiResult<List<DriverLink>>
 
     /** 연결된 회사 */
     suspend fun links(): ApiResult<List<DriverLink>>
-
-    suspend fun accept(linkId: Long): ApiResult<DriverLink>
-
-    suspend fun decline(linkId: Long): ApiResult<Unit>
-
-    /** 해제하면 위치 공유와 새 지정 배차가 끝난다. 이미 잡은 배차는 그대로 */
-    suspend fun unlink(linkId: Long): ApiResult<Unit>
 }

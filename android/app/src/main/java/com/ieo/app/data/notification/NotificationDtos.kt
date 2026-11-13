@@ -11,8 +11,8 @@ data class NotificationResponse(
     val id: Long,
     val type: String,
     val message: String,
-    val dispatchRequestId: Long,
-    val orderId: Long,
+    val dispatchRequestId: Long? = null,
+    val orderId: Long? = null,
     val createdAt: String,
 ) {
     /** 모르는 종류(서버가 새로 늘린 것)면 null: 앱이 이해하지 못하는 알림은 건너뛴다 */

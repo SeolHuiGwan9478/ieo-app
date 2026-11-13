@@ -17,10 +17,4 @@ class DefaultDriverLinkRepository(
     override suspend fun links(): ApiResult<List<DriverLink>> =
         caller.call { api.links() }.mapResponse { list -> list.map(DriverLinkResponse::toDomain) }
 
-    override suspend fun accept(linkId: Long): ApiResult<DriverLink> =
-        caller.call { api.accept(linkId) }.mapResponse { it.toDomain() }
-
-    override suspend fun decline(linkId: Long): ApiResult<Unit> = caller.callNoContent { api.decline(linkId) }
-
-    override suspend fun unlink(linkId: Long): ApiResult<Unit> = caller.callNoContent { api.unlink(linkId) }
 }

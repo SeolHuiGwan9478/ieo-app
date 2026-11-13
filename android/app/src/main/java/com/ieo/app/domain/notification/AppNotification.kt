@@ -8,8 +8,9 @@ data class AppNotification(
     val id: Long,
     val type: NotificationType,
     val message: String,
-    val dispatchRequestId: Long,
-    val orderId: Long,
+    /** 배차 알림의 배차 요청·오더. 단골 요청 알림이면 null */
+    val dispatchRequestId: Long?,
+    val orderId: Long?,
     val createdAt: Instant,
 )
 
@@ -22,6 +23,9 @@ enum class NotificationType {
 
     /** 10분 안에 확정되지 않았다 */
     DISPATCH_EXPIRED,
+
+    /** 주선사가 단골 연결을 요청했다. 차에서는 알려 주기만 하고 수락은 휴대폰에서 한다 */
+    DRIVER_LINK_REQUESTED,
 }
 
 /** 알림 연결에서 오는 것 */
