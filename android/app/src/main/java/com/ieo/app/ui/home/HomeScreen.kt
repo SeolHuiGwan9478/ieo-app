@@ -95,7 +95,7 @@ private val WideLayoutMinWidth = 1000.dp
 /**
  * 홈 화면. 운행 상태마다 주인공이 하나다.
  * 운행 전은 내 배차, 대기 중은 대기 타이머, 주행 중은 도착 예정 시각.
- * 차를 세우면(P·주차 브레이크) 어느 화면이든 세운 곳 근처 추천 3건이 함께 보인다 (03 배차 추천).
+ * 상하차지에서(운행이 없으면 아무 데서나) 차를 세우면 근처 추천 1건이 함께 보인다 (03 배차 추천).
  *
  * 연회색 바탕 위에 흰 묶음을 놓고, 핵심 숫자만 크고 굵게 쓴다. 구분선은 쓰지 않는다.
  * 시안: "Ieo 홈 목록 시안"의 A안 (2026-10-22)
@@ -353,14 +353,14 @@ private fun WaitDetails(state: HomeState.Waiting, onPickClick: (NextOrderCard) -
 }
 
 /**
- * 배차 추천 (03): 차를 세운 곳 근처 오더 중 실수익 높은 3건. 누르면 오더를 열고 배차를 요청한다.
+ * 배차 추천 (03): 상하차지(운행이 없으면 세운 곳) 근처 오더 중 실수익 1등 1건. 누르면 오더를 열고 배차를 요청한다.
  * 세워 두었을 때만 받으므로 비어 있으면 보이지 않는다. 운행 전 화면은 [emptyNote]로 무엇이 뜨는지 알려 준다
  */
 @Composable
 private fun Picks(orders: List<NextOrderCard>, onClick: (NextOrderCard) -> Unit, emptyNote: Boolean = false) {
     if (orders.isEmpty() && !emptyNote) return
     WhiteSection {
-        SectionTitle(title = "근처 추천", count = orders.size, note = "세운 곳 근처, 실수익 높은 순")
+        SectionTitle(title = "근처 추천", note = "실수익 1등")
         if (orders.isEmpty()) {
             Text(
                 "차를 세우면(P·주차 브레이크) 근처 오더 중 실수익 높은 3건을 보여 드려요",

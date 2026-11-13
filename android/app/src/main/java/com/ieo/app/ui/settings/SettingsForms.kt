@@ -132,7 +132,7 @@ fun ColumnScope.RecommendationForm(
     }
     if (enabled) {
         Spacer(Modifier.height(20.dp))
-        FieldLabel("찾는 범위 (세운 곳에서)")
+        FieldLabel("찾는 범위 (상하차지에서)")
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             IeoTonalButton(text = "−", onClick = { radiusKm = stepRadius(radiusKm, -RADIUS_STEP_KM) }, modifier = Modifier.width(88.dp))
             Text(

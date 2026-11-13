@@ -161,7 +161,7 @@ interface HomeActions {
  * 차주가 맞다고 하면 감지한 때부터 대기를 시작한다 (WAIT-007). "대기 시작" 버튼은 묻지 않고 바로 시작한다 (WAIT-008).
  * 떠남은 반경을 벗어나거나 시속 20km 이상으로 1분 달린 때(WAIT-005), 또는 "출발"·"운행 완료" 버튼.
  * 상하차지 3km 전, 도착, 대기비 시작, 떠남은 음성으로도 알린다 (문장은 [HomeAnnouncements]).
- * 배차 추천: 차를 세우면 세운 자리 근처에서 실수익 높은 3건을 받아 보여 준다 (03 배차 추천).
+ * 배차 추천: 상하차지에서(운행이 없으면 아무 데서나) 차를 세우면 근처 추천 1건을 받아 보여 준다 (03 배차 추천).
  */
 class HomeViewModel(
     private val tripRepository: TripRepository,
@@ -561,27 +561,30 @@ class HomeViewModel(
     }
 
     /**
-     * 배차 추천 (03): 차를 세우면(기어 P 또는 주차 브레이크) 세운 자리 근처에서 실수익 높은 3건을 받는다.
-     * 가운데 창에 1등부터 15초씩 차례로 띄우고, 홈에는 카드로 남긴다. 도착·떠남을 묻는 중이면 창은 띄우지 않는다.
-     * 세운 순간 한 번만 받고, 움직이면 지운다. 운행 상태와 상관없이 같다. 보여 준 것·넘긴 것은 기록하지 않는다
+     * 배차 추천 (03, 2026-11-13): 차를 세우면(기어 P 또는 주차 브레이크) 추천 1건을 받는다.
+     * 상차지·하차지에 도착해 있으면 서버가 그곳 근처를, 운행이 없으면 세운 자리 근처를 찾는다.
+     * 상차지로 가는 중·운송 중(휴게소 등)에는 묻지 않는다. 세워 둔 채 도착을 확인해도 그때 한 번 묻는다.
+     * 같은 곳에서 다시 받은 것(fresh=false)은 홈 카드에만 두고 가운데 창은 띄우지 않는다. 움직이면 지운다
      */
     private fun recommendWhenParked() {
         viewModelScope.launch {
-            parked.collectLatest { isParked ->
-                if (!isParked) {
-                    snapshot.update { it.copy(nextOrders = emptyList()) }
-                    closePick()
-                    return@collectLatest
+            combine(parked, snapshot.map { it.current?.status?.isDriving == true }) { isParked, driving -> isParked to driving }
+                .distinctUntilChanged()
+                .collectLatest { (isParked, driving) ->
+                    if (!isParked || driving) {
+                        snapshot.update { it.copy(nextOrders = emptyList()) }
+                        closePick()
+                        return@collectLatest
+                    }
+                    val here = sensors.location.filterNotNull().first()
+                    val result = (recommendationRepository.recommend(here) as? ApiResult.Success)?.data ?: return@collectLatest
+                    snapshot.update { it.copy(nextOrders = result.items) }
+                    val first = result.items.firstOrNull() ?: return@collectLatest
+                    if (result.fresh && _status.value.stopQuestion == null && !_status.value.finishing) {
+                        pickChain = true
+                        showPick(first.order.id)
+                    }
                 }
-                val here = sensors.location.filterNotNull().first()
-                val items = (recommendationRepository.recommend(here) as? ApiResult.Success)?.data ?: return@collectLatest
-                snapshot.update { it.copy(nextOrders = items) }
-                val first = items.firstOrNull() ?: return@collectLatest
-                if (_status.value.stopQuestion == null && !_status.value.finishing) {
-                    pickChain = true
-                    showPick(first.order.id)
-                }
-            }
         }
     }
 

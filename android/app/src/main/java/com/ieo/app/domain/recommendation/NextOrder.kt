@@ -3,12 +3,12 @@ package com.ieo.app.domain.recommendation
 import com.ieo.app.domain.order.Order
 
 /**
- * 배차 추천 하나 (서버 RecommendationResponse, 03 배차 추천): 차를 세운 자리 근처 오더.
- * [order]의 distanceMeters는 세운 자리에서 상차지까지 공차 거리다.
+ * 배차 추천 하나 (서버 RecommendationResponse, 03 배차 추천): 상하차지(운행이 없으면 세운 자리) 근처 오더.
+ * [order]의 distanceMeters는 그 출발점에서 상차지까지 공차 거리다.
  */
 data class NextOrder(
     val order: Order,
-    /** 세운 자리 → 상차지 공차 거리 */
+    /** 출발점(상하차지 또는 세운 자리) → 상차지 공차 거리 */
     val emptyMeters: Long,
     /** 공차 + 운송 구간 기름값(원) */
     val fuelCost: Long,
@@ -19,3 +19,9 @@ data class NextOrder(
     /** 공차 + 운송 구간 예상 통행료(원). 경로를 받지 못했으면 null */
     val tollFare: Long? = null,
 )
+
+/**
+ * 추천 한 번의 결과 (서버 RecommendationListResponse). 최대 1건.
+ * [fresh]가 false면 같은 곳에서 이미 받은 것을 서버가 다시 돌려준 것이라 큰 창을 다시 띄우지 않는다
+ */
+data class Recommendation(val items: List<NextOrder>, val fresh: Boolean)

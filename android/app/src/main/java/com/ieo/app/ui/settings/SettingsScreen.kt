@@ -234,7 +234,7 @@ private fun RecommendationSection(preference: RecommendationPreference?, onEdit:
         }
         DetailLine("추천", if (preference.enabled) "켬" else "끔")
         if (preference.enabled) {
-            DetailLine("찾는 범위", "세운 곳에서 ${preference.radiusKm}km 안")
+            DetailLine("찾는 범위", "상하차지에서 ${preference.radiusKm}km 안")
             DetailLine("최소 실수익", minNetProfitLabel(preference.minNetProfit))
             DetailLine("제외할 화물", excludedCargoLabel(preference.excludedCargo))
         }

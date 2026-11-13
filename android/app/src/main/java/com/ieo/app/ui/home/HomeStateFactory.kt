@@ -32,7 +32,7 @@ data class HomeSnapshot(
     /** 오늘 운행 수와 실수익 */
     val today: DailySummary? = null,
     val receivables: Receivables? = null,
-    /** 차를 세웠을 때 받은 근처 추천 3건 (03 배차 추천). 움직이면 비운다 */
+    /** 차를 세웠을 때 받은 근처 추천 1건 (03 배차 추천). 움직이면 비운다 */
     val nextOrders: List<NextOrder> = emptyList(),
 )
 

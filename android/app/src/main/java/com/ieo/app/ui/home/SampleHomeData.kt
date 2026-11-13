@@ -22,11 +22,9 @@ object SampleHomeData {
         AssignedTrip("t2", anseong, busan, "내일", "08:00", "5톤 카고", 620_000, "선불", "△△운송"),
     )
 
-    /** 세운 곳 근처 추천 3건 (03 배차 추천) */
+    /** 근처 추천 1건 (03 배차 추천) */
     val picks = listOf(
         NextOrderCard(1, "칠곡", "부산 강서", "내일", "06:00", "5톤 윙", 372_229, 380_000, "한빛로지스", 17_000, longWait = true, fuelCost = 57_000, tollFare = 17_000, brokerMetrics = BrokerMetrics(published = true, avgPaymentDays = 12)),
-        NextOrderCard(2, "대구 북구", "울산 남구", "오늘", "18:30", "5톤 카고", 268_000, 280_000, "○○물류", 12_000, longWait = false, fuelCost = 12_000, tollFare = null),
-        NextOrderCard(3, "대구 검단", "오산 가장", "내일", "07:00", "5톤 윙", 255_000, 300_000, "△△운송", 9_000, longWait = false, fuelCost = 45_000, tollFare = 13_000),
     )
 
     fun idle() = HomeState.Idle(

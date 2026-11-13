@@ -695,11 +695,25 @@ class HomeViewModelTest {
     }
 
     @Test
-    fun `운행 중이어도 세우면 같은 방식으로 추천을 보여 준다`() = homeTest(TripStatus.IN_TRANSIT, prepare = { server.nextOrders = picks(11) }) { vm ->
+    fun `운송 중에 휴게소에서 세우면 추천을 묻지 않는다`() = homeTest(TripStatus.IN_TRANSIT, prepare = { server.nextOrders = picks(11) }) { vm ->
+        sensors.parkAt(GeoPoint(36.0, 128.0))
+        advanceTimeBy(60_000)
+        runCurrent()
+
+        assertTrue(server.recommendRequests.isEmpty())
+        assertTrue((vm.state.value as HomeState.Driving).picks.isEmpty())
+    }
+
+    @Test
+    fun `하차지에서 세우면 추천을 묻고, 같은 곳에서 다시 받은 것은 카드로만 두고 창은 띄우지 않는다`() = homeTest(TripStatus.AT_DROPOFF, prepare = {
+        server.nextOrders = picks(11)
+        server.recommendationFresh = false
+    }) { vm ->
         sensors.parkAt(GeoPoint(36.0, 128.0))
         runCurrent()
 
-        assertEquals(listOf(11L), (vm.state.value as HomeState.Driving).picks.map { it.orderId })
+        assertEquals(1, server.recommendRequests.size)
+        assertNull(vm.status.value.pick)
     }
 
     @Test

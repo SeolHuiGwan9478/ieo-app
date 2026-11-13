@@ -2,6 +2,7 @@ package com.ieo.app.data.recommendation
 
 import com.ieo.app.data.order.OrderResponse
 import com.ieo.app.domain.recommendation.NextOrder
+import com.ieo.app.domain.recommendation.Recommendation
 import com.ieo.app.domain.order.CargoCategory
 import com.ieo.app.domain.recommendation.RecommendationPreference
 import kotlinx.serialization.Serializable
@@ -13,7 +14,7 @@ import retrofit2.http.Query
 
 interface RecommendationApi {
 
-    /** 차를 세운 자리 근처 추천 3건 */
+    /** 추천 최대 1건. 상하차지에 있으면 그곳 근처, 운행이 없으면 세운 자리 근처 */
     @GET("api/recommendations")
     suspend fun recommend(@Query("lat") lat: Double, @Query("lng") lng: Double): Response<RecommendationListResponse>
 
@@ -27,8 +28,8 @@ interface RecommendationApi {
 // 서버 domain/recommendation/dto와 같은 모양
 
 @Serializable
-data class RecommendationListResponse(val items: List<RecommendationResponse> = emptyList()) {
-    fun toDomain() = items.map(RecommendationResponse::toDomain)
+data class RecommendationListResponse(val items: List<RecommendationResponse> = emptyList(), val fresh: Boolean = true) {
+    fun toDomain() = Recommendation(items.map(RecommendationResponse::toDomain), fresh)
 }
 
 @Serializable

@@ -20,7 +20,7 @@ sealed interface HomeState {
         val unpaid: UnpaidAlert?,
         /** 내가 잡아 둔 배차. 눌러서 길 안내를 시작한다 */
         val myTrips: List<AssignedTrip>,
-        /** 세운 곳 근처 추천 3건 (03 배차 추천). 세워 두지 않았으면 비어 있다 */
+        /** 근처 추천 1건 (03 배차 추천). 세워 두지 않았으면 비어 있다 */
         val picks: List<NextOrderCard> = emptyList(),
     ) : HomeState
 
@@ -38,7 +38,7 @@ sealed interface HomeState {
         val workStartedAt: Long? = null,
         /** 상하차지를 떠나는 중이다. 이만큼 더 이어지면 자동으로 떠남 처리 (WAIT-005) */
         val departingInSeconds: Long? = null,
-        /** 세운 곳 근처 추천 3건 (03 배차 추천). 세워 두지 않았으면 비어 있다 */
+        /** 근처 추천 1건 (03 배차 추천). 세워 두지 않았으면 비어 있다 */
         val picks: List<NextOrderCard> = emptyList(),
     ) : HomeState {
         val isWorking: Boolean get() = workStartedAt != null
@@ -64,7 +64,7 @@ sealed interface HomeState {
         val nearStop: Boolean = false,
         /** 세워 두었다(기어 P 또는 주차 브레이크). 이때만 버튼이 눌린다 */
         val parked: Boolean = false,
-        /** 세운 곳 근처 추천 3건 (03 배차 추천). 세워 두지 않았으면 비어 있다 */
+        /** 근처 추천 1건 (03 배차 추천). 세워 두지 않았으면 비어 있다 */
         val picks: List<NextOrderCard> = emptyList(),
         /** 쉬어야 할 때가 되었으면 연속 운전 시간과 단계 (TRIP-031). 아니면 null */
         val rest: RestCheck? = null,
@@ -170,7 +170,7 @@ data class TripSummary(
     val brokerName: String,
 )
 
-/** 배차 추천 카드 하나 (03): 세운 곳 근처 오더. 누르면 오더를 열고 배차를 요청한다 */
+/** 배차 추천 카드 하나 (03): 상하차지(운행이 없으면 세운 곳) 근처 오더. 누르면 오더를 열고 배차를 요청한다 */
 data class NextOrderCard(
     val orderId: Long,
     val pickup: String,

@@ -18,6 +18,7 @@ import com.ieo.app.domain.vehicle.GeoPoint
 import com.ieo.app.domain.order.ReportType
 import com.ieo.app.domain.order.OrderRepository
 import com.ieo.app.domain.recommendation.NextOrder
+import com.ieo.app.domain.recommendation.Recommendation
 import com.ieo.app.domain.recommendation.RecommendationPreference
 import com.ieo.app.domain.recommendation.RecommendationRepository
 import com.ieo.app.domain.trip.LocationSample
@@ -88,9 +89,15 @@ class FakeTripServer(var trip: Trip) :
     /** 추천을 물은 자리 */
     val recommendRequests = mutableListOf<GeoPoint>()
 
-    override suspend fun recommend(near: GeoPoint): ApiResult<List<NextOrder>> {
+    /** false면 서버가 같은 곳에서 이미 준 추천을 다시 돌려준 것 */
+    var recommendationFresh = true
+
+    override suspend fun recommend(near: GeoPoint): ApiResult<Recommendation> {
         recommendRequests += near
-        return nextOrders
+        return when (val result = nextOrders) {
+            is ApiResult.Success -> ApiResult.Success(Recommendation(result.data, recommendationFresh))
+            is ApiResult.Failure -> result
+        }
     }
 
     /** 추천 설정. 바꾸면 그대로 돌려준다 */

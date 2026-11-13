@@ -34,10 +34,10 @@ class PreferenceExcludedCargoStore(private val repository: RecommendationReposit
 interface RecommendationRepository {
 
     /**
-     * 차를 세운 자리([near]) 근처 추천, 실수익 높은 순 3건 (03 배차 추천). 추천을 껐으면 빈 목록.
-     * 서버는 보여 준 것을 기록하지 않는다
+     * 추천 최대 1건 (03 배차 추천). 서버가 지금 운행을 보고 상차지·하차지 근처, 운행이 없으면 세운 자리([near]) 근처를 찾는다.
+     * 같은 곳에서 이미 받았으면 서버가 적어 둔 것을 fresh=false로 돌려준다. 추천을 껐으면 빈 목록
      */
-    suspend fun recommend(near: GeoPoint): ApiResult<List<NextOrder>>
+    suspend fun recommend(near: GeoPoint): ApiResult<Recommendation>
 
     /** 내 추천 설정. 정한 적 없으면 서버 기본값 */
     suspend fun preference(): ApiResult<RecommendationPreference>
