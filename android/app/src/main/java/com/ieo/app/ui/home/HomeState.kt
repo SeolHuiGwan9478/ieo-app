@@ -55,7 +55,6 @@ sealed interface HomeState {
         val progress: Float?,
         val remainingKm: Int?,
         val remainingMinutes: Int?,
-        val etaShared: Boolean,
         /** 내비가 길 안내 중인지. 안내가 꺼졌거나 실패했으면 "길 안내 다시"·"대기 시작" 버튼을 보여 준다 */
         val naviActive: Boolean = true,
         /** 상하차지 반경 안에 세워 두었다. 이만큼 더 서 있으면 도착을 확인한다 (WAIT-001, 007) */

@@ -501,14 +501,6 @@ private fun DrivingHome(
                 }
                 // 세워 두었으면 아래에 누를 수 있는 목록을 보여 주므로 카드는 달릴 때만
                 if (!state.parked) RestStopCard(state)
-                if (state.etaShared) {
-                    Spacer(Modifier.height(20.dp))
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(Icons.Outlined.Check, contentDescription = null, tint = status.done, modifier = Modifier.size(24.dp))
-                        Spacer(Modifier.width(8.dp))
-                        Text("주선사에게 도착 시각을 알렸어요", fontSize = 24.sp, color = TextSub)
-                    }
-                }
             }
             // 세워 두었을 때만 누를 수 있는 휴게소 목록. 운행 정보보다 먼저 보이게 둔다
             if (state.parked) RestStopList(state, onAddRestStopWaypoint)

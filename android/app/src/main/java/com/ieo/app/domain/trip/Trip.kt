@@ -15,7 +15,6 @@ data class Trip(
     val pickup: TripStop,
     val dropoff: TripStop,
     /** 서버가 주선사에게 도착 예정 시각을 알렸다 */
-    val etaShared: Boolean = false,
 ) {
     fun stop(type: StopType): TripStop = when (type) {
         StopType.PICKUP -> pickup

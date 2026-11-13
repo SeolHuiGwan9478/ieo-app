@@ -106,7 +106,6 @@ class HomeStateFactory(
             progress = navi?.fraction,
             remainingKm = navi?.remainMeters?.let { (it + 500) / 1000 },
             remainingMinutes = remainSeconds?.let { (it + 59) / 60 },
-            etaShared = trip.etaShared,
             naviActive = navi != null && !navi.failed,
             arrivingInSeconds = (arrival as? ArrivalCheck.Stopping)?.remaining?.seconds,
             nearStop = nearStop,

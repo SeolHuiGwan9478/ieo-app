@@ -47,6 +47,6 @@ interface WaitRepository {
     /** 운행의 대기 증빙 링크 (상차지·하차지 함께, 운행에 하나). 이미 있으면 같은 링크 (WAIT-020) */
     suspend fun createProof(tripId: Long): ApiResult<WaitProofLink>
 
-    /** 증빙 링크를 주선사에게 문자로 보낸다 (WAIT-022) */
+    /** 증빙을 주선사에게 보낸다 (WAIT-022). 주선사는 콘솔에서 본다 */
     suspend fun sendProof(tripId: Long): ApiResult<WaitProofLink>
 }

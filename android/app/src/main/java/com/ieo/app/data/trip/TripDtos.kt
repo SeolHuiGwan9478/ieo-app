@@ -21,7 +21,6 @@ data class TripResponse(
     val plateNumber: String,
     val pickup: TripStopResponse,
     val dropoff: TripStopResponse,
-    val etaSharedAt: String? = null,
 ) {
     fun toDomain() = Trip(
         id = id,
@@ -32,7 +31,6 @@ data class TripResponse(
         plateNumber = plateNumber,
         pickup = pickup.toDomain(),
         dropoff = dropoff.toDomain(),
-        etaShared = etaSharedAt != null,
     )
 }
 

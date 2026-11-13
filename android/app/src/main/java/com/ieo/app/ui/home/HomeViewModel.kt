@@ -264,7 +264,6 @@ class HomeViewModel(
         announceChargeableStart()
         keepNaviProgressFresh()
         reportLocationWhileOnTrip()
-        watchEtaShared()
         recommendWhenParked()
         tellNotifications()
         tellWhenRestIsDue()
@@ -883,21 +882,6 @@ class HomeViewModel(
         }
     }
 
-    /** 서버가 주선사에게 도착 시각을 알렸는지 운송 중에 다시 확인한다. 알린 뒤에는 묻지 않는다 */
-    private fun watchEtaShared() {
-        viewModelScope.launch {
-            snapshot.map { trip -> trip.current?.takeIf { it.status == TripStatus.IN_TRANSIT && !it.etaShared }?.id }
-                .distinctUntilChanged()
-                .collectLatest { tripId ->
-                    while (tripId != null) {
-                        delay(ETA_SHARED_CHECK_MILLIS)
-                        val latest = (tripRepository.currentTrip() as? ApiResult.Success)?.data
-                        if (latest?.id == tripId) snapshot.update { it.copy(current = latest) }
-                    }
-                }
-        }
-    }
-
     private fun keepNaviProgressFresh() {
         viewModelScope.launch {
             navigator.progress.map { it != null }.distinctUntilChanged().collectLatest { guiding ->
@@ -944,7 +928,6 @@ class HomeViewModel(
         const val NEXT_ORDER_REQUESTED_MESSAGE = "배차 요청을 보냈어요. 주선사가 확정하면 내 배차에 들어와요"
         const val RECEIPT_REMINDER_MESSAGE = "운행을 마쳤어요. 인수증 사진은 휴대폰 증빙에서 보내 주세요"
         private const val NAVI_REFRESH_MILLIS = 10_000L
-        private const val ETA_SHARED_CHECK_MILLIS = 60_000L
         private const val SENSOR_CHECK_MILLIS = 1_000L
         private const val REST_CHECK_MILLIS = 10_000L
         private const val REST_STOPS_WAIT_MILLIS = 8_000L

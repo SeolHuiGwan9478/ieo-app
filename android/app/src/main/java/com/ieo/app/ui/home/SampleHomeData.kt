@@ -69,6 +69,5 @@ object SampleHomeData {
         progress = 0.67f,
         remainingKm = 142,
         remainingMinutes = 108,
-        etaShared = true,
     )
 }
