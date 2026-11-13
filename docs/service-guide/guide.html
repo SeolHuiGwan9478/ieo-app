@@ -165,6 +165,7 @@ body {
         <h3 style="margin-top: 2.4cqw">부록</h3>
         <ol>
           <li>외부 API와 데이터 출처</li>
+          <li>TMAP 아껴 쓰기</li>
         </ol>
       </div>
       <div>
@@ -455,9 +456,10 @@ body {
     <div class="twocol">
       <div class="text-col">
         <h2>상세에서 실제 길로<br>다시 계산해요</h2>
-        <p class="lead">오더를 누르면 TMAP 화물차 경로로 지금 위치에서 상차지, 상차지에서 하차지까지를 다시 재요. 그 거리로 기름값과 통행료를 내서 운임에서 뺀 금액이 실수익이에요.</p>
+        <p class="lead">오더를 누르면 TMAP 화물차 경로로 출발점에서 상차지, 상차지에서 하차지까지를 다시 재요. 그 거리로 기름값과 통행료를 내서 운임에서 뺀 금액이 실수익이에요.</p>
         <ul class="facts">
           <li><b>순서</b> 운임 → 실수익과 그 내역 → 상차·하차 → 화물 → 주선사. 휴대폰과 차량이 같은 순서예요.</li>
+          <li><b>출발점</b> 상차지·하차지에 도착해 있으면 그곳, 아니면 현 위치에서 재요. "상차지까지"에 "부산 신항에서 2km", "현 위치에서 12km"처럼 적어요. 추천으로 본 오더면 추천 숫자를, 10분 안에 같은 곳에서 다시 열면 직전 숫자를 써서 TMAP을 다시 부르지 않아요.</li>
           <li><b>연비</b> 차가 잰 연비, 기사님이 적은 연비, 톤수별 평균 순서로 찾아 기름값을 내요.</li>
           <li><b>이 노선 평균 운임</b> 같은 시·구끼리 오간 운행이 최근 90일에 10건 이상 끝났을 때만 보여요. 운임이 싼지 비싼지 견줘 볼 수 있어요.</li>
           <li><b>현장 정보</b> 상하차지 이름 아래를 누르면 다른 기사님들이 남긴 높이 제한, 지게차, 주차, 평균 대기를 볼 수 있어요.</li>
@@ -494,18 +496,18 @@ body {
     <div class="eyebrow">RECOMMEND · 01</div>
     <div class="twocol">
       <div class="text-col">
-        <h2>차를 세우면 근처에서<br>돈 되는 3건을 보여 줘요</h2>
-        <p class="lead">기어를 P에 두거나 주차 브레이크를 채우는 순간, 세운 자리 근처 오더 가운데 실수익이 높은 3건을 골라 가운데 창에 하나씩 띄워요. 운행 전이든, 상차지·하차지에서 기다리든, 휴게소든 같아요.</p>
+        <h2>상하차지에서 세우면<br>근처 1등 오더를 보여 줘요</h2>
+        <p class="lead">상차지나 하차지에 도착해 기어를 P에 두거나 주차 브레이크를 채우면, 그 상하차지 근처 오더 가운데 실수익 1등 1건을 가운데 창에 띄워요. 배차가 없을 때는 세운 곳 근처예요. 배차가 몇 건이든 똑같아요.</p>
         <ul class="facts">
-          <li><b>15초씩 차례로</b><br>1등이 15초 동안 떠 있다가 [넘기기]를 누르거나 시간이 지나면 2등, 3등으로 넘어가요. 넘긴 것은 기록하지 않아요.</li>
-          <li><b>홈에 카드로 남아요</b><br>창이 지나가도 홈의 '근처 추천'에 3건이 남아요. 차에서 내렸다 돌아와 눌러 봐도 돼요. 출발하면 지우고, 다음에 세우면 그 자리 근처로 다시 받아요.</li>
-          <li><b>무엇을 고르나</b><br>세운 곳에서 30km(설정) 안, 내 차에 실을 수 있고 제외한 화물이 아니며 이미 요청해 둔 오더가 아닌 것. 어림으로 10건을 고른 뒤 TMAP 화물차 경로로 기름값·통행료를 다시 내서 3건을 골라요.</li>
+          <li><b>언제</b><br>상차지·하차지에 도착해 세울 때, 배차가 없을 때 세울 때. 상차지로 가는 길이나 짐을 싣고 가다 휴게소에서 세울 때는 띄우지 않아요.</li>
+          <li><b>한 곳에서 한 번</b><br>창은 15초 동안 떠 있다 닫혀요. 같은 상하차지에서 다시 세우거나 시동을 껐다 켜도 홈의 '근처 추천' 카드로만 보이고 창은 다시 뜨지 않아요. 출발하면 지워요.</li>
+          <li><b>무엇을 고르나</b><br>그곳에서 30km(설정) 안, 내 차에 실을 수 있고 제외한 화물이 아니며 이미 요청해 둔 오더가 아닌 것. 직선거리 어림으로 3건을 고른 뒤 TMAP 화물차 경로로 기름값·통행료를 다시 내서 1등을 골라요.</li>
           <li><b>요청은 기사님이</b><br>[배차 요청]을 눌러야 주선사에게 가요. 이 요청에는 '추천에서 눌렀음'이 남아, 추천이 얼마나 쓰이는지 볼 수 있어요. 달리는 동안에는 띄우지 않고 음성으로 말을 걸지도 않아요.</li>
         </ul>
       </div>
       <div class="shots" style="--h: 50cqw; --cap: 24cqw">
-        <figure class="shot car"><img src="assets/c_pick_modal.jpg" alt="차량 배차 추천 창"><figcaption>세우면 뜨는 창. 위 막대가 15초를 세요.</figcaption></figure>
-        <figure class="shot car"><img src="assets/c_pick_home.jpg" alt="차량 홈의 근처 추천 카드"><figcaption>홈의 '근처 추천'. 상차 시각을 보고 맞출 수 있는지 판단해요.</figcaption></figure>
+        <figure class="shot car"><img src="assets/c_pick_modal.jpg" alt="차량 배차 추천 창"><figcaption>하차지에서 세우면 뜨는 창. 위 막대가 15초를 세요.</figcaption></figure>
+        <figure class="shot car"><img src="assets/c_pick_home.jpg" alt="차량 홈의 근처 추천 카드"><figcaption>홈의 '근처 추천' 1건. 상차 시각을 보고 맞출 수 있는지 판단해요.</figcaption></figure>
       </div>
     </div>
     <div class="foot"><img src="assets/ieo_wordmark_orange.svg" alt="ieo"><span>배차 추천</span></div>
@@ -519,7 +521,7 @@ body {
         <p class="lead">휴대폰 [내 정보 → 배차 추천]이나 차량 [설정 → 배차 추천]에서 바꾸면 서버에 하나로 저장돼, 다음에 차를 세울 때부터 바로 적용돼요.</p>
         <ul class="facts">
           <li><b>추천 받기</b> 스위치로 켜고 꺼요. 끄면 차를 세워도 추천 창이 뜨지 않아요.</li>
-          <li><b>찾는 범위</b> 세운 곳에서 5km부터 100km까지, 5km씩 늘리고 줄여요. 기본은 30km예요. 넓히면 후보가 늘지만 빈 차로 가는 길도 길어져요.</li>
+          <li><b>찾는 범위</b> 상하차지(배차가 없으면 세운 곳)에서 5km부터 100km까지, 5km씩 늘리고 줄여요. 기본은 30km예요. 넓히면 후보가 늘지만 빈 차로 가는 길도 길어져요.</li>
           <li><b>최소 실수익</b> 고른 금액보다 실수익이 적은 오더는 추천하지 않아요.</li>
           <li><b>제외할 화물</b> 냉동·냉장, 이사, 위험물, 중량물, 장척물, 건자재, 농수산물, 폐기물 가운데 여러 개를 골라요. 오더 찾기 조건과 같은 설정이에요.</li>
         </ul>
@@ -580,14 +582,14 @@ body {
         <p class="lead">화물차는 2시간 연속 운전하면 15분 이상 쉬어야 해요(화물자동차 운수사업법 시행규칙 제22조). 1시간 45분에 미리 알리면서 가는 길에 있는 화물차 라운지를 함께 말해요.</p>
         <ul class="facts">
           <li><b>언제</b> 1시간 45분, 2시간에 한 번씩. 정체로 계속 달리면 2시간 45분, 3시간에도 알려요(연장운행은 1시간까지, 뒤에 30분 휴게). 잠깐 선 시간은 운전에 넣고, 15분(2시간을 넘겼으면 30분) 세워 두면 다시 재요.</li>
-          <li><b>어디를</b> TMAP 화물차 경로 위, 가는 방향 오른쪽에 있는 휴게소만 골라요. 15분이면 약 20km라 20km 안 라운지, 없으면 졸음쉼터, 그것도 없으면 다음 라운지를 말해요.</li>
+          <li><b>어디를</b> 저장해 둔 휴게소 가운데 TMAP 화물차 경로 위, 가는 방향 오른쪽에 있는 곳만 골라요. 경로는 이 안내 때만 받아요. 15분이면 약 20km라 20km 안 라운지, 없으면 졸음쉼터, 그것도 없으면 다음 라운지를 말해요.</li>
           <li><b>화물차 라운지</b> 수면실·샤워실·세탁실이 모두 있는 휴게소 60곳이에요. 한국도로공사와 공공데이터를 매주 받아 둬요.</li>
-          <li><b>경유지로</b> 세워 두면 가는 길 라운지 3곳이 보이고, 눌러 고른 곳을 내비 경유지로 넣어요.</li>
+          <li><b>경유지로</b> 안내 뒤 세워 두면 가는 길 라운지 3곳이 보이고, 눌러 고른 곳을 내비 경유지로 넣어요. 안내 전에는 라운지 카드도 목록도 보이지 않아요.</li>
         </ul>
       </div>
       <div class="shots" style="--h: 50cqw; --cap: 24cqw">
         <figure class="shot car"><img src="assets/c_rest_soon.jpg" alt="1시간 45분 휴게 안내"><figcaption>1시간 45분. "18km 앞 성주휴게소에 수면실과 샤워실이 있어요."</figcaption></figure>
-        <figure class="shot car"><img src="assets/c_rest_parked.jpg" alt="세워 두었을 때 라운지 목록"><figcaption>세워 두었을 때. 눌러 고르고 경유지로 넣어요.</figcaption></figure>
+        <figure class="shot car"><img src="assets/c_rest_parked.jpg" alt="세워 두었을 때 라운지 목록"><figcaption>안내 뒤 세워 두었을 때. 눌러 고르고 경유지로 넣어요.</figcaption></figure>
       </div>
     </div>
     <div class="foot"><img src="assets/ieo_wordmark_orange.svg" alt="ieo"><span>운행 · 휴게 안내</span></div>
@@ -816,7 +818,7 @@ body {
       <thead><tr><th>API·데이터</th><th>어디에 쓰나</th><th>제공</th><th>키 (서버 환경변수)</th><th>지킬 것</th></tr></thead>
       <tbody>
         <tr class="group"><td colspan="5">길·돈</td></tr>
-        <tr><td>TMAP 화물차 경로</td><td>배차 추천과 오더 상세의 실수익(빈 차 거리, 운송 거리, 통행료), 운행 경로 위 휴게소·졸음쉼터</td><td>SK텔레콤 TMAP</td><td><code>TMAP_APP_KEY</code></td><td>결과는 24시간까지만 들고 있어요. 못 받으면 직선거리 어림</td></tr>
+        <tr><td>TMAP 화물차 경로</td><td>배차 추천과 오더 상세의 실수익(빈 차 거리, 운송 거리, 통행료), 운행 경로 위 휴게소·졸음쉼터</td><td>SK텔레콤 TMAP</td><td><code>TMAP_APP_KEY</code></td><td>결과는 24시간까지만 들고 있어요. 못 받으면 직선거리 어림. 부르는 때는 다음 장</td></tr>
         <tr><td>오피넷 유가</td><td>시도별 경유 평균 가격으로 기름값 계산</td><td>한국석유공사</td><td><code>OPINET_API_KEY</code></td><td>못 받으면 1L 1,600원</td></tr>
         <tr><td>카카오 로컬</td><td>상하차지 주소를 좌표로 바꾸기</td><td>카카오</td><td><code>KAKAO_REST_API_KEY</code></td><td>서버에서만 불러요</td></tr>
         <tr class="group"><td colspan="5">휴게</td></tr>
@@ -832,6 +834,33 @@ body {
     </table>
     <p class="note" style="margin-top: 1.2cqw; margin-bottom: 3.6cqw">데이터 출처 표시: 휴게소 정보 — 공공데이터포털 전국휴게소정보표준데이터, 한국도로공사 고속도로 공공데이터 포털 · 유가 — 한국석유공사 오피넷 · 경로·통행료 — TMAP. 문자 발송 업체는 아직 정하지 않아 서버 기록에만 남아요.</p>
     <div class="foot"><img src="assets/ieo_wordmark_orange.svg" alt="ieo"><span>부록 · 외부 API와 데이터 출처</span></div>
+  </section>
+
+
+  <section class="page sheet" aria-label="TMAP 아껴 쓰기">
+    <div class="eyebrow">APPENDIX · 02</div>
+    <h2>TMAP은 꼭 필요한 순간에만 불러요</h2>
+    <p class="lead">TMAP 화물차 경로는 한 번에 11원이에요(후불 종량제). 무료체험은 서비스 전체에 하루 1,000번이고 넘으면 그날 막혀요. 차량 내비로는 통행료, 안 간 길 미리 재기, 경로 선을 받을 수 없어서 이 세 곳에만 써요.</p>
+    <table class="apis" aria-label="TMAP 부르는 곳">
+      <thead><tr><th>어디서</th><th>언제</th><th>무엇을 위해</th><th>운행 1건에</th><th>다시 쓰기</th></tr></thead>
+      <tbody>
+        <tr><td>배차 추천</td><td>상하차지에 도착해 세울 때, 배차가 없을 때 세울 때</td><td>실수익(기름값·통행료)으로 후보 3건 가운데 1등 고르기</td><td>최대 12번</td><td>같은 상하차지는 추천 기록(DB)을 그대로</td></tr>
+        <tr><td>오더 상세</td><td>오더를 눌러 열 때</td><td>실수익 내역: 기름값, 통행료, 상차지까지 거리</td><td>열 때 최대 2번</td><td>추천한 오더면 추천 숫자, 10분·1km 안이면 직전 숫자</td></tr>
+        <tr><td>경로 위 휴게소</td><td>휴게 안내(1시간 45분, 2시간) 때</td><td>저장한 휴게소 가운데 내 길 위·가는 방향인 곳 가리기</td><td>2번 이하</td><td>다음 안내까지 받은 목록을 씀</td></tr>
+      </tbody>
+    </table>
+    <p class="note" style="margin-top: 1cqw">기사님 한 명(하루 3건) 기준으로 하루 약 110번이던 것을 약 20~40번으로 줄였어요(2026-11-13). 오더 목록의 거리·실수익은 직선거리 × 1.3 어림이라 TMAP을 쓰지 않아요.</p>
+    <div style="display: flex; gap: 1.6cqw; margin-top: 1.6cqw">
+      <div style="flex: 1; background: var(--soft, #F7F8FA); border-radius: 1cqw; padding: 1.4cqw 1.6cqw">
+        <h3 style="margin: 0 0 .6cqw">지금: 서버 메모리</h3>
+        <p class="note" style="margin: 0">받은 결과를 서버에 적어 둬요. <b>길 메모</b>(출발지 → 도착지의 거리·시간·통행료)는 누구 것도 아니라 기사님끼리 같이 쓰고 23시간 둬요. <b>결과 메모</b>(그 기사님이 그 오더를 본 실수익)는 10분만 둬요. 서버가 다시 켜지면 지워지고 다시 물어요.</p>
+      </div>
+      <div style="flex: 1; background: var(--soft, #F7F8FA); border-radius: 1cqw; padding: 1.4cqw 1.6cqw">
+        <h3 style="margin: 0 0 .6cqw; display: flex; align-items: center; gap: .8cqw"><img src="assets/redis.svg" alt="Redis 로고" style="height: 2.2cqw">나중에: Redis</h3>
+        <p class="note" style="margin: 0">서버를 두 대 넘게 두거나, 서버가 꺼졌다 켜지며 다시 묻는 TMAP 비용이 Redis 비용보다 커지면 같은 메모를 Redis로 옮겨요. 키는 <code>tmap:route:출발:도착:차 규격</code>(23시간), <code>profit:recent:기사님:오더</code>(10분)이고 시간이 지나면 Redis가 스스로 지워요.</p>
+      </div>
+    </div>
+    <div class="foot"><img src="assets/ieo_wordmark_orange.svg" alt="ieo"><span>부록 · TMAP 아껴 쓰기</span></div>
   </section>
 
 </div>

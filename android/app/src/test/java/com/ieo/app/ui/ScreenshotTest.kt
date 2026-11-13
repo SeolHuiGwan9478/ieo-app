@@ -185,7 +185,7 @@ private object Scenes {
         fareNote = "인수증 · 30일 안에 지급",
         profitNote = "기름값·통행료 뺀 금액",
         profit = "497,000원",
-        profitLines = listOf("예상 통행료" to "17,000원", "기름값" to "66,000원", "상차지까지" to "4km"),
+        profitLines = listOf("예상 통행료" to "17,000원", "기름값" to "66,000원", "상차지까지" to "현 위치에서 4km"),
         pickup = com.ieo.app.ui.orders.DetailStop("대전 산업단지", "대전 대덕구 대화로 106", "오늘 17:03~20:03"),
         dropoff = com.ieo.app.ui.orders.DetailStop("부산 신항 CY", "부산 강서구 신항로 300", "11월 13일 14:00까지"),
         cargo = "가전 박스 · 4.5톤",
