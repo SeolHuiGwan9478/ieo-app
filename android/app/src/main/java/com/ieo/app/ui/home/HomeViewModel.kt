@@ -221,7 +221,6 @@ class HomeViewModel(
 
     /** 받아 둔 경로 위 쉴 곳 (TRIP-032). 운행 중이 아니면 null */
     private val routeStops = MutableStateFlow<RouteRestStopsAt?>(null)
-    private var routeStopsTriedAt: Instant? = null
 
     val state: StateFlow<HomeState> =
         combine(snapshot, navigator.progress, arrivalView, departureCheck, combine(restCheck, routeStops, ::Pair)) { snapshot, navi, arrival, departure, (rest, stops) ->
@@ -269,7 +268,6 @@ class HomeViewModel(
         recommendWhenParked()
         tellNotifications()
         tellWhenRestIsDue()
-        keepRouteStopsFresh()
         rememberDropoffRoute()
     }
 
@@ -852,43 +850,18 @@ class HomeViewModel(
         }
     }
 
-    /** 운행 중인 차의 경로 위 쉴 곳을 받는다. 운행 중이 아니거나 위치를 모르거나 경로를 못 받으면 null */
+    /**
+     * 운행 중인 차의 경로 위 쉴 곳을 받는다 (TRIP-032). 휴게 안내(1시간 45분, 2시간) 때만 부른다 (2026-11-13, TMAP 아끼기).
+     * 쉴 곳 정보는 서버 DB 것이고, TMAP 경로 선은 내 길 위에 있는지 가리는 데만 쓴다.
+     * 운행 중이 아니거나 위치를 모르거나 경로를 못 받으면 null
+     */
     private suspend fun loadRouteStops(): RouteRestStopsAt? {
         val trip = snapshot.value.current?.takeIf { it.status.isDriving } ?: return null
         val here = sensors.location.value ?: return null
-        routeStopsTriedAt = clock.instant()
         val remain = navigator.progress.value?.remainMeters
         val result = (restAreaRepository.onRoute(trip.id, here) as? ApiResult.Success)?.data ?: return null
         if (!result.routed) return null
         return RouteRestStopsAt(trip.id, result.stops, result.attribution, clock.instant(), remain).also { routeStops.value = it }
-    }
-
-    /**
-     * 운행 화면의 "다음 화물차 라운지"와 세워 두었을 때 목록을 위해 경로 위 쉴 곳을 받아 둔다.
-     * 남은 거리는 내비 남은 거리로 고치므로 자주 받지 않는다: 처음, 30분마다, 라운지가 다 지나갔을 때, 차를 세웠을 때.
-     * 못 받았으면 10분 뒤에 다시 해 본다 (TMAP 결과는 저장하지 않고, 부르는 수를 줄인다)
-     */
-    private fun keepRouteStopsFresh() {
-        viewModelScope.launch {
-            var wasParked = false
-            while (true) {
-                val trip = snapshot.value.current?.takeIf { it.status.isDriving }
-                val parkedNow = sensors.motion.value?.isParked == true
-                if (trip == null) {
-                    routeStops.value = null
-                } else {
-                    val now = clock.instant()
-                    val held = routeStops.value?.takeIf { it.tripId == trip.id }
-                    val stale = held == null || held.fetchedAt.plus(ROUTE_STOPS_MAX_AGE).isBefore(now) ||
-                        held.current(navigator.progress.value?.remainMeters).none { it.isLounge }
-                    val justParked = parkedNow && !wasParked
-                    val mayRetry = routeStopsTriedAt?.plus(ROUTE_STOPS_RETRY)?.isBefore(now) ?: true
-                    if (justParked || (stale && mayRetry)) loadRouteStops()
-                }
-                wasParked = parkedNow
-                delay(ROUTE_STOPS_CHECK_MILLIS)
-            }
-        }
     }
 
     /** 세워 두었을 때 휴게소를 내비 경유지로 넣는다 (TRIP-032). 달리는 동안에는 누르지 못한다 */
@@ -975,9 +948,6 @@ class HomeViewModel(
         private const val SENSOR_CHECK_MILLIS = 1_000L
         private const val REST_CHECK_MILLIS = 10_000L
         private const val REST_STOPS_WAIT_MILLIS = 8_000L
-        private const val ROUTE_STOPS_CHECK_MILLIS = 15_000L
-        private val ROUTE_STOPS_MAX_AGE: Duration = Duration.ofMinutes(30)
-        private val ROUTE_STOPS_RETRY: Duration = Duration.ofMinutes(10)
 
         /** 상하차지 정보 카드를 읽어 주고 "대기 시작" 버튼을 보여 주는 거리 (SITE-006, WAIT-008) */
         private const val APPROACH_ANNOUNCE_METERS = 3_000.0

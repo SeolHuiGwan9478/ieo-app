@@ -138,7 +138,7 @@ class OrderUiMapper(private val labels: DayTimeFormatter) {
         profitLines = listOfNotNull(
             profit?.tollFare?.let { "예상 통행료" to formatWon(it) },
             profit?.let { "기름값" to formatWon(it.fuelCost) },
-            profit?.let { "상차지까지" to "${(it.emptyMeters + 500) / 1000}km" }
+            profit?.let { "상차지까지" to it.emptyRunLabel }
                 // 실제 경로를 받기 전에는 목록과 같은 어림 거리
                 ?: order.distanceMeters?.let { "상차지까지" to Keyword.distanceText(it) },
             order.routeAverageFare?.let { "이 노선 평균 운임" to "${formatWon(roundedToManwon(it))} (Ieo 완료 운행 기준)" },

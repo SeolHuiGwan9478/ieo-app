@@ -1,6 +1,12 @@
 package com.ieo.app.ui.home
 
 import com.ieo.app.domain.ledger.DailySummary
+import com.ieo.app.domain.restarea.RestStop
+import com.ieo.app.domain.restarea.RestStopKind
+import com.ieo.app.domain.restarea.RouteRestStopsAt
+import com.ieo.app.domain.trip.RestCheck
+import com.ieo.app.domain.trip.RestLevel
+import java.time.Duration
 import com.ieo.app.domain.ledger.Receivables
 import com.ieo.app.domain.navi.NaviProgress
 import com.ieo.app.domain.trip.StopType
@@ -78,6 +84,20 @@ class HomeStateFactoryTest {
         assertEquals("대구 성서", state.destinationName)
         assertNull(state.etaText)
         assertFalse(state.naviActive)
+    }
+
+    @Test
+    fun `경로 위 쉴 곳은 휴게 안내(1시간 45분, 2시간) 중에만 보여 준다`() {
+        val trip = TripFixtures.trip(TripStatus.IN_TRANSIT)
+        val lounge = RestStop(RestStopKind.LOUNGE, "성주휴게소", "부산 방향", 18_000, listOf("수면실"), null, 35.9, 128.2)
+        val stops = RouteRestStopsAt(trip.id, listOf(lounge), "출처", NOW, null)
+        val snapshot = HomeSnapshot(current = trip)
+
+        val quiet = factory.create(snapshot, navi = null, rest = RestCheck(Duration.ofMinutes(90), null), restStops = stops)
+        assertTrue((quiet as HomeState.Driving).restStops.isEmpty())
+
+        val soon = factory.create(snapshot, navi = null, rest = RestCheck(Duration.ofMinutes(105), RestLevel.SOON), restStops = stops)
+        assertEquals(listOf("성주휴게소"), (soon as HomeState.Driving).restStops.map { it.name })
     }
 
     @Test

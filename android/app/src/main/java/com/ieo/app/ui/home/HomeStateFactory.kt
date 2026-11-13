@@ -94,8 +94,9 @@ class HomeStateFactory(
         rest: RestCheck?,
         restStops: RouteRestStopsAt?,
     ): HomeState.Driving {
-        val stops = restStops?.takeIf { it.tripId == trip.id }?.current(navi?.remainMeters).orEmpty()
         val alert = rest?.takeIf { it.level != null }
+        // 쉴 곳 카드와 목록은 휴게 안내 중에만 보인다 (2026-11-13)
+        val stops = if (alert == null) emptyList() else restStops?.takeIf { it.tripId == trip.id }?.current(navi?.remainMeters).orEmpty()
         val remainSeconds = navi?.remainSeconds
         return HomeState.Driving(
             trip = tripMapper.map(trip).toSummary(),

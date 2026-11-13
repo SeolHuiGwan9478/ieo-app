@@ -5,6 +5,7 @@ import com.ieo.app.data.order.OrderSiteResponse
 import com.ieo.app.data.order.BrokerMetricsResponse
 import com.ieo.app.domain.order.BrokerMetrics
 import com.ieo.app.domain.order.CargoCategory
+import com.ieo.app.domain.order.OrderProfit
 import com.ieo.app.testing.TripFixtures
 import com.ieo.app.testing.TripFixtures.NOW
 import com.ieo.app.ui.common.DayTimeFormatter
@@ -28,6 +29,16 @@ class OrderUiMapperTest {
         assertEquals("냉동 닭 · 4.2톤", detail.cargo)
         assertEquals(listOf("5톤 윙바디", "냉동·냉장", "인수증"), detail.tags.map { it.text })
         assertEquals("지게차", detail.loadingTag?.text)
+    }
+
+    @Test
+    fun `상차지까지 거리에 상하차지 이름이나 현 위치를 붙인다`() {
+        val order = TripFixtures.order()
+
+        val atStop = mapper.detail(order, OrderProfit(300_000, 50_000, 6_000, 2_400, originName = "부산 신항"))
+        assertEquals("부산 신항에서 2km", atStop.profitLines.toMap()["상차지까지"])
+        val here = mapper.detail(order, OrderProfit(300_000, 50_000, 6_000, 2_400))
+        assertEquals("현 위치에서 2km", here.profitLines.toMap()["상차지까지"])
     }
 
     @Test
