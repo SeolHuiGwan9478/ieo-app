@@ -266,6 +266,25 @@ private object Scenes {
         "ledger_delete" to { LedgerScreen(ledger.copy(form = com.ieo.app.ui.ledger.LedgerForm.ConfirmDelete(com.ieo.app.ui.ledger.DeleteTarget.OfExpense(1), "주유 150만 원을 지울까요?", "11월 5일 (목) · 잘못 넣음")), noop<LedgerActions>()) },
         "ledger_edit_fare" to { LedgerScreen(ledger.copy(detail = detail, form = LedgerForm.EditFare(1, 320_000, PaymentType.RECEIPT)), noop<LedgerActions>()) },
         "settings" to { SettingsScreen(settings, noop<SettingsActions>()) },
+        // 내 플랜 티켓 (PLAN-007). 차에서는 보기만 한다
+        "settings_plan" to {
+            SettingsScreen(
+                settings.copy(
+                    plan = com.ieo.app.domain.account.DriverPlan(
+                        "PRO", "프로", 30_000, listOf("배차 추천·대기 증빙 무제한", "장부 전체 기간·내보내기", "세금계산서 월 40장·자동 발행"),
+                        trial = false, renews = true, daysLeft = 23, paidUntil = java.time.LocalDate.of(2026, 12, 12),
+                    ),
+                ),
+                noop<SettingsActions>(),
+            )
+        },
+        // 로고 "이어 붙이기" 로딩 패널 (2026-11-14). 뒤 화면을 가리고 가운데 로고가 움직인다
+        "loading" to {
+            Box(Modifier.fillMaxSize()) {
+                SettingsScreen(settings, noop<SettingsActions>())
+                com.ieo.app.ui.component.IeoLoadingPanel(visible = true, message = "불러오는 중이에요")
+            }
+        },
         "settings_links" to { DriverLinksSection(linkState) },
         "settings_verified" to { SettingsScreen(settings.copy(standing = com.ieo.app.domain.account.DriverStanding(true, 4, 4, 37, 1)), noop<SettingsActions>(), linkCount = 2) },
         "settings_unverified" to { SettingsScreen(settings.copy(standing = com.ieo.app.domain.account.DriverStanding(false, 2, 4, 0, 0)), noop<SettingsActions>()) },
