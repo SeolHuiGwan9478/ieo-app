@@ -358,6 +358,7 @@ private fun OrderRowView(row: OrderRow, onClick: () -> Unit) {
         }
         FlowRow(Modifier.padding(top = 12.dp), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             listOfNotNull(
+                Keyword.regular().takeIf { row.forMeOnly },
                 Keyword.vehicle(row.vehicle),
                 row.cargo?.let(Keyword::cargo),
                 Keyword.payment(row.paymentType),

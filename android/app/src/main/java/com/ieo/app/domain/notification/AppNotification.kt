@@ -26,6 +26,9 @@ enum class NotificationType {
 
     /** 주선사가 단골 연결을 요청했다. 차에서는 알려 주기만 하고 수락은 휴대폰에서 한다 */
     DRIVER_LINK_REQUESTED,
+
+    /** 단골 주선사가 나에게만 보이는 오더를 보냈다 (BRK-011). 세워 두면 오더 탭에서 본다 */
+    ORDER_TARGETED,
 }
 
 /** 알림 연결에서 오는 것 */

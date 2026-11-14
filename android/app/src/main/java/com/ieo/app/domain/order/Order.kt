@@ -41,6 +41,8 @@ data class Order(
     val routeAverageFare: Long? = null,
     /** 내가 이미 신고한 오더. 신고는 오더마다 한 번이다 (DSP-042) */
     val reportedByMe: Boolean = false,
+    /** 단골 주선사가 나에게만 보낸 지정 오더 (BRK-011). 서버는 지정된 차주에게만 이 오더를 보여 준다 */
+    val forMeOnly: Boolean = false,
 ) {
     /** 화면과 음성에 쓰는 주선사 이름. 서류 심사 전이면 가린다 */
     val brokerLabel: String get() = if (limited) "서류 승인 후 공개" else brokerName

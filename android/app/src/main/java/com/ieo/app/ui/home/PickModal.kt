@@ -101,6 +101,7 @@ fun BoxScope.PickModal(
             Spacer(Modifier.height(12.dp))
             TagLine(
                 listOfNotNull(
+                    Keyword.regular().takeIf { pick.forMeOnly },
                     pick.cargo?.let(Keyword::cargo),
                     Keyword.emptyRun(pick.emptyMeters),
                     Keyword.longWait().takeIf { pick.longWait },

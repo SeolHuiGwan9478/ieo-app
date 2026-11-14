@@ -42,6 +42,15 @@ class OrderUiMapperTest {
     }
 
     @Test
+    fun `단골 주선사의 지정 오더는 목록과 상세 태그 맨 앞에 단골을 붙인다`() {
+        val mine = TripFixtures.order().copy(forMeOnly = true)
+
+        assertEquals(true, mapper.row(mine).forMeOnly)
+        assertEquals("단골", mapper.detail(mine).tags.first().text)
+        assertEquals(false, mapper.row(TripFixtures.order()).forMeOnly)
+    }
+
+    @Test
     fun `일반이나 모르는 종류는 붙이지 않는다`() {
         val general = TripFixtures.order().copy(cargoCategory = CargoCategory.GENERAL)
 

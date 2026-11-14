@@ -158,6 +158,7 @@ class HomeStateFactory(
         brokerMetrics = next.order.brokerMetrics,
         fuelCost = next.fuelCost,
         tollFare = next.tollFare,
+        forMeOnly = next.order.forMeOnly,
     )
 
     private fun siteInfo(card: SiteCard) = SiteInfo(

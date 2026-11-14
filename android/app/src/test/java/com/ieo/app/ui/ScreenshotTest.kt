@@ -249,7 +249,7 @@ private object Scenes {
         },
         "sheet_register" to { Box(Modifier.fillMaxSize()) { RegisterTripSheet(true, RegisterTripUiState(), noop<RegisterTripActions>(), {}) } },
         "sheet_car_link" to { Box(Modifier.fillMaxSize()) { CarLinkSheet(CarLinkUiState(listOf(VehicleChoice(1, "경기80바1234", "5톤 카고"), VehicleChoice(2, "서울90사5678", "11톤 윙바디"))), noop<CarLinkActions>()) } },
-        "orders_list" to { OrdersScreen(OrdersUiState(nearby = true, rows = listOf(orderRow.copy(isNew = true), orderRow.copy(id = 2, day = "오늘")), conditions = com.ieo.app.ui.orders.OrderConditions(minFare = com.ieo.app.ui.orders.OrderMinFare.OVER_30), updatedAt = java.time.Instant.now()), noop<OrdersActions>(), false) },
+        "orders_list" to { OrdersScreen(OrdersUiState(nearby = true, rows = listOf(orderRow.copy(isNew = true), orderRow.copy(id = 2, day = "오늘", forMeOnly = true)), conditions = com.ieo.app.ui.orders.OrderConditions(minFare = com.ieo.app.ui.orders.OrderMinFare.OVER_30), updatedAt = java.time.Instant.now()), noop<OrdersActions>(), false) },
         "orders_conditions" to { OrdersScreen(OrdersUiState(nearby = true, rows = listOf(orderRow), draft = com.ieo.app.ui.orders.OrderConditions(minFare = com.ieo.app.ui.orders.OrderMinFare.OVER_30), draftCount = 3), noop<OrdersActions>(), false) },
         "orders_detail" to { OrdersScreen(OrdersUiState(nearby = true, rows = listOf(orderRow), detail = orderDetail), noop<OrdersActions>(), false) },
         "orders_unverified" to { OrdersScreen(OrdersUiState(nearby = true, rows = listOf(orderRow), verified = false), noop<OrdersActions>(), false) },

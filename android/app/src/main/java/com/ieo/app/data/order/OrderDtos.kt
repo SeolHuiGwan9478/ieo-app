@@ -38,6 +38,8 @@ data class OrderResponse(
     val limited: Boolean = false,
     val routeAverageFare: Long? = null,
     val reportedByMe: Boolean = false,
+    /** 지정 오더면 그 차주(나) */
+    val targetDriverId: Long? = null,
 ) {
     fun toDomain() = Order(
         id = id,
@@ -63,6 +65,7 @@ data class OrderResponse(
         netProfit = netProfit,
         routeAverageFare = routeAverageFare,
         reportedByMe = reportedByMe,
+        forMeOnly = targetDriverId != null,
     )
 }
 

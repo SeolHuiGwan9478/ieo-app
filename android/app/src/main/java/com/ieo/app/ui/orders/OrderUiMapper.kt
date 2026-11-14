@@ -37,6 +37,8 @@ data class OrderRow(
     val dropoffTime: String = "",
     /** 자동 새로고침으로 새로 들어왔다 */
     val isNew: Boolean = false,
+    /** 단골 주선사가 나에게만 보낸 지정 오더 */
+    val forMeOnly: Boolean = false,
 )
 
 /** 상세의 상차지·하차지 한 곳 */
@@ -116,12 +118,14 @@ class OrderUiMapper(private val labels: DayTimeFormatter) {
         dropoffName = order.dropoff.name,
         dropoffTime = "${labels.dayTime(order.dropoffBy)}까지",
         isNew = isNew,
+        forMeOnly = order.forMeOnly,
     )
 
     fun detail(order: Order, profit: OrderProfit? = null) = OrderDetail(
         id = order.id,
         route = route(order),
         tags = listOfNotNull(
+            Keyword.regular().takeIf { order.forMeOnly },
             Keyword.vehicle(order.vehicleLabel),
             order.specialCargo?.let(Keyword::cargo),
             Keyword.payment(order.paymentTypeLabel),

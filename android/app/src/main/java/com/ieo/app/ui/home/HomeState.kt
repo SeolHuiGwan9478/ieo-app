@@ -191,6 +191,8 @@ data class NextOrderCard(
     val fuelCost: Long = 0,
     /** 예상 통행료(원). 경로를 받지 못했으면 null */
     val tollFare: Long? = null,
+    /** 단골 주선사가 나에게만 보낸 지정 오더 */
+    val forMeOnly: Boolean = false,
 ) {
     val route: String get() = "$pickup → $dropoff"
 }

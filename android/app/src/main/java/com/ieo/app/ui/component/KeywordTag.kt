@@ -63,6 +63,9 @@ data class Keyword(val text: String, val color: TagColor) {
         /** 상차지 평균 대기가 길었던 곳 (REC-012) */
         fun longWait() = Keyword("대기 길었던 곳", IeoTag.Plum)
 
+        /** 단골 주선사가 나에게만 보낸 지정 오더 (BRK-011). 태그 맨 앞에 둔다 */
+        fun regular() = Keyword("단골", IeoTag.Mine)
+
         /** 주선사 평균 지급 소요일. 15일 이하는 빠름, 20일 초과는 늦음, 그 사이는 보통. 운행 20건 미만이면 기록 쌓는 중 */
         fun brokerPayment(metrics: BrokerMetrics): Keyword {
             val days = metrics.avgPaymentDays

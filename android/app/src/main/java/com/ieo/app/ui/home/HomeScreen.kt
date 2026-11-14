@@ -375,6 +375,7 @@ private fun Picks(orders: List<NextOrderCard>, onClick: (NextOrderCard) -> Unit,
                 day = order.pickupDay,
                 title = order.route,
                 tags = listOfNotNull(
+                    Keyword.regular().takeIf { order.forMeOnly },
                     Keyword.vehicle(order.vehicle),
                     order.cargo?.let(Keyword::cargo),
                     Keyword.emptyRun(order.emptyMeters),
