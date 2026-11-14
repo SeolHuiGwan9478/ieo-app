@@ -56,8 +56,7 @@ body {
 .toc ol { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: .75cqw; counter-reset: n; }
 .toc li { counter-increment: n; display: flex; gap: 1.1cqw; font-size: 1.35cqw; line-height: 1.5; }
 .toc li::before { content: counter(n, decimal-leading-zero); font-variant-numeric: tabular-nums; color: var(--ink-sub); min-width: 2cqw; }
-.toc .later { color: var(--ink-sub); }
-.draft { position: absolute; top: 5.2cqw; right: 6cqw; font-size: 1.05cqw; color: var(--ink-sub); border: .1cqw solid var(--line); padding: .35cqw .9cqw; border-radius: .4cqw; }
+.toc li .pg { margin-left: auto; color: var(--ink-sub); font-variant-numeric: tabular-nums; }
 
 /* 브랜드 색 */
 .colors { display: grid; grid-template-columns: 1.15fr 1fr 1.25fr; gap: 3.2cqw; flex: 1; min-height: 0; }
@@ -150,64 +149,64 @@ body {
 
 
   <section class="page sheet" aria-label="목차">
-    <span class="draft">초안 · 확인하며 바뀌어요</span>
     <div class="eyebrow">CONTENTS</div>
     <h2>목차</h2>
     <div class="toc">
       <div>
         <h3>브랜드</h3>
         <ol>
-          <li>로고</li>
-          <li>아이콘</li>
-          <li>브랜드 색</li>
-          <li>로고를 쓸 때</li>
+          <li>로고<span class="pg">3</span></li>
+          <li>아이콘<span class="pg">4</span></li>
+          <li>브랜드 색<span class="pg">5</span></li>
+          <li>로고를 쓸 때<span class="pg">6</span></li>
+          <li>로딩<span class="pg">7</span></li>
+        </ol>
+        <h3 style="margin-top: 2.4cqw">주선사·운영</h3>
+        <ol>
+          <li>주선사 콘솔<span class="pg">39</span></li>
+          <li>에이전트<span class="pg">40</span></li>
+          <li>운영자 서류 심사<span class="pg">41</span></li>
         </ol>
         <h3 style="margin-top: 2.4cqw">부록</h3>
         <ol>
-          <li>외부 API와 데이터 출처</li>
-          <li>TMAP 아껴 쓰기</li>
+          <li>외부 API와 데이터 출처<span class="pg">42</span></li>
+          <li>TMAP 아껴 쓰기<span class="pg">43</span></li>
         </ol>
       </div>
-      <div>
-        <h3>차량 앱</h3>
-        <ol>
-          <li>로그인</li>
-          <li>차량 연결과 내 차량 정보</li>
-          <li>홈과 운행 시작</li>
-          <li>운행 중 화면</li>
-          <li>휴게 안내와 화물차 라운지</li>
-          <li>대기 기록과 대기 증빙</li>
-          <li>인수증 확인</li>
-          <li>상하차지 정보</li>
-          <li>배차 추천</li>
-          <li>오더 찾기와 실수익</li>
-          <li>장부</li>
-          <li>다른 앱 배차 등록</li>
-          <li>단골 주선사</li>
-          <li>지정 오더와 신뢰 지표</li>
-          <li>알림</li>
-          <li>음성과 주행 중 화면</li>
-          <li>운영자 서류 심사</li>
-          <li>설정</li>
-        </ol>
-      </div>
-      <div>
-        <h3>휴대폰 앱</h3>
-        <ol>
-          <li>가입</li>
-          <li>서류 올리기</li>
-          <li>내 정보</li>
-          <li>내 차량과 연비</li>
-          <li>오더 찾기와 조건</li>
-          <li>오더 상세와 실수익</li>
-          <li>배차 요청에서 확정까지</li>
-          <li>배차 추천 설정</li>
-          <li>내 배차와 직접 등록</li>
-          <li>대기 증빙과 시각 수정</li>
-          <li>종이 인수증 보내기</li>
-          <li>현장 정보 남기기</li>
-          <li>수익과 장부 내보내기</li>
-          <li class="later">나머지는 차량 앱 확인 뒤에 채워요</li>
+      <div style="grid-column: span 2">
+        <h3>기사님 앱 (차량·휴대폰)</h3>
+        <ol style="display:grid;grid-template-columns:1fr 1fr;column-gap:3cqw;grid-auto-flow:column;grid-template-rows:repeat(16,auto)">
+          <li>가입<span class="pg">8</span></li>
+          <li>서류 올리기<span class="pg">9</span></li>
+          <li>내 정보<span class="pg">10</span></li>
+          <li>내 차량과 연비<span class="pg">11</span></li>
+          <li>차량 로그인<span class="pg">12</span></li>
+          <li>오더 찾기<span class="pg">13</span></li>
+          <li>오더 조건<span class="pg">14</span></li>
+          <li>오더 상세와 실수익<span class="pg">15</span></li>
+          <li>배차 요청에서 확정까지<span class="pg">16</span></li>
+          <li>배차 추천<span class="pg">17</span></li>
+          <li>배차 추천 설정<span class="pg">18</span></li>
+          <li>운행 시작<span class="pg">19</span></li>
+          <li>운행 중 화면<span class="pg">20</span></li>
+          <li>휴게 안내<span class="pg">21</span></li>
+          <li>도착과 대기<span class="pg">22</span></li>
+          <li>떠남과 대기 증빙<span class="pg">23</span></li>
+          <li>대기 증빙 보기와 시각 수정<span class="pg">24</span></li>
+          <li>종이 인수증 보내기<span class="pg">25</span></li>
+          <li>인수증 확인<span class="pg">26</span></li>
+          <li>상하차지 정보<span class="pg">27</span></li>
+          <li>현장 정보 남기기<span class="pg">28</span></li>
+          <li>장부<span class="pg">29</span></li>
+          <li>장부 수정과 지우기<span class="pg">30</span></li>
+          <li>수익과 장부 내보내기<span class="pg">31</span></li>
+          <li>세금계산서<span class="pg">32</span></li>
+          <li>요금제<span class="pg">33</span></li>
+          <li>단골 주선사<span class="pg">34</span></li>
+          <li>지정 오더<span class="pg">35</span></li>
+          <li>신뢰 지표와 이행 기록<span class="pg">36</span></li>
+          <li>알림<span class="pg">37</span></li>
+          <li>음성과 주행 중 화면<span class="pg">38</span></li>
         </ol>
       </div>
     </div>
@@ -316,6 +315,19 @@ body {
       <div class="dont"><figure><div class="box" style="background: repeating-linear-gradient(45deg, #FFD6C4 0 .6cqw, #DCE6F5 .6cqw 1.2cqw, #F7E7A6 1.2cqw 1.8cqw)"><img src="assets/ieo_wordmark_orange.svg" alt=""></div><figcaption>복잡한 무늬나 사진 위에 올리지 마세요</figcaption></figure></div>
     </div>
     <div class="foot"><img src="assets/ieo_wordmark_orange.svg" alt="ieo"><span>로고를 쓸 때</span></div>
+  </section>
+
+  <section class="page sheet" aria-label="로딩">
+    <div class="eyebrow">BRAND · 05</div>
+    <h2>기다리는 동안은 로고가 이어 붙어요</h2>
+    <p class="lead">로딩도 로고로 해요. 막대가 앞으로 늘어나 큰 점과 작은 점을 차례로 이어 붙였다가 돌아와요. "이어서, 이어짐"이라는 이름 뜻을 그대로 움직임으로 보여 줘요. 한 바퀴는 1.8초예요.</p>
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:2cqw;margin-top:3cqw"><figure style="margin:0;display:flex;flex-direction:column;align-items:center;gap:1.4cqw;background:#FFF3EE;border-radius:1.6cqw;padding:3cqw 1.5cqw"><div style="height:5cqw;display:flex;align-items:center"><svg viewBox="14 47 90 26" style="width:13cqw;height:auto" fill="#FF6C37"><rect x="18" y="51" width="42" height="18" rx="9"/><circle cx="76" cy="60" r="9" opacity="1"/><circle cx="98" cy="60" r="6" opacity="1"/></svg></div><figcaption style="text-align:center;font-size:1.25cqw;color:var(--ink-sub)"><b style="display:block;color:var(--ink);font-size:1.4cqw">0.0초</b>로고 그대로</figcaption></figure><figure style="margin:0;display:flex;flex-direction:column;align-items:center;gap:1.4cqw;background:#FFF3EE;border-radius:1.6cqw;padding:3cqw 1.5cqw"><div style="height:5cqw;display:flex;align-items:center"><svg viewBox="14 47 90 26" style="width:13cqw;height:auto" fill="#FF6C37"><rect x="18" y="51" width="68" height="18" rx="9"/><circle cx="76" cy="60" r="9" opacity="0.5"/><circle cx="98" cy="60" r="6" opacity="1"/></svg></div><figcaption style="text-align:center;font-size:1.25cqw;color:var(--ink-sub)"><b style="display:block;color:var(--ink);font-size:1.4cqw">0.4초</b>막대가 늘어나며 큰 점을 이어요</figcaption></figure><figure style="margin:0;display:flex;flex-direction:column;align-items:center;gap:1.4cqw;background:#FFF3EE;border-radius:1.6cqw;padding:3cqw 1.5cqw"><div style="height:5cqw;display:flex;align-items:center"><svg viewBox="14 47 90 26" style="width:13cqw;height:auto" fill="#FF6C37"><rect x="18" y="51" width="86" height="18" rx="9"/><circle cx="76" cy="60" r="9" opacity="0"/><circle cx="98" cy="60" r="6" opacity="0"/></svg></div><figcaption style="text-align:center;font-size:1.25cqw;color:var(--ink-sub)"><b style="display:block;color:var(--ink);font-size:1.4cqw">1.0초</b>작은 점 끝까지 이어 붙였어요</figcaption></figure><figure style="margin:0;display:flex;flex-direction:column;align-items:center;gap:1.4cqw;background:#FFF3EE;border-radius:1.6cqw;padding:3cqw 1.5cqw"><div style="height:5cqw;display:flex;align-items:center"><svg viewBox="14 47 90 26" style="width:13cqw;height:auto" fill="#FF6C37"><rect x="18" y="51" width="51" height="18" rx="9"/><circle cx="76" cy="60" r="9" opacity="1"/><circle cx="98" cy="60" r="6" opacity="1"/></svg></div><figcaption style="text-align:center;font-size:1.25cqw;color:var(--ink-sub)"><b style="display:block;color:var(--ink);font-size:1.4cqw">1.5초</b>다시 줄어들며 점이 돌아와요</figcaption></figure></div>
+    <ul class="facts" style="margin-top:3.4cqw;display:grid;grid-template-columns:repeat(3,1fr);gap:2.5cqw">
+      <li><b>차량 앱</b><br>오더·내 차량 불러오기, QR 로그인 기다리기. 화면을 덮을 때는 크게(글자 26sp).</li>
+      <li><b>휴대폰 앱</b><br>버튼을 누른 뒤 처리 중, 서류 올리는 중, 플랜 불러오기, 세금계산서 발행 중.</li>
+      <li><b>주선사 콘솔</b><br>버튼 안 작은 로딩과 화면 불러오기. "동작 줄이기"를 켠 사람에게는 멈춘 로고만 보여요.</li>
+    </ul>
+    <div class="foot"><img src="assets/ieo_wordmark_orange.svg" alt="ieo"><span>브랜드 · 로딩</span></div>
   </section>
 
   <section class="page sheet" aria-label="가입">
@@ -501,7 +513,7 @@ body {
     <div class="twocol">
       <div class="text-col">
         <h2>상하차지에서 세우면<br>근처 1등 오더를 보여 줘요</h2>
-        <p class="lead">상차지나 하차지에 도착해 기어를 P에 두거나 주차 브레이크를 채우면, 그 상하차지 근처 오더 가운데 실수익 1등 1건을 가운데 창에 띄워요. 배차가 없을 때는 세운 곳 근처예요. 배차가 몇 건이든 똑같아요.</p>
+        <p class="lead">상차지나 하차지에 도착해 기어를 P에 두거나 주차 브레이크를 채우면, 그 상하차지 근처 오더 가운데 실수익 1등 1건을 가운데 창에 띄워요. 배차가 없을 때는 세운 곳 근처예요. 배차가 몇 건이든 똑같아요. <b>프로 기능</b>이에요(무료 체험 30일 포함).</p>
         <ul class="facts">
           <li><b>언제</b><br>상차지·하차지에 도착해 세울 때, 배차가 없을 때 세울 때. 상차지로 가는 길이나 짐을 싣고 가다 휴게소에서 세울 때는 띄우지 않아요.</li>
           <li><b>한 곳에서 한 번</b><br>창은 15초 동안 떠 있다 닫혀요. 같은 상하차지에서 다시 세우거나 시동을 껐다 켜도 홈의 '근처 추천' 카드로만 보이고 창은 다시 뜨지 않아요. 출발하면 지워요.</li>
@@ -525,6 +537,7 @@ body {
         <p class="lead">휴대폰 [내 정보 → 배차 추천]이나 차량 [설정 → 배차 추천]에서 바꾸면 서버에 하나로 저장돼, 다음에 차를 세울 때부터 바로 적용돼요.</p>
         <ul class="facts">
           <li><b>추천 받기</b> 스위치로 켜고 꺼요. 끄면 차를 세워도 추천 창이 뜨지 않아요.</li>
+          <li><b>베이직이면</b> 설정에 "프로에서 받아요"가 보이고 바꿀 수 없어요. 추천 한 번에 실제 길을 여러 번 재야 해서(TMAP) 프로에만 줘요. 오더를 눌렀을 때의 실수익은 플랜과 상관없이 보여요.</li>
           <li><b>찾는 범위</b> 상하차지(배차가 없으면 세운 곳)에서 5km부터 100km까지, 5km씩 늘리고 줄여요. 기본은 30km예요. 넓히면 후보가 늘지만 빈 차로 가는 길도 길어져요.</li>
           <li><b>최소 실수익</b> 고른 금액보다 실수익이 적은 오더는 추천하지 않아요.</li>
           <li><b>제외할 화물</b> 냉동·냉장, 이사, 위험물, 중량물, 장척물, 건자재, 농수산물, 폐기물 가운데 여러 개를 골라요. 오더 찾기 조건과 같은 설정이에요.</li>
@@ -629,7 +642,7 @@ body {
         <ul class="facts">
           <li><b>대기와 작업</b><br>[상차 시작]·[하차 시작]을 누르면 대기가 끝나고 작업 시간이 시작돼요. 대기비는 도착부터 작업 시작까지로 계산해요.</li>
           <li><b>대기비 기준은 주선사가</b><br>무료 시간, 단위 시간, 단위 금액, 상한을 콘솔에서 정해요. 무료 시간이 끝나는 순간 "지금부터 대기비가 붙어요"라고 말해요.</li>
-          <li><b>증빙은 운행 하나에 링크 하나</b><br>상차지와 하차지 기록을 함께 담아요. QR을 찍어 휴대폰으로 받거나, 주선사에게 바로 문자로 보내요. 지나서도 장부에서 만들 수 있어요.</li>
+          <li><b>증빙은 운행 하나에 링크 하나</b><br>상차지와 하차지 기록을 함께 담아요. QR을 찍어 휴대폰으로 받거나, [주선사에게 보내기]로 주선사 콘솔 운행 상세에 바로 올려요. 지나서도 장부에서 만들 수 있어요.</li>
         </ul>
       </div>
       <div class="shots" style="--h: 36cqw; --cap: 16cqw">
@@ -814,6 +827,50 @@ body {
     <div class="foot"><img src="assets/ieo_wordmark_orange.svg" alt="ieo"><span>장부 · 휴대폰과 내보내기</span></div>
   </section>
 
+  <section class="page sheet" aria-label="세금계산서">
+    <div class="eyebrow">LEDG · 04</div>
+    <div class="twocol">
+      <div class="text-col">
+        <h2>운행 한 건에<br>세금계산서 한 장</h2>
+        <p class="lead">장부 상세에서 [세금계산서 발행]을 누르면 운임과 대기비로 운송료 세금계산서를 만들어요. 볼타 대리 정발행으로 기사님 대신 발행하고, 공동인증서는 이에오가 보관하지 않아요.</p>
+        <ul class="facts">
+          <li><b>발행 전 확인</b> 공급자(나)·받는 곳(주선사), 운임+대기비, 공급가액·부가세 10%·합계를 보여 줘요. 사업자번호 같은 빈 칸이 있으면 알려 주고 발행을 막아요(내 정보 > 사업자 정보).</li>
+          <li><b>한 달에 몇 장</b> 베이직 10장, 프로 40장. 수정 발행은 장수에 세지 않아요.</li>
+          <li><b>지금은 시연용</b> 국세청에는 보내지 않고 기록만 남겨요. 실제 연결 때는 볼타 흐름(발급 등록 → 요청 → 접수 → 발행됨)을 그대로 따라가요.</li>
+          <li><b>차에서는</b> 발행 화면이 없어요. 손으로 적는 일이 많아 휴대폰에서 해요.</li>
+        </ul>
+      </div>
+      <div class="shots" style="--h: 40cqw; --cap: 14cqw">
+        <figure class="shot"><img src="assets/m_TX_ledger.jpg" alt="장부 상세의 세금계산서 칸"><figcaption><b><span class="step">1</span>장부 상세</b>운행마다 세금계산서 칸.</figcaption></figure>
+        <figure class="shot"><img src="assets/m_TX_ready.jpg" alt="세금계산서 발행 전 확인"><figcaption><b><span class="step">2</span>발행 전 확인</b>금액과 양쪽 정보를 보고 발행.</figcaption></figure>
+        <figure class="shot"><img src="assets/m_TX_issued.jpg" alt="세금계산서 발행됨"><figcaption><b><span class="step">3</span>발행됨</b>승인번호가 남아요.</figcaption></figure>
+      </div>
+    </div>
+    <div class="foot"><img src="assets/ieo_wordmark_orange.svg" alt="ieo"><span>장부 · 세금계산서</span></div>
+  </section>
+
+  <section class="page sheet" aria-label="요금제">
+    <div class="eyebrow">PLAN · 01</div>
+    <div class="twocol">
+      <div class="text-col">
+        <h2>30일 플랜,<br>건당 수수료는 없어요</h2>
+        <p class="lead">오더 보기와 배차는 누구나 무료예요. 돈과 바로 이어지는 기능에만 30일 플랜으로 받아요. 운행·배차 건마다 받는 수수료는 없어요(2027년 화물운송플랫폼법).</p>
+        <ul class="facts">
+          <li><b>기사님</b> 베이직 무료(대기 증빙 30일 3건, 세금계산서 월 10장), 프로 30,000원(배차 추천, 대기 증빙 무제한, 장부 전체·내보내기, 세금계산서 월 40장). 처음 30일은 무료 체험.</li>
+          <li><b>쿠폰</b> 주선사가 상차 2시간 안에 배차를 취소하면 프로 3일 쿠폰. 쿠폰함에서 [사용하기]를 눌러야 적용돼요.</li>
+          <li><b>주선사</b> 베이직 무료, 프로 39,000원(운행 데이터 리포트, 함께 일한 차주 기록, 에이전트). 담당자는 둘 다 몇 명이든 둘 수 있어요.</li>
+          <li><b>해지</b> 언제든 바로 해요. 남은 날까지 쓰고 그 뒤 베이직이 돼요. 지금은 시연용 결제라 돈이 나가지 않아요.</li>
+        </ul>
+      </div>
+      <div class="shots" style="--h: 30cqw; --cap: 22cqw; flex-wrap: wrap">
+        <figure class="shot"><img src="assets/m_PL_pro.jpg" alt="휴대폰 플랜 화면"><figcaption>기사님 플랜. 티켓과 이번 달 사용량.</figcaption></figure>
+        <figure class="shot"><img src="assets/m_PL_coupons.jpg" alt="휴대폰 쿠폰함" style="height: 20cqw"><figcaption>쿠폰함.</figcaption></figure>
+        <figure class="shot"><img src="assets/w_console_plan.jpg" alt="주선사 콘솔 플랜" style="height: 13cqw"><figcaption>주선사 콘솔. 다음 결제일과 [해지하기].</figcaption></figure>
+      </div>
+    </div>
+    <div class="foot"><img src="assets/ieo_wordmark_orange.svg" alt="ieo"><span>요금제</span></div>
+  </section>
+
   <section class="page sheet" aria-label="단골 주선사">
     <div class="eyebrow">LINK · 01</div>
     <div class="twocol">
@@ -918,6 +975,48 @@ body {
       </div>
     </div>
     <div class="foot"><img src="assets/ieo_wordmark_orange.svg" alt="ieo"><span>음성 · 주행 중 화면</span></div>
+  </section>
+
+  <section class="page sheet" aria-label="주선사 콘솔">
+    <div class="eyebrow">CONSOLE · 01</div>
+    <div class="twocol">
+      <div class="text-col">
+        <h2>주선사는 웹 콘솔에서<br>오더부터 정산까지</h2>
+        <p class="lead">주선사 담당자는 웹 콘솔을 써요. 오더를 올리고, 기사님 요청을 골라 확정하고, 달리는 차의 도착 예정과 대기 증빙·인수증 사진을 한곳에서 봐요.</p>
+        <ul class="facts">
+          <li><b>내 회사</b> 모집 중 오더, 진행 중 운행, 단골 차주, 차주에게 보이는 신뢰 지표와 기간별 실적.</li>
+          <li><b>운행 상세</b> 도착 예정과 진행률, 단골이면 지도 위 위치, 대기 증빙과 인수증 사진, 운임과 수수료.</li>
+          <li><b>단골·담당자</b> 단골 연결 요청과 지정 오더, 담당자 초대(몇 명이든).</li>
+          <li><b>리포트 (프로)</b> 노선별 실제 운임, 상하차지 대기, 함께 일한 차주 기록.</li>
+        </ul>
+      </div>
+      <div class="shots" style="--h: 24cqw; --cap: 40cqw; flex-direction: column; gap: 1.4cqw">
+        <figure class="shot"><img src="assets/w_console_home.jpg" alt="콘솔 내 회사"><figcaption>내 회사</figcaption></figure>
+        <figure class="shot"><img src="assets/w_console_trip.jpg" alt="콘솔 운행 상세"><figcaption>운행 상세</figcaption></figure>
+      </div>
+    </div>
+    <div class="foot"><img src="assets/ieo_wordmark_orange.svg" alt="ieo"><span>주선사 콘솔</span></div>
+  </section>
+
+  <section class="page sheet" aria-label="에이전트">
+    <div class="eyebrow">CONSOLE · 02</div>
+    <div class="twocol">
+      <div class="text-col">
+        <h2>말로 맡기면 초안까지,<br>실행은 버튼으로</h2>
+        <p class="lead">프로 주선사는 에이전트에게 말로 일을 맡겨요. 화주 카톡을 붙여 넣으면 오더 초안을, "누가 좋아?"라고 물으면 요청 온 기사님 비교를 만들어요. 올리기·확정은 늘 사람이 버튼을 눌러요.</p>
+        <ul class="facts">
+          <li><b>보여 주는 것</b> 생각한 단계, 부른 도구(보낸 값·받은 값), 웹 검색 출처와 번호, 만든 이미지, 오더 초안·기사님 비교·화주 안내 문장 카드.</li>
+          <li><b>하지 않는 것</b> 혼자 올리기·확정·취소하지 않고, 화주·기사님에게 직접 보내지 않아요. 원래 볼 수 없는 연락처·위치는 보여 주지 않아요.</li>
+          <li><b>한도와 기록</b> 30일에 몇 번까지로 막고, 누가 무엇을 시켰는지 남겨요. 대화는 30일 뒤 지워요.</li>
+          <li><b>지금은 시연판</b> 화면과 흐름만 있고, 서버·LLM은 붙일 예정이에요.</li>
+        </ul>
+      </div>
+      <div class="shots" style="--h: 24cqw; --cap: 40cqw; flex-direction: column; gap: 1.4cqw">
+        <figure class="shot"><img src="assets/w_agent_order.jpg" alt="에이전트 오더 초안"><figcaption>생각 → 도구 호출 → 오더 초안</figcaption></figure>
+        <figure class="shot"><img src="assets/w_agent_search.jpg" alt="에이전트 웹 검색"><figcaption>웹 검색과 출처 번호</figcaption></figure>
+      </div>
+    </div>
+    <div class="foot"><img src="assets/ieo_wordmark_orange.svg" alt="ieo"><span>주선사 콘솔 · 에이전트</span></div>
   </section>
 
   <section class="page sheet" aria-label="운영자 서류 심사">
