@@ -1,0 +1,219 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>휴대폰 홈 타일 시안</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --orange50:#FFF3EE; --orange100:#FFE2D6; --orange500:#FF6C37; --orange600:#F25A22; --orange700:#C2410C;
+    --canvas:#F2F4F6; --strong:#191F28; --mid:#4E5968; --line:#E5E8EB; --white:#fff;
+    --drive:#E8EFFD; --driveInk:#1D4ED8; --warn:#FDECEC; --warnInk:#C62828;
+    --navy:#E8ECF4; --navyInk:#1E2A44; --teal:#D5F5F0; --tealInk:#0F766E;
+    --sand:#F5EBDD; --sandInk:#7C5A2E; --sage:#E6EFE2; --sageInk:#3F5F31; --plum:#F3E6F5; --plumInk:#74307F;
+  }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body { font-family:'Noto Sans KR', system-ui, sans-serif; background:#DADDE1; color:var(--strong); padding:32px 16px; }
+  h1.page { font-size:20px; font-weight:800; text-align:center; }
+  p.lead { text-align:center; color:var(--mid); font-size:14px; margin:6px 0 28px; }
+  .row { display:flex; gap:40px; justify-content:center; flex-wrap:wrap; }
+  .col { display:flex; flex-direction:column; align-items:center; gap:12px; }
+  .label { font-weight:800; font-size:15px; }
+  .label small { display:block; font-weight:500; color:var(--mid); font-size:12px; text-align:center; margin-top:2px; }
+
+  .phone { width:360px; height:780px; background:var(--canvas); border-radius:36px; border:10px solid #111; overflow:hidden; position:relative; display:flex; flex-direction:column; }
+  .status { height:28px; display:flex; justify-content:space-between; align-items:center; padding:0 20px; font-size:12px; font-weight:600; }
+  .scroll { flex:1; overflow-y:auto; padding:8px 16px 16px; scrollbar-width:none; }
+  .scroll::-webkit-scrollbar { display:none; }
+
+  .top { display:flex; align-items:center; gap:8px; padding:8px 0 14px; }
+  .logo { width:34px; height:34px; border-radius:10px; background:var(--orange500); display:grid; place-items:center; }
+  .name { font-size:19px; font-weight:800; }
+  .badge { font-size:11px; font-weight:700; color:var(--orange700); background:var(--orange50); padding:4px 8px; border-radius:99px; }
+  .bell { margin-left:auto; position:relative; }
+  .bell i { position:absolute; top:-2px; right:-2px; width:8px; height:8px; border-radius:50%; background:var(--orange500); border:2px solid var(--canvas); }
+
+  /* 진행 중 운행: 홈 맨 위에 한 장 */
+  .trip { background:var(--white); border-radius:18px; padding:16px; }
+  .trip .head { display:flex; justify-content:space-between; align-items:center; }
+  .chip { font-size:12px; font-weight:700; padding:4px 8px; border-radius:6px; background:var(--drive); color:var(--driveInk); }
+  .fare { font-size:20px; font-weight:800; }
+  .route { font-size:16px; font-weight:700; margin:10px 0 4px; }
+  .meta { font-size:13px; color:var(--mid); }
+  .trip .go { margin-top:12px; height:44px; border-radius:12px; background:var(--orange600); color:#fff; font-weight:700; font-size:15px; display:grid; place-items:center; }
+
+  /* 돈 요약: 두 칸 */
+  .money { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:10px; }
+  .money div { background:var(--white); border-radius:16px; padding:12px 14px; }
+  .money span { font-size:12px; color:var(--mid); }
+  .money b { display:block; font-size:18px; font-weight:800; margin-top:2px; }
+  .money .due b { color:var(--warnInk); }
+
+  .section { font-size:14px; font-weight:800; margin:18px 2px 10px; color:var(--strong); }
+
+  /* A: 3열 정사각 타일 */
+  .grid3 { display:grid; grid-template-columns:repeat(3, minmax(0,1fr)); gap:8px; }
+  .tile { aspect-ratio:1/1; background:var(--white); border-radius:16px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:8px; position:relative; }
+  .tile .ic { width:44px; height:44px; border-radius:14px; display:grid; place-items:center; }
+  .tile .t { font-size:13px; font-weight:700; text-align:center; line-height:1.25; }
+  .tile .n { position:absolute; top:8px; right:8px; min-width:20px; height:20px; padding:0 6px; border-radius:99px; background:var(--orange500); color:#fff; font-size:11px; font-weight:800; display:grid; place-items:center; }
+  .tile .pro { position:absolute; top:8px; right:8px; font-size:10px; font-weight:800; color:var(--orange700); background:var(--orange50); padding:2px 6px; border-radius:6px; }
+
+  /* B: 큰 칸 2개 + 작은 칸 */
+  .big2 { display:grid; grid-template-columns:repeat(2, minmax(0,1fr)); gap:8px; }
+  .big { aspect-ratio:1/1; border-radius:20px; padding:16px; display:flex; flex-direction:column; justify-content:space-between; position:relative; }
+  .big.order { background:var(--orange500); color:#fff; }
+  .big.qr { background:var(--strong); color:#fff; }
+  .big .t { font-size:20px; font-weight:800; line-height:1.25; }
+  .big .s { font-size:12px; opacity:.85; margin-top:4px; }
+  .big .count { font-size:13px; font-weight:700; background:rgba(255,255,255,.2); padding:4px 8px; border-radius:99px; align-self:flex-start; }
+  .grid4 { display:grid; grid-template-columns:repeat(4, minmax(0,1fr)); gap:8px; margin-top:8px; }
+  .mini { aspect-ratio:1/1; background:var(--white); border-radius:14px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:6px; position:relative; }
+  .mini .ic { width:34px; height:34px; border-radius:11px; display:grid; place-items:center; }
+  .mini .t { font-size:11.5px; font-weight:700; text-align:center; line-height:1.2; }
+  .mini .n { position:absolute; top:5px; right:5px; width:8px; height:8px; border-radius:50%; background:var(--orange500); }
+
+  .nav { height:62px; background:var(--white); border-top:1px solid var(--line); display:grid; grid-template-columns:repeat(5,1fr); }
+  .nav div { display:flex; flex-direction:column; align-items:center; justify-content:center; gap:3px; font-size:11px; font-weight:600; color:#8B95A1; }
+  .nav .on { color:var(--strong); }
+  svg { display:block; }
+</style>
+</head>
+<body>
+<h1 class="page">휴대폰 홈: 사각형 버튼 시안</h1>
+<p class="lead">진행 중 운행과 돈 요약은 위에 두고, 자주 쓰는 일을 사각형 버튼으로 바로 누르게 했어요</p>
+
+<!-- 아이콘 모음 -->
+<svg width="0" height="0" style="position:absolute">
+  <defs>
+    <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5" fill="none" stroke="currentColor" stroke-width="2"/><path d="M16 16l4.5 4.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></symbol>
+    <symbol id="i-truck" viewBox="0 0 24 24"><path d="M2.5 6.5h11v9h-11zM13.5 9.5h4l3 3v3h-7z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><circle cx="7" cy="17.5" r="1.8" fill="currentColor"/><circle cx="17" cy="17.5" r="1.8" fill="currentColor"/></symbol>
+    <symbol id="i-qr" viewBox="0 0 24 24"><path d="M3.5 3.5h6v6h-6zM14.5 3.5h6v6h-6zM3.5 14.5h6v6h-6z" fill="none" stroke="currentColor" stroke-width="2"/><path d="M14.5 14.5h2.5v2.5h-2.5zM18 18h2.5v2.5H18zM18 14.5h2.5M14.5 18v2.5" stroke="currentColor" stroke-width="2"/></symbol>
+    <symbol id="i-camera" viewBox="0 0 24 24"><path d="M3.5 7.5h4l1.5-2.5h6l1.5 2.5h4v12h-17z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><circle cx="12" cy="13" r="3.3" fill="none" stroke="currentColor" stroke-width="2"/></symbol>
+    <symbol id="i-book" viewBox="0 0 24 24"><path d="M5 3.5h11.5l2.5 2.5v14.5H5z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M8.5 9h7M8.5 12.5h7M8.5 16h4.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></symbol>
+    <symbol id="i-won" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5" fill="none" stroke="currentColor" stroke-width="2"/><path d="M7.5 9l2 6.5 2.5-6 2.5 6 2-6.5M7 11.5h10" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/></symbol>
+    <symbol id="i-receipt" viewBox="0 0 24 24"><path d="M5.5 3.5h13v17l-2.2-1.5-2.1 1.5-2.2-1.5-2.2 1.5-2.1-1.5-2.2 1.5z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M9 9h6M9 12.5h6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></symbol>
+    <symbol id="i-handshake" viewBox="0 0 24 24"><path d="M2.5 11l4-4 4 1.5 3-1.5 4 1 4 3-3.5 4.5M6.5 7l-1 7 5 5 1.5-1.5M10.5 8.5L8 11.5c1 1 2.5 1 3.5 0l2-2 4.5 4.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round"/></symbol>
+    <symbol id="i-pin" viewBox="0 0 24 24"><path d="M12 21s-6.5-6-6.5-11a6.5 6.5 0 0113 0c0 5-6.5 11-6.5 11z" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="10" r="2.3" fill="currentColor"/></symbol>
+    <symbol id="i-spark" viewBox="0 0 24 24"><path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M18.5 15.5l.8 2 2 .8-2 .8-.8 2-.8-2-2-.8 2-.8z" fill="currentColor"/></symbol>
+    <symbol id="i-doc" viewBox="0 0 24 24"><path d="M6 3.5h8l4 4v13H6z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M9 14l2 2 4-4.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="i-car" viewBox="0 0 24 24"><path d="M4 16.5V12l2-5h12l2 5v4.5z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M4 12h16" stroke="currentColor" stroke-width="2"/><circle cx="7.5" cy="17.5" r="1.6" fill="currentColor"/><circle cx="16.5" cy="17.5" r="1.6" fill="currentColor"/></symbol>
+    <symbol id="i-ticket" viewBox="0 0 24 24"><path d="M3.5 7.5h17v3a1.8 1.8 0 000 3.5v3h-17v-3a1.8 1.8 0 000-3.5z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M14 8v8" stroke="currentColor" stroke-width="2" stroke-dasharray="2 2"/></symbol>
+    <symbol id="i-bell" viewBox="0 0 24 24"><path d="M6 16.5V11a6 6 0 0112 0v5.5l1.5 2h-15z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M10 20.5h4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></symbol>
+    <symbol id="i-home" viewBox="0 0 24 24"><path d="M4 10.5L12 4l8 6.5V20h-5.5v-5.5h-5V20H4z" fill="currentColor"/></symbol>
+    <symbol id="i-chart" viewBox="0 0 24 24"><path d="M3.5 17l5.5-5.5 4 3.5 7-7.5" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="i-user" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4" fill="none" stroke="currentColor" stroke-width="2"/><path d="M4 20.5c1-4 4.3-6 8-6s7 2 8 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></symbol>
+    <symbol id="i-logo" viewBox="0 0 24 24"><rect x="4" y="10" width="9" height="4" rx="2" fill="#fff"/><circle cx="16" cy="12" r="2" fill="#fff"/><circle cx="20" cy="12" r="1.3" fill="#fff"/></symbol>
+  </defs>
+</svg>
+
+<div class="row">
+
+  <!-- A -->
+  <div class="col">
+    <div class="phone">
+      <div class="status"><span>8:24</span><span>▾ ▮</span></div>
+      <div class="scroll">
+        <div class="top">
+          <div class="logo"><svg width="24" height="24"><use href="#i-logo"/></svg></div>
+          <span class="name">김민수님</span><span class="badge">인증 차주</span>
+          <span class="bell"><svg width="24" height="24"><use href="#i-bell"/></svg><i></i></span>
+        </div>
+
+        <div class="trip">
+          <div class="head"><span class="chip">상차지로 가는 중</span><span class="fare">57만 원</span></div>
+          <div class="route">대전 산업단지 → 김포 한강물류</div>
+          <div class="meta">상차 오늘 19:17 · 경기80바8101 · 한빛물류</div>
+        </div>
+
+        <div class="money">
+          <div><span>이번 달 실수익</span><b>995,000원</b></div>
+          <div class="due"><span>못 받은 돈</span><b>1,565,000원</b></div>
+        </div>
+
+        <div class="section">바로 가기</div>
+        <div class="grid3">
+          <div class="tile"><span class="n">6</span><div class="ic" style="background:var(--orange50);color:var(--orange600)"><svg width="26" height="26"><use href="#i-search"/></svg></div><div class="t">오더 찾기</div></div>
+          <div class="tile"><span class="n">2</span><div class="ic" style="background:var(--drive);color:var(--driveInk)"><svg width="26" height="26"><use href="#i-truck"/></svg></div><div class="t">내 배차</div></div>
+          <div class="tile"><div class="ic" style="background:var(--navy);color:var(--navyInk)"><svg width="26" height="26"><use href="#i-qr"/></svg></div><div class="t">차량에 로그인</div></div>
+          <div class="tile"><span class="n">1</span><div class="ic" style="background:var(--sand);color:var(--sandInk)"><svg width="26" height="26"><use href="#i-camera"/></svg></div><div class="t">인수증 보내기</div></div>
+          <div class="tile"><div class="ic" style="background:var(--teal);color:var(--tealInk)"><svg width="26" height="26"><use href="#i-book"/></svg></div><div class="t">장부</div></div>
+          <div class="tile"><div class="ic" style="background:var(--warn);color:var(--warnInk)"><svg width="26" height="26"><use href="#i-won"/></svg></div><div class="t">미수금</div></div>
+          <div class="tile"><div class="ic" style="background:var(--sage);color:var(--sageInk)"><svg width="26" height="26"><use href="#i-receipt"/></svg></div><div class="t">세금계산서</div></div>
+          <div class="tile"><span class="n">1</span><div class="ic" style="background:var(--plum);color:var(--plumInk)"><svg width="26" height="26"><use href="#i-handshake"/></svg></div><div class="t">단골 주선사</div></div>
+          <div class="tile"><div class="ic" style="background:var(--orange50);color:var(--orange600)"><svg width="26" height="26"><use href="#i-pin"/></svg></div><div class="t">상하차지 정보</div></div>
+          <div class="tile"><span class="pro">PRO</span><div class="ic" style="background:var(--orange50);color:var(--orange600)"><svg width="26" height="26"><use href="#i-spark"/></svg></div><div class="t">배차 추천</div></div>
+          <div class="tile"><div class="ic" style="background:var(--navy);color:var(--navyInk)"><svg width="26" height="26"><use href="#i-doc"/></svg></div><div class="t">서류</div></div>
+          <div class="tile"><div class="ic" style="background:var(--canvas);color:var(--mid)"><svg width="26" height="26"><use href="#i-car"/></svg></div><div class="t">내 차량</div></div>
+        </div>
+      </div>
+      <div class="nav">
+        <div class="on"><svg width="24" height="24"><use href="#i-home"/></svg>홈</div>
+        <div><svg width="24" height="24"><use href="#i-search"/></svg>오더</div>
+        <div><svg width="24" height="24"><use href="#i-truck"/></svg>배차</div>
+        <div><svg width="24" height="24"><use href="#i-chart"/></svg>수익</div>
+        <div><svg width="24" height="24"><use href="#i-user"/></svg>내 정보</div>
+      </div>
+    </div>
+    <div class="label">A. 같은 크기 3열 버튼<small>12개를 한눈에. 할 일이 있으면 숫자 표시</small></div>
+  </div>
+
+  <!-- B -->
+  <div class="col">
+    <div class="phone">
+      <div class="status"><span>8:24</span><span>▾ ▮</span></div>
+      <div class="scroll">
+        <div class="top">
+          <div class="logo"><svg width="24" height="24"><use href="#i-logo"/></svg></div>
+          <span class="name">김민수님</span><span class="badge">인증 차주</span>
+          <span class="bell"><svg width="24" height="24"><use href="#i-bell"/></svg><i></i></span>
+        </div>
+
+        <div class="big2">
+          <div class="big order">
+            <span class="count">모집 중 6건</span>
+            <div><svg width="34" height="34" style="margin-bottom:8px"><use href="#i-search"/></svg><div class="t">오더<br>찾기</div><div class="s">내 차에 맞는 오더</div></div>
+          </div>
+          <div class="big qr">
+            <span class="count">차량 대기</span>
+            <div><svg width="34" height="34" style="margin-bottom:8px"><use href="#i-qr"/></svg><div class="t">차량에<br>로그인</div><div class="s">차량 화면 QR 찍기</div></div>
+          </div>
+        </div>
+
+        <div class="trip" style="margin-top:8px">
+          <div class="head"><span class="chip">상차지로 가는 중</span><span class="fare">57만 원</span></div>
+          <div class="route">대전 산업단지 → 김포 한강물류</div>
+          <div class="meta">상차 오늘 19:17 · 한빛물류</div>
+        </div>
+
+        <div class="grid4">
+          <div class="mini"><span class="n"></span><div class="ic" style="background:var(--drive);color:var(--driveInk)"><svg width="22" height="22"><use href="#i-truck"/></svg></div><div class="t">내 배차</div></div>
+          <div class="mini"><span class="n"></span><div class="ic" style="background:var(--sand);color:var(--sandInk)"><svg width="22" height="22"><use href="#i-camera"/></svg></div><div class="t">인수증</div></div>
+          <div class="mini"><div class="ic" style="background:var(--teal);color:var(--tealInk)"><svg width="22" height="22"><use href="#i-book"/></svg></div><div class="t">장부</div></div>
+          <div class="mini"><div class="ic" style="background:var(--warn);color:var(--warnInk)"><svg width="22" height="22"><use href="#i-won"/></svg></div><div class="t">미수금</div></div>
+          <div class="mini"><div class="ic" style="background:var(--sage);color:var(--sageInk)"><svg width="22" height="22"><use href="#i-receipt"/></svg></div><div class="t">세금<br>계산서</div></div>
+          <div class="mini"><span class="n"></span><div class="ic" style="background:var(--plum);color:var(--plumInk)"><svg width="22" height="22"><use href="#i-handshake"/></svg></div><div class="t">단골</div></div>
+          <div class="mini"><div class="ic" style="background:var(--orange50);color:var(--orange600)"><svg width="22" height="22"><use href="#i-pin"/></svg></div><div class="t">상하차지</div></div>
+          <div class="mini"><div class="ic" style="background:var(--orange50);color:var(--orange600)"><svg width="22" height="22"><use href="#i-spark"/></svg></div><div class="t">배차 추천</div></div>
+        </div>
+
+        <div class="money">
+          <div><span>이번 달 실수익</span><b>995,000원</b></div>
+          <div class="due"><span>못 받은 돈</span><b>1,565,000원</b></div>
+        </div>
+      </div>
+      <div class="nav">
+        <div class="on"><svg width="24" height="24"><use href="#i-home"/></svg>홈</div>
+        <div><svg width="24" height="24"><use href="#i-search"/></svg>오더</div>
+        <div><svg width="24" height="24"><use href="#i-truck"/></svg>배차</div>
+        <div><svg width="24" height="24"><use href="#i-chart"/></svg>수익</div>
+        <div><svg width="24" height="24"><use href="#i-user"/></svg>내 정보</div>
+      </div>
+    </div>
+    <div class="label">B. 큰 버튼 2개 + 작은 버튼 8개<small>가장 많이 쓰는 오더 찾기·차량 로그인을 크게</small></div>
+  </div>
+
+</div>
+</body>
+</html>
