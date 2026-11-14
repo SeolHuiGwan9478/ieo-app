@@ -185,6 +185,7 @@ body {
           <li>다른 앱 배차 등록</li>
           <li>단골 주선사</li>
           <li>지정 오더와 신뢰 지표</li>
+          <li>알림</li>
           <li>설정</li>
         </ol>
       </div>
@@ -873,6 +874,27 @@ body {
       </div>
     </div>
     <div class="foot"><img src="assets/ieo_wordmark_orange.svg" alt="ieo"><span>신뢰 지표 · 이행 기록</span></div>
+  </section>
+
+  <section class="page sheet" aria-label="알림">
+    <div class="eyebrow">NOTI · 01</div>
+    <div class="twocol">
+      <div class="text-col">
+        <h2>차는 배너와 음성,<br>휴대폰은 푸시</h2>
+        <p class="lead">배차가 확정되거나 취소되고, 단골 회사가 요청이나 오더를 보내면 기사님에게 바로 알려요. 문자와 알림톡은 보내지 않고, 문자는 로그인 인증번호에만 써요.</p>
+        <ul class="facts">
+          <li><b>알리는 것</b> 배차 확정, 배차 취소(주선사가 확정된 배차를 취소), 마감, 10분 안에 확정되지 않음, 단골 연결 요청, 단골 오더.</li>
+          <li><b>차에서는</b> 화면 위 배너와 음성으로 알려요. 확정과 취소는 운행 안내처럼 먼저 말하고 홈의 내 배차를 다시 받아요. 앱이 서버와 연결을 열어 두고(SSE) 받기 때문에, 시동이 꺼져 있던 동안 온 알림은 다음에 켜면 이어서 받아요.</li>
+          <li><b>휴대폰에서는</b> 앱이 꺼져 있어도 푸시(FCM)로 받고, 누르면 알맞은 화면이 열려요. 확정은 내 배차, 단골 요청은 단골 주선사, 단골 오더는 그 오더.</li>
+          <li><b>주선사는</b> 알림 대신 콘솔 화면에서 배차 요청, 인수증 사진, 대기 증빙, 도착 예정을 봐요.</li>
+        </ul>
+      </div>
+      <div class="shots" style="--h: 40cqw; --cap: 20cqw">
+        <figure class="shot"><img src="assets/m_NT_inbox.jpg" alt="휴대폰 알림함"><figcaption>휴대폰 알림함. 종류마다 이름과 갈 곳이 붙어요.</figcaption></figure>
+        <figure class="shot car"><img src="assets/c_noti_canceled.jpg" alt="차량 홈의 배차 취소 배너" style="height: 22cqw"><figcaption>차량. 주선사가 배차를 취소하면 바로 배너와 음성.</figcaption></figure>
+      </div>
+    </div>
+    <div class="foot"><img src="assets/ieo_wordmark_orange.svg" alt="ieo"><span>알림</span></div>
   </section>
 
   <section class="page sheet" aria-label="외부 API와 데이터 출처">

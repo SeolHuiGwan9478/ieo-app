@@ -24,6 +24,9 @@ enum class NotificationType {
     /** 10분 안에 확정되지 않았다 */
     DISPATCH_EXPIRED,
 
+    /** 주선사가 확정된 배차를 취소했다. 내 배차에서 빠졌다 (DSP-030) */
+    DISPATCH_CANCELED,
+
     /** 주선사가 단골 연결을 요청했다. 차에서는 알려 주기만 하고 수락은 휴대폰에서 한다 */
     DRIVER_LINK_REQUESTED,
 

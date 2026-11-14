@@ -311,6 +311,20 @@ class HomeViewModelTest {
     }
 
     @Test
+    fun `주선사가 배차를 취소하면 운행처럼 먼저 말하고 홈을 새로 받는다`() = homeTest { vm ->
+        // 서버에서 운행이 바뀌었다. 다시 받아야 홈에 보인다
+        server.trip = server.trip.copy(status = TripStatus.TO_PICKUP)
+        val canceled = AppNotification(9, NotificationType.DISPATCH_CANCELED, "한빛로지스에서 배차를 취소했어요", 1, 11, NOW)
+        notifications.emit(canceled)
+        runCurrent()
+
+        assertEquals(canceled.message, announcer.texts.last())
+        assertEquals(AnnouncementPriority.TRIP, announcer.said.last().priority)
+        assertEquals(BannerKind.INFO, vm.status.value.banners.last().kind)
+        assertEquals(listOf<Long?>(null, 1), tracker.tracked)
+    }
+
+    @Test
     fun `운행 완료를 누르고 완료하면 운행을 마치고 내 배차 목록으로 돌아간다`() = homeTest(TripStatus.IN_TRANSIT) { vm ->
         vm.arrive()
         runCurrent()

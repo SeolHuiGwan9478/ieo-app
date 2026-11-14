@@ -22,10 +22,13 @@ import java.time.Instant
  */
 object HomeAnnouncements {
 
+    /** 내 배차가 생기거나 빠지는 알림. 운행 안내처럼 먼저 말하고, 홈을 새로 받는다 */
+    val TRIP_CHANGES = setOf(NotificationType.DISPATCH_CONFIRMED, NotificationType.DISPATCH_CANCELED)
+
     /** 배차 확정은 운행 안내로, 마감·만료는 추천과 같은 순서로 말한다 (09 알림: 주행 중 음성) */
     fun notification(notification: AppNotification): Announcement = Announcement(
         text = notification.message,
-        priority = if (notification.type == NotificationType.DISPATCH_CONFIRMED) AnnouncementPriority.TRIP
+        priority = if (notification.type in TRIP_CHANGES) AnnouncementPriority.TRIP
         else AnnouncementPriority.RECOMMENDATION,
     )
 

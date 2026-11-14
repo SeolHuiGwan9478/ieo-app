@@ -597,13 +597,13 @@ class HomeViewModel(
     /** 배너를 다 보여 줬거나 닫았다. 다음 배너가 있으면 이어서 나온다 */
     fun bannerDone(id: Long) = _status.update { status -> status.copy(banners = status.banners.filterNot { it.id == id }) }
 
-    /** 배차 확정·마감·만료 알림을 말하고 배너로 띄운다. 확정이면 내 배차가 늘었으니 홈을 새로 받는다 */
+    /** 서버 알림을 말하고 배너로 띄운다. 확정·취소면 내 배차가 바뀌었으니 홈을 새로 받는다 */
     private fun tellNotifications() {
         viewModelScope.launch {
             notifications.collect { notification ->
                 announcer.say(HomeAnnouncements.notification(notification))
                 _status.update { it.copy(banners = it.banners + bannerOf(notification)) }
-                if (notification.type == NotificationType.DISPATCH_CONFIRMED) load()
+                if (notification.type in HomeAnnouncements.TRIP_CHANGES) load()
             }
         }
     }
