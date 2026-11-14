@@ -232,6 +232,16 @@ private fun RecommendationSection(preference: RecommendationPreference?, onEdit:
             Text("설정을 불러오지 못했어요", fontSize = 24.sp, color = TextSub, modifier = Modifier.padding(horizontal = TextInset, vertical = 8.dp))
             return@WhiteSection
         }
+        if (!preference.available) {
+            DetailLine("추천", "프로에서 받아요")
+            Text(
+                "휴대폰 앱에서 프로로 바꾸면 상하차지에 세울 때 근처 오더를 추천해 드려요",
+                fontSize = 24.sp,
+                color = TextSub,
+                modifier = Modifier.padding(horizontal = TextInset, vertical = 8.dp),
+            )
+            return@WhiteSection
+        }
         DetailLine("추천", if (preference.enabled) "켬" else "끔")
         if (preference.enabled) {
             DetailLine("찾는 범위", "상하차지에서 ${preference.radiusKm}km 안")

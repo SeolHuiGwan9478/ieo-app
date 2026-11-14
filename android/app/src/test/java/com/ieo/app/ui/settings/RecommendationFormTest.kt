@@ -46,4 +46,10 @@ class RecommendationFormTest {
         val received = RecommendationPreferenceBody(true, 30, null, listOf("COLD", "FROZEN")).toDomain()
         assertEquals(setOf(CargoCategory.COLD), received.excludedCargo)
     }
+
+    @Test
+    fun `베이직이면 서버가 available false를 주고 예전 서버는 받을 수 있는 것으로 본다`() {
+        assertFalse(RecommendationPreferenceBody(true, 30, available = false).toDomain().available)
+        assertEquals(true, RecommendationPreferenceBody(true, 30).toDomain().available)
+    }
 }
