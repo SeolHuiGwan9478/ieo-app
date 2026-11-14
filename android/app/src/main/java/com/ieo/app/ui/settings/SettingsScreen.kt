@@ -44,6 +44,7 @@ import com.ieo.app.domain.vehicle.BodyType
 import com.ieo.app.domain.vehicle.Tonnage
 import com.ieo.app.domain.vehicle.Vehicle
 import com.ieo.app.domain.vehicle.VehicleDimensions
+import com.ieo.app.ui.component.IeoLoadingIndicator
 import com.ieo.app.ui.component.TextInset
 import com.ieo.app.ui.component.DetailLine
 import com.ieo.app.ui.component.IeoBottomSheet
@@ -200,8 +201,10 @@ private fun VehicleSection(vehicles: List<Vehicle>, isLoading: Boolean, onEdit: 
         // 차주 한 명에 차 한 대 (VEH-001). 예전에 여러 대를 넣은 계정이면 기본 차량만 보여 준다
         SectionTitle(title = "내 차량", note = "번호 변경은 휴대폰 앱에서", icon = R.drawable.ic_menu_truck)
         val vehicle = vehicles.firstOrNull { it.isDefault } ?: vehicles.firstOrNull()
-        if (vehicle == null) {
-            Text(if (isLoading) "불러오는 중…" else "휴대폰 앱에서 내 차를 등록해 주세요", fontSize = 24.sp, color = TextSub, modifier = Modifier.padding(horizontal = TextInset, vertical = 8.dp))
+        if (vehicle == null && isLoading) {
+            IeoLoadingIndicator(width = 72.dp, modifier = Modifier.padding(horizontal = TextInset, vertical = 16.dp))
+        } else if (vehicle == null) {
+            Text("휴대폰 앱에서 내 차를 등록해 주세요", fontSize = 24.sp, color = TextSub, modifier = Modifier.padding(horizontal = TextInset, vertical = 8.dp))
         } else {
             VehicleRow(vehicle, onClick = { onEdit(vehicle) })
         }

@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
@@ -27,6 +28,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.ieo.app.domain.ledger.PaymentType
 import com.ieo.app.ui.common.formatWon
+import com.ieo.app.ui.component.IeoLoadingIndicator
 import com.ieo.app.ui.component.FilterChip
 import com.ieo.app.ui.component.IeoBottomSheet
 import com.ieo.app.ui.component.IeoPrimaryButton
@@ -132,9 +134,13 @@ fun BoxScope.RegisterTripSheet(
 @Composable
 private fun PlacePicker(label: String, options: List<PlaceOption>, selected: PlaceOption?, loading: Boolean, onSelect: (String) -> Unit) {
     FieldLabel(label)
+    if (options.isEmpty() && loading) {
+        IeoLoadingIndicator(width = 72.dp, modifier = Modifier.padding(vertical = 12.dp))
+        return
+    }
     if (options.isEmpty()) {
         Text(
-            if (loading) "불러오는 중…" else "고를 곳이 없어요. 내비에서 목적지를 한 번 검색하면 여기 나와요",
+            "고를 곳이 없어요. 내비에서 목적지를 한 번 검색하면 여기 나와요",
             fontSize = 24.sp,
             color = TextSub,
         )

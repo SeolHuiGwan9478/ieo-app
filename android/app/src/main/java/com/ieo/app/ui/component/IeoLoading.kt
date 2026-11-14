@@ -3,6 +3,7 @@ package com.ieo.app.ui.component
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
@@ -36,9 +37,10 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import kotlin.math.abs
+import com.ieo.app.ui.theme.Orange500
 
-private const val CYCLE_MILLIS = 1200
+
+private const val CYCLE_MILLIS = 1800
 
 /** 로고 심볼 좌표(design/logo/icon, 120 단위)에서 막대와 점 두 개만 잘라낸 영역 */
 private const val GLYPH_LEFT = 14f
@@ -46,14 +48,15 @@ private const val GLYPH_WIDTH = 90f
 private const val GLYPH_HEIGHT = 26f
 
 /**
- * 로딩 표시. 로고의 막대·점·작은 점에 빛이 왼쪽에서 오른쪽으로 차례로 흘러간다.
+ * 로딩 표시 "이어 붙이기" (2026-11-14). 로고의 막대가 앞으로 늘어나 큰 점·작은 점을 차례로 이어 붙였다가 돌아온다.
+ * 이름(이어서) 뜻을 그대로 보여 준다. 휴대폰 앱·주선사 콘솔도 같은 움직임이다.
  * 버튼이나 카드 안처럼 작은 자리에 쓴다. 화면 전체를 덮을 때는 [IeoLoadingPanel]을 쓴다.
  */
 @Composable
 fun IeoLoadingIndicator(
     modifier: Modifier = Modifier,
     width: Dp = 96.dp,
-    color: Color = MaterialTheme.colorScheme.onBackground,
+    color: Color = Orange500,
 ) {
     val phase by rememberInfiniteTransition(label = "ieo-loading").animateFloat(
         initialValue = 0f,
@@ -70,29 +73,17 @@ fun IeoLoadingIndicator(
         val unit = size.width / GLYPH_WIDTH
         fun x(value: Float) = (value - GLYPH_LEFT) * unit
         val centerY = size.height / 2
-
-        // 막대 → 점 → 작은 점 순서로 0.18 주기씩 늦게 밝아진다
-        val bar = glow(phase, delay = 0f)
-        val dot = glow(phase, delay = 0.18f)
-        val smallDot = glow(phase, delay = 0.36f)
+        val frame = IeoLoadingMotion.at(phase)
 
         val barHeight = 18 * unit
         drawRoundRect(
-            color = color.copy(alpha = alphaOf(bar)),
+            color = color,
             topLeft = Offset(x(18f), centerY - barHeight / 2),
-            size = Size(42 * unit, barHeight),
+            size = Size(frame.barWidth * unit, barHeight),
             cornerRadius = CornerRadius(barHeight / 2),
         )
-        drawCircle(
-            color = color.copy(alpha = alphaOf(dot)),
-            radius = 9 * unit * scaleOf(dot),
-            center = Offset(x(76f), centerY),
-        )
-        drawCircle(
-            color = color.copy(alpha = alphaOf(smallDot)),
-            radius = 6 * unit * scaleOf(smallDot),
-            center = Offset(x(98f), centerY),
-        )
+        drawCircle(color = color.copy(alpha = color.alpha * frame.dotAlpha), radius = 9 * unit, center = Offset(x(76f), centerY))
+        drawCircle(color = color.copy(alpha = color.alpha * frame.smallDotAlpha), radius = 6 * unit, center = Offset(x(98f), centerY))
     }
 }
 
@@ -116,12 +107,12 @@ fun IeoLoadingPanel(
                 .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null) {},
         ) {
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                IeoLoadingIndicator(width = 120.dp)
+                IeoLoadingIndicator(width = 160.dp)
                 if (message != null) {
                     Spacer(Modifier.height(28.dp))
                     Text(
                         text = message,
-                        fontSize = 24.sp,
+                        fontSize = 26.sp,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
@@ -131,22 +122,43 @@ fun IeoLoadingPanel(
 }
 
 /**
- * 한 주기(0~1) 안에서 빛이 지나가는 정도(0~1).
- * delay만큼 늦게 시작하는 삼각파라서, 세 요소가 차례로 밝아졌다 어두워진다.
+ * "이어 붙이기" 한 주기(0~1)의 모양. 로고 좌표 단위.
+ * 막대 42 → 86(작은 점 끝까지)으로 늘었다가 돌아오고, 막대가 지나가는 동안 점이 사라졌다가 돌아온다.
+ * 휴대폰 앱(IeoLoading.kt)·주선사 콘솔(IeoLoader.tsx)과 같은 숫자다
  */
-private fun glow(phase: Float, delay: Float): Float {
-    val distance = abs(((phase - delay) % 1f + 1f) % 1f - 0.25f)
-    return (1f - distance / 0.25f).coerceIn(0f, 1f)
+internal object IeoLoadingMotion {
+    data class Frame(val barWidth: Float, val dotAlpha: Float, val smallDotAlpha: Float)
+
+    private const val SHORT = 42f
+    private const val LONG = 86f
+    private val ease = FastOutSlowInEasing
+
+    fun at(phase: Float): Frame {
+        val p = ((phase % 1f) + 1f) % 1f
+        val bar = when {
+            p < 0.10f -> SHORT
+            p < 0.50f -> SHORT + (LONG - SHORT) * ease.transform((p - 0.10f) / 0.40f)
+            p < 0.60f -> LONG
+            p < 0.95f -> LONG - (LONG - SHORT) * ease.transform((p - 0.60f) / 0.35f)
+            else -> SHORT
+        }
+        return Frame(bar, fade(p, 0.20f, 0.30f, 0.72f, 0.80f), fade(p, 0.38f, 0.46f, 0.60f, 0.70f))
+    }
+
+    /** outStart~outEnd 동안 1→0, inStart~inEnd 동안 0→1 */
+    private fun fade(p: Float, outStart: Float, outEnd: Float, inStart: Float, inEnd: Float): Float = when {
+        p < outStart -> 1f
+        p < outEnd -> 1f - (p - outStart) / (outEnd - outStart)
+        p < inStart -> 0f
+        p < inEnd -> (p - inStart) / (inEnd - inStart)
+        else -> 1f
+    }
 }
-
-private fun alphaOf(glow: Float) = 0.25f + 0.75f * glow
-
-private fun scaleOf(glow: Float) = 1f + 0.2f * glow
 
 @Preview(widthDp = 400, heightDp = 200, showBackground = true)
 @Composable
 private fun IeoLoadingIndicatorPreview() {
     Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
-        IeoLoadingIndicator(color = Color.Black)
+        IeoLoadingIndicator()
     }
 }
