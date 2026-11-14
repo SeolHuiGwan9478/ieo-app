@@ -366,7 +366,7 @@ private fun BoxScope.ReceiptViewer(bitmaps: List<ImageBitmap>, index: Int, onMov
                 if (bitmaps.size > 1) "종이 인수증 ${index + 1} / ${bitmaps.size}" else "종이 인수증",
                 fontSize = 28.sp, fontWeight = FontWeight.Bold, color = Color.White, modifier = Modifier.weight(1f),
             )
-            Text("두 번 누르면 크게 보여요", fontSize = 22.sp, color = Color(0xFFBDBDBD))
+            Text("두 번 누르면 크게 보여요", fontSize = 24.sp, color = Color(0xFFBDBDBD))
             Spacer(Modifier.width(24.dp))
             Box(
                 contentAlignment = Alignment.Center,

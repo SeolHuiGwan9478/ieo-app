@@ -85,7 +85,7 @@ fun RestStopCard(state: HomeState.Driving) {
             .border(if (focus != null) 2.dp else 1.dp, accent, CardShape)
             .padding(horizontal = 20.dp, vertical = 16.dp),
     ) {
-        Text(if (focus != null) "쉬어 갈 곳" else "다음 화물차 라운지", fontSize = 20.sp, color = TextSub)
+        Text(if (focus != null) "쉬어 갈 곳" else "다음 화물차 라운지", fontSize = 24.sp, color = TextSub)
         Spacer(Modifier.height(4.dp))
         Text(
             "${stop.name} · 경로로 ${km(stop)}",
@@ -112,7 +112,7 @@ fun RestStopList(state: HomeState.Driving, onAddWaypoint: (RestStop) -> Unit) {
     var selectedName by remember(lounges.map { it.name }, suggested.name) { mutableStateOf(suggested.name) }
     val target = lounges.firstOrNull { it.name == selectedName } ?: suggested
     WhiteSection(contentPadding = 28.dp) {
-        Text("가는 길 화물차 라운지 · 눌러서 고르기", fontSize = 22.sp, color = TextSub)
+        Text("가는 길 화물차 라운지 · 눌러서 고르기", fontSize = 24.sp, color = TextSub)
         Spacer(Modifier.height(8.dp))
         lounges.forEach { stop ->
             LoungeRow(stop, selected = stop.name == target.name, enabled = state.parked, onClick = { selectedName = stop.name })
@@ -126,7 +126,7 @@ fun RestStopList(state: HomeState.Driving, onAddWaypoint: (RestStop) -> Unit) {
         )
         state.restAttribution?.let {
             Spacer(Modifier.height(12.dp))
-            Text(it, fontSize = 18.sp, color = TextSub)
+            Text(it, fontSize = 24.sp, color = TextSub)
         }
     }
 }

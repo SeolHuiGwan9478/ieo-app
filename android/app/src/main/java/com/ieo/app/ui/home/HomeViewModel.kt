@@ -252,6 +252,10 @@ class HomeViewModel(
     val parked: StateFlow<Boolean> = sensors.motion.map { it?.isParked == true }
         .stateIn(viewModelScope, SharingStarted.Eagerly, false)
 
+    /** 차가 움직이고 있다: 기어 P도 주차 브레이크도 아니다. 센서를 아직 못 읽었으면 막지 않는다 (UX-001, UX-004) */
+    val moving: StateFlow<Boolean> = sensors.motion.map { it != null && !it.isParked }
+        .stateIn(viewModelScope, SharingStarted.Eagerly, false)
+
     init {
         viewModelScope.launch {
             load()

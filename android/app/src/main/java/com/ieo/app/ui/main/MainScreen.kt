@@ -2,6 +2,7 @@ package com.ieo.app.ui.main
 
 import com.ieo.app.ui.component.IeoBannerHost
 import com.ieo.app.ui.component.ListeningPill
+import com.ieo.app.ui.component.ParkedOnly
 import com.ieo.app.ui.component.MessageBanners
 import com.ieo.app.ui.component.ShowMessage
 import com.ieo.app.ui.home.PickModal
@@ -102,13 +103,14 @@ fun MainScreen(
     val carLinkState by carLinkViewModel.state.collectAsStateWithLifecycle()
     ShowMessage(carLinkState.message, messages::show, carLinkViewModel::messageShown)
 
-    // 단골 주선사 요청 (BRK-002). 정차 중에만 묻는다: 주행이 끝날 때마다 새로 받고, 주행 중에는 창을 감춘다
-    val isDriving = liveState is HomeState.Driving
+    // 차가 움직이면 오더·장부·설정은 막는다 (UX-003, UX-004, DSP-012)
+    val moving by homeViewModel.moving.collectAsStateWithLifecycle()
 
     var confirmingTrip by remember { mutableStateOf<AssignedTrip?>(null) }
 
-    // 다른 앱에서 받은 배차 등록 창
+    // 다른 앱에서 받은 배차 등록 창. 손으로 고르고 적는 창이라 차가 움직이면 닫는다 (UX-004)
     var registering by remember { mutableStateOf(false) }
+    LaunchedEffect(moving) { if (moving) registering = false }
     val registerState by registerViewModel.state.collectAsStateWithLifecycle()
     ShowMessage(registerState.message, messages::show, registerViewModel::messageShown)
     LaunchedEffect(registerState.done) {
@@ -139,10 +141,9 @@ fun MainScreen(
                         onPickClick = { homeViewModel.openPick(it.orderId) },
                         onAddRestStopWaypoint = homeViewModel::addRestStopWaypoint,
                     )
-                    // 주행 중에는 오더 목록을 보여 주지 않는다 (DSP-012)
-                    Destination.ORDERS -> OrdersRoute(isDriving = liveState is HomeState.Driving, onMessage = messages::show)
-                    Destination.LEDGER -> LedgerRoute(onMessage = messages::show)
-                    Destination.SETTINGS -> SettingsRoute(onMessage = messages::show)
+                    Destination.ORDERS -> ParkedOnly(moving, "주행 중에는 오더를 보여 드리지 않아요") { OrdersRoute(onMessage = messages::show) }
+                    Destination.LEDGER -> ParkedOnly(moving, "주행 중에는 장부를 보여 드리지 않아요") { LedgerRoute(onMessage = messages::show) }
+                    Destination.SETTINGS -> ParkedOnly(moving, "주행 중에는 설정을 열지 않아요") { SettingsRoute(onMessage = messages::show) }
                 }
                 if (BuildConfig.SHOW_DEMO_SWITCHER && destination == Destination.HOME) {
                     DemoStateSwitcher(

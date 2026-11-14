@@ -81,12 +81,8 @@ private val ScreenPadding = 28.dp
  * 상태는 [OrdersViewModel]이 정하고, 이 화면은 그리기만 한다.
  */
 @Composable
-fun OrdersScreen(state: OrdersUiState, actions: OrdersActions, isDriving: Boolean) {
+fun OrdersScreen(state: OrdersUiState, actions: OrdersActions) {
     Box(modifier = Modifier.fillMaxSize().background(CanvasGray)) {
-        if (isDriving) {
-            DrivingNotice()
-            return@Box
-        }
         Column(
             verticalArrangement = Arrangement.spacedBy(16.dp),
             modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(ScreenPadding),
@@ -241,19 +237,6 @@ private fun ConditionChip(text: String, selected: Boolean, onClick: () -> Unit) 
             .wrapContentHeight()
             .padding(horizontal = 26.dp, vertical = 12.dp),
     )
-}
-
-@Composable
-private fun DrivingNotice() {
-    Column(
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center,
-        modifier = Modifier.fillMaxSize().padding(ScreenPadding),
-    ) {
-        Text("주행 중에는 오더를 보여 드리지 않아요", fontSize = 28.sp, fontWeight = FontWeight.ExtraBold, color = TextStrong)
-        Spacer(Modifier.height(12.dp))
-        Text("정차하면 다시 보여 드릴게요", fontSize = 24.sp, fontWeight = FontWeight.Medium, color = TextSub, textAlign = TextAlign.Center)
-    }
 }
 
 /** 확정을 기다리는 내 요청: 구간, 만료까지 남은 시간, 철회 */
@@ -505,7 +488,6 @@ private fun OrdersScreenPreview() {
                 pending = PendingRequest("평택 청북 → 대구 북구", SystemClock.elapsedRealtime() + 492_000),
             ),
             actions = PreviewOrdersActions,
-            isDriving = false,
         )
     }
 }

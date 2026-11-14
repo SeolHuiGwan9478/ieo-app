@@ -36,6 +36,7 @@ import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Rule
@@ -308,6 +309,17 @@ class HomeViewModelTest {
         assertEquals(BannerKind.INFO, vm.status.value.banners.last().kind)
         vm.bannerDone(7)
         assertEquals(listOf(8L), vm.status.value.banners.map { it.id })
+    }
+
+    @Test
+    fun `차가 움직이면 moving이고 기어 P나 주차 브레이크면 아니다 센서를 못 읽으면 막지 않는다`() = homeTest { vm ->
+        assertFalse(vm.moving.value)
+        sensors.drive(GeoPoint(36.0, 128.0))
+        runCurrent()
+        assertTrue(vm.moving.value)
+        sensors.parkAt(GeoPoint(36.0, 128.0))
+        runCurrent()
+        assertFalse(vm.moving.value)
     }
 
     @Test

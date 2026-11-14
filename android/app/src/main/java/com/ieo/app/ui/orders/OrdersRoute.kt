@@ -9,9 +9,9 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 
 /** 오더 탭과 ViewModel을 잇는다. 탭을 열 때마다 목록을 새로 받는다 */
 @Composable
-fun OrdersRoute(isDriving: Boolean, onMessage: (String) -> Unit, viewModel: OrdersViewModel = viewModel(factory = OrdersViewModel.Factory)) {
+fun OrdersRoute(onMessage: (String) -> Unit, viewModel: OrdersViewModel = viewModel(factory = OrdersViewModel.Factory)) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     LaunchedEffect(Unit) { viewModel.refresh() }
     ShowMessage(state.message, onMessage, viewModel::messageShown)
-    OrdersScreen(state = state, actions = viewModel, isDriving = isDriving)
+    OrdersScreen(state = state, actions = viewModel)
 }

@@ -53,7 +53,7 @@ fun BoxScope.FinishTripSheet(
             Spacer(Modifier.width(20.dp))
             Text("대기 증빙 만들기", fontSize = 26.sp, color = TextStrong)
         }
-        Text("상차지·하차지 대기 기록을 주선사에게 보낼 링크로 만들어요", fontSize = 22.sp, color = TextSub, modifier = Modifier.padding(start = 76.dp))
+        Text("상차지·하차지 대기 기록을 주선사에게 보낼 링크로 만들어요", fontSize = 24.sp, color = TextSub, modifier = Modifier.padding(start = 76.dp))
         Spacer(Modifier.height(32.dp))
         Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             IeoTonalButton(text = "취소", onClick = onDismiss, modifier = Modifier.weight(1f))
