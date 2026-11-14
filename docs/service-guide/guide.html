@@ -184,6 +184,7 @@ body {
           <li>장부</li>
           <li>다른 앱 배차 등록</li>
           <li>단골 주선사</li>
+          <li>지정 오더와 신뢰 지표</li>
           <li>설정</li>
         </ol>
       </div>
@@ -353,7 +354,7 @@ body {
     <div class="twocol">
       <div class="text-col">
         <h2>내 정보</h2>
-        <p class="lead">휴대폰 앱 내 정보에는 주선사가 나를 볼 때 보는 기록을 그대로 띄웠어요. 완료한 운행 수, 직전에 취소한 횟수, 단골 주선사 수예요.</p>
+        <p class="lead">휴대폰 앱 내 정보에는 주선사가 나를 볼 때 보는 기록을 그대로 띄웠어요. 완료한 운행 수, 늦은 취소 횟수, 단골 주선사 수예요.</p>
         <ul class="facts">
           <li><b>번호를 바꾸려면</b> 새 번호로 인증번호를 다시 받아야 해요. 다른 계정이 쓰는 번호면 거기서 막혀요.</li>
           <li><b>이름은</b> 그냥 수정하고 저장하면 돼요.</li>
@@ -830,6 +831,48 @@ body {
       </div>
     </div>
     <div class="foot"><img src="assets/ieo_wordmark_orange.svg" alt="ieo"><span>단골 주선사</span></div>
+  </section>
+
+  <section class="page sheet" aria-label="지정 오더">
+    <div class="eyebrow">LINK · 02</div>
+    <div class="twocol">
+      <div class="text-col">
+        <h2>나에게만 온 오더엔<br>"단골" 태그가 붙어요</h2>
+        <p class="lead">단골로 연결된 주선사는 오더를 올릴 때 받을 기사님을 한 명 정할 수 있어요. 이 오더는 그 기사님에게만 보이고, 목록·상세·추천 어디서든 "단골" 태그로 다른 오더와 구분돼요.</p>
+        <ul class="facts">
+          <li><b>알림</b> 지정 오더가 올라오거나 받을 기사님이 나로 바뀌면 앱 알림이 와요. 휴대폰은 알림을 누르면 그 오더 상세가 열리고, 차는 배너와 음성으로 알려 줘요.</li>
+          <li><b>잡는 방법은 같아요</b> 실수익, 상차지까지 거리, 배차 요청 흐름은 일반 오더와 똑같아요.</li>
+          <li><b>단골을 해제하면</b> 아직 아무도 잡지 않은 그 회사의 지정 오더는 "단골 해제"로 닫혀요. 이미 잡은 배차는 그대로예요.</li>
+        </ul>
+      </div>
+      <div class="shots" style="--h: 40cqw; --cap: 20cqw">
+        <figure class="shot"><img src="assets/m_DSP_regular_list.jpg" alt="휴대폰 오더 목록의 단골 태그"><figcaption>휴대폰 오더 목록. 단골 회사가 나에게만 보낸 오더.</figcaption></figure>
+        <figure class="shot car"><img src="assets/c_orders_regular.jpg" alt="차량 오더 목록의 단골 태그" style="height: 24cqw"><figcaption>차량 오더 목록. 같은 태그로 보여요.</figcaption></figure>
+      </div>
+    </div>
+    <div class="foot"><img src="assets/ieo_wordmark_orange.svg" alt="ieo"><span>지정 오더</span></div>
+  </section>
+
+  <section class="page sheet" aria-label="신뢰 지표와 이행 기록">
+    <div class="eyebrow">LINK · 03</div>
+    <div class="twocol">
+      <div class="text-col">
+        <h2>주선사는 지급,<br>기사님은 이행 기록</h2>
+        <p class="lead">처음 거래하는 상대라도 믿을 만한지 고를 수 있게, 서로의 지난 거래를 숫자로 보여 줘요. 숫자는 이에오에서 실제로 끝난 운행만으로 매일 새벽 4시 40분에 다시 계산해요.</p>
+        <ul class="facts">
+          <li><b>주선사 지표</b> 최근 180일 동안 운행비를 평균 며칠 만에 줬는지, 약속보다 늦게 준 비율, 그 회사 운행의 평균 대기 시간이에요. 오더 상세와 단골 요청에 보여요.</li>
+          <li><b>태그 색</b> 평균 지급이 15일 이하면 초록, 20일을 넘으면 보라로 눈에 띄게 해요.</li>
+          <li><b>기록이 적으면</b> 끝난 운행이 20건 이상 쌓여야 숫자를 보여요. 그 전에는 "거래 기록 적음"으로 표시해 적은 표본으로 오해하지 않게 해요.</li>
+          <li><b>기사님 이행 기록</b> 완료 운행 수, 늦은 취소(상차 2시간 안 취소) 수, 단골 주선사 수예요. 주선사가 배차 요청을 볼 때 함께 보여요.</li>
+        </ul>
+      </div>
+      <div class="shots" style="--h: 40cqw; --cap: 20cqw">
+        <figure class="shot"><img src="assets/m_metrics_detail.jpg" alt="오더 상세의 주선사 신뢰 지표" style="height: 6cqw"><figcaption>오더 상세. 주선사 지급 평균과 지연 비율.</figcaption></figure>
+        <figure class="shot"><img src="assets/m_record_my.jpg" alt="휴대폰 내 정보의 이행 기록" style="height: 7cqw"><figcaption>휴대폰 내 정보. 내 이행 기록.</figcaption></figure>
+        <figure class="shot car"><img src="assets/c_record_settings.jpg" alt="차량 설정의 이행 기록" style="height: 8cqw"><figcaption>차량 설정. 같은 기록을 보여요.</figcaption></figure>
+      </div>
+    </div>
+    <div class="foot"><img src="assets/ieo_wordmark_orange.svg" alt="ieo"><span>신뢰 지표 · 이행 기록</span></div>
   </section>
 
   <section class="page sheet" aria-label="외부 API와 데이터 출처">

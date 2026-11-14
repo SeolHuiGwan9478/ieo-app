@@ -148,7 +148,7 @@ private fun RecordCard(standing: DriverStanding, linkCount: Int) {
         Spacer(Modifier.height(16.dp))
         Row {
             RecordStat("${standing.completedTripCount}건", "완료 운행", Modifier.weight(1f))
-            RecordStat("${standing.lateCancelCount}건", "직전 취소", Modifier.weight(1f))
+            RecordStat("${standing.lateCancelCount}건", "늦은 취소", Modifier.weight(1f))
             RecordStat("${linkCount}곳", "단골 주선사", Modifier.weight(1f))
         }
         if (!standing.verified) {
