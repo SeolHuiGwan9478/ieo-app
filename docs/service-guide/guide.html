@@ -53,9 +53,9 @@ body {
 .foot img { width: 3.2cqw; display: block; }
 
 /* 목차 */
-.toc { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 3cqw; margin-top: 1cqw; }
-.toc h3 { margin: 0 0 1.2cqw; font-size: 1.5cqw; font-weight: 700; padding-bottom: .9cqw; border-bottom: .15cqw solid var(--ink); }
-.toc ol { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: .75cqw; counter-reset: n; }
+.toc { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 3cqw; margin-top: 0; }
+.toc h3 { margin: 0 0 1cqw; font-size: 1.5cqw; font-weight: 700; padding-bottom: .9cqw; border-bottom: .15cqw solid var(--ink); }
+.toc ol { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: .5cqw; counter-reset: n; }
 .toc li { counter-increment: n; display: flex; gap: 1.1cqw; font-size: 1.35cqw; line-height: 1.5; }
 .toc li::before { content: counter(n, decimal-leading-zero); font-variant-numeric: tabular-nums; color: var(--ink-sub); min-width: 2cqw; }
 .toc li .pg { margin-left: auto; color: var(--ink-sub); font-variant-numeric: tabular-nums; }
@@ -176,7 +176,7 @@ body {
         <ol>
           <li>기존 앱과 다른 점<span class="pg">3</span></li>
         </ol>
-        <h3 style="margin-top: 1.8cqw">브랜드</h3>
+        <h3 style="margin-top: 1.5cqw">브랜드</h3>
         <ol>
           <li>로고<span class="pg">4</span></li>
           <li>아이콘<span class="pg">5</span></li>
@@ -184,13 +184,13 @@ body {
           <li>로고를 쓸 때<span class="pg">7</span></li>
           <li>로딩<span class="pg">8</span></li>
         </ol>
-        <h3 style="margin-top: 1.8cqw">주선사·운영</h3>
+        <h3 style="margin-top: 1.5cqw">주선사·운영</h3>
         <ol>
           <li>주선사 콘솔<span class="pg">43</span></li>
           <li>에이전트<span class="pg">44</span></li>
           <li>운영자 서류 심사<span class="pg">45</span></li>
         </ol>
-        <h3 style="margin-top: 1.8cqw">부록</h3>
+        <h3 style="margin-top: 1.5cqw">부록</h3>
         <ol>
           <li>외부 API와 데이터 출처<span class="pg">46</span></li>
           <li>TMAP 아껴 쓰기<span class="pg">47</span></li>
@@ -235,6 +235,12 @@ body {
           <li>신뢰 지표와 이행 기록<span class="pg">40</span></li>
           <li>알림<span class="pg">41</span></li>
           <li>음성과 주행 중 화면<span class="pg">42</span></li>
+        </ol>
+        <h3 style="margin-top: 1.5cqw">앞으로</h3>
+        <ol style="display:grid;grid-template-columns:1fr 1fr 1fr;column-gap:2.4cqw">
+          <li>밴드 화물 글 모으기<span class="pg">50</span></li>
+          <li>휴게소 밥값·기사식당<span class="pg">51</span></li>
+          <li>계절별 맞춤 에어컨<span class="pg">52</span></li>
         </ol>
       </div>
     </div>
@@ -1327,6 +1333,172 @@ body {
     </div>
     <p class="note" style="margin-top: 1.2cqw">출처: 유가 — 한국석유공사 오피넷 · 휴게소 — 한국도로공사 고속도로 공공데이터 포털, 공공데이터포털 전국휴게소정보표준데이터(이용허락: 저작자표시). 앱의 데이터 출처 화면에도 같이 적어요.</p>
     <div class="foot"><img src="assets/ieo_wordmark_orange.svg" alt="ieo"><span>부록 · 기름값과 휴게소 데이터</span></div>
+  </section>
+
+  <section class="page sheet" aria-label="밴드·커뮤니티 화물 글 모으기">
+    <div class="eyebrow">NEXT · 01 · 만들 계획</div>
+    <h2>밴드에 올라온 화물 글도 이에오 오더 목록으로</h2>
+    <p class="lead">기사님들은 노선·톤수별 화물차 모임 밴드에서도 일을 구해요. 밴드와 다른 커뮤니티에 흩어진 화물 글을 읽어 오더 모양으로 바꾸고, 이에오 오더와 함께 차 안 한 목록에서 보여 줄 거예요.</p>
+    <div style="display:grid;grid-template-columns:0.95fr 1.15fr 0.95fr;gap:2cqw;align-items:start">
+      <figure class="shot" style="margin:0">
+        <img src="assets/band_public_posts.jpg" alt="공개 화물 밴드의 실제 글 목록. 글쓴이와 업체 광고 카드는 가림" style="width:100%;height:25cqw;object-fit:cover;object-position:top;border:.1cqw solid var(--line);border-radius:.8cqw">
+        <figcaption style="max-width:none"><b>지금: 실제 밴드 글 목록</b>공개 화물 밴드(멤버 2천여 명). 같은 지입 모집 글이 20분마다 다시 올라와 진짜 오더를 찾기 어려워요. 글쓴이·업체는 가렸어요.</figcaption>
+      </figure>
+      <div style="display:flex;flex-direction:column;gap:1.2cqw">
+        <div style="background:#F7F8FA;border-radius:1.2cqw;padding:1.4cqw 1.6cqw">
+          <h3 style="margin:0 0 .6cqw">이에오가 하는 일</h3>
+          <ol class="flow">
+            <li><b>① 가져오기</b> 기사님이 로그인해 허락한 밴드의 글만 BAND 공식 API로 읽어요. 화면을 긁어 오지 않아요.</li>
+            <li><b>② AI로 읽기</b> "16시 화성 향남 상차 ~ 광주 하차, 5톤 윙"에서 상하차지·시간·톤수·차종·운임을 칸으로 뽑아요. 모르는 칸은 비워 둬요.</li>
+            <li><b>③ 거르기</b> 지입 모집·차량 매매 같은 광고, 여러 밴드에 같은 글, 지난 날짜, 내 차에 못 싣는 글을 빼요.</li>
+            <li><b>④ 한 목록</b> 이에오 오더와 섞어 실수익 순으로. 밴드 글에는 '밴드'와 모임 이름을 붙여요.</li>
+          </ol>
+        </div>
+        <div style="background:#F7F8FA;border-radius:1.2cqw;padding:1.4cqw 1.6cqw">
+          <h3 style="margin:0 0 .6cqw">지킬 것</h3>
+          <ul class="flow">
+            <li><b>출처 표시</b> 원문 링크를 달고, 글쓴이 연락처는 그 기사님 화면에만.</li>
+            <li><b>배차는 글쓴이와</b> 전화로 정하고, 잡은 일은 이에오 운행으로 등록해 알림·대기·인수증·장부를 챙겨요.</li>
+            <li><b>다른 커뮤니티</b> 카페·오픈채팅 등은 허용된 방법(API, 운영자 제휴)이 있을 때만.</li>
+          </ul>
+        </div>
+      </div>
+      <figure class="shot car" style="margin:0">
+        <svg viewBox="0 0 420 470" role="img" aria-label="차량 오더 목록 예시. 이에오 오더와 밴드 글이 함께 보인다" style="display:block;width:100%;height:auto;background:#14171C;border-radius:1.1cqw;padding:.55cqw;box-sizing:border-box">
+          <rect x="0" y="0" width="420" height="470" rx="14" fill="#F2F4F6"/>
+          <text x="22" y="40" font-size="20" font-weight="700" fill="#191F28">오더 찾기</text>
+          <text x="398" y="40" font-size="13" text-anchor="end" fill="#4E5968">실수익 순</text>
+          <g>
+            <rect x="14" y="62" width="392" height="118" rx="14" fill="#fff"/>
+            <rect x="30" y="78" width="54" height="24" rx="12" fill="#FFF0EA"/><text x="57" y="95" font-size="12" font-weight="700" text-anchor="middle" fill="#E5531C">이에오</text>
+            <text x="30" y="130" font-size="19" font-weight="700" fill="#191F28">평택 → 대구</text>
+            <text x="30" y="158" font-size="13" fill="#4E5968">5톤 카고 · 내일 09:00 상차</text>
+            <text x="390" y="130" font-size="12" text-anchor="end" fill="#4E5968">실수익</text>
+            <text x="390" y="158" font-size="19" font-weight="700" text-anchor="end" fill="#191F28">27만</text>
+          </g>
+          <g>
+            <rect x="14" y="192" width="392" height="134" rx="14" fill="#fff" stroke="#FF6C37" stroke-width="2"/>
+            <rect x="30" y="208" width="46" height="24" rx="12" fill="#E8F6EC"/><text x="53" y="225" font-size="12" font-weight="700" text-anchor="middle" fill="#1B7F3B">밴드</text>
+            <text x="86" y="225" font-size="12" fill="#4E5968">경부 5톤 모임 · 12분 전</text>
+            <text x="30" y="262" font-size="19" font-weight="700" fill="#191F28">안성 → 김해</text>
+            <text x="30" y="290" font-size="13" fill="#4E5968">5톤 윙 · 내일 07:00 상차 · 인수증</text>
+            <text x="30" y="312" font-size="12" fill="#8B95A1">원문 보기 ›</text>
+            <text x="390" y="262" font-size="12" text-anchor="end" fill="#4E5968">실수익</text>
+            <text x="390" y="290" font-size="19" font-weight="700" text-anchor="end" fill="#191F28">29만</text>
+          </g>
+          <g>
+            <rect x="14" y="338" width="392" height="118" rx="14" fill="#fff"/>
+            <rect x="30" y="354" width="46" height="24" rx="12" fill="#E8F6EC"/><text x="53" y="371" font-size="12" font-weight="700" text-anchor="middle" fill="#1B7F3B">밴드</text>
+            <text x="86" y="371" font-size="12" fill="#4E5968">호남 화물 · 40분 전</text>
+            <text x="30" y="406" font-size="19" font-weight="700" fill="#191F28">화성 → 광주</text>
+            <text x="30" y="434" font-size="13" fill="#4E5968">5톤 카고 · 오늘 15:00 상차</text>
+            <text x="390" y="406" font-size="12" text-anchor="end" fill="#4E5968">실수익</text>
+            <text x="390" y="434" font-size="19" font-weight="700" text-anchor="end" fill="#191F28">21만</text>
+          </g>
+        </svg>
+        <figcaption style="max-width:none"><b>차량 화면 예시 (계획)</b>숫자와 모임 이름은 예시예요.</figcaption>
+      </figure>
+    </div>
+    <p class="note">먼저 확인할 것: 오더를 나누는 밴드는 대부분 멤버 공개라, 기사님이 가입한 밴드를 기사님 허락으로 읽는 방식이어야 해요. BAND 오픈 API의 읽기 범위와 호출 한도, 밴드 운영 정책을 확인해요. 화면 출처: 네이버 밴드 공개 밴드, 2026-11-15.</p>
+    <div class="foot"><img src="assets/ieo_wordmark_orange.svg" alt="ieo"><span>앞으로 · 밴드·커뮤니티 화물 글</span></div>
+  </section>
+
+  <section class="page sheet" aria-label="휴게소 밥값과 기사식당">
+    <div class="eyebrow">NEXT · 02 · 만들 계획</div>
+    <h2>다음 휴게소 밥값, 그리고 기사님들이 고른 식당</h2>
+    <p class="lead">운행 중 휴게 안내에 대표 메뉴와 가격을 붙이고, 고속도로 밖 기사식당은 기사님들이 직접 남긴 한 마디로 추천할 거예요. 큰 차를 세울 수 있는지가 가장 먼저예요.</p>
+    <div style="display:grid;grid-template-columns:1fr 1fr 0.85fr;gap:1.8cqw;align-items:start">
+      <div style="background:#F7F8FA;border-radius:1.2cqw;padding:1.5cqw 1.7cqw">
+        <div style="display:flex;align-items:center;gap:1cqw;margin-bottom:.9cqw"><img src="assets/ex_data.svg" alt="한국도로공사 고속도로 공공데이터 포털 로고" style="height:2.4cqw"></div>
+        <h3 style="margin:0 0 .6cqw">휴게소 밥값: 데이터가 있어요</h3>
+        <ol class="flow">
+          <li><b>메뉴 7,294개</b> 도로공사 '휴게소 메뉴' 데이터에 휴게소별 메뉴 이름, 가격, 대표 메뉴(EX-FOOD) 여부가 있어요. 지금 쓰는 키로 받아지는 걸 확인했어요.</li>
+          <li><b>휴게소에 붙이기</b> 휴게소 코드가 같아서, 이미 가진 휴게소 219곳에 메뉴를 바로 이어 붙여요. 매주 휴게소를 받을 때 같이 받아요.</li>
+          <li><b>안내</b> "다음 휴게소 12km, 대표 메뉴 어묵우동 7천 원" 처럼 음성 한 줄. 세워 두면 메뉴 전체와 가장 싼 한 끼를 봐요.</li>
+        </ol>
+      </div>
+      <div style="background:#F7F8FA;border-radius:1.2cqw;padding:1.5cqw 1.7cqw">
+        <div style="height:2.4cqw;margin-bottom:.9cqw;display:flex;align-items:center"><span class="note" style="margin:0;font-weight:700;color:var(--orange-text)">기사님들이 만드는 데이터</span></div>
+        <h3 style="margin:0 0 .6cqw">기사식당: 묻고, 모으고, 추천</h3>
+        <ol class="flow">
+          <li><b>한 마디 묻기</b> 식당 앞에 30분쯤 세웠다 출발하면 "여기서 드셨어요? 괜찮았어요?" 하고 물어요. 응·아니로 답하고, 애매한 말은 Jev가 판별해요.</li>
+          <li><b>기사님 기준</b> 큰 차 주차, 한 끼 가격, 새벽 영업, 혼밥. 승용차 맛집 평점이 아니라 이 기준으로 모아요.</li>
+          <li><b>추천</b> 내 경로 근처, 다른 기사님들이 '괜찮았다'고 한 곳, 내 톤수로 세울 수 있는 곳 순으로.</li>
+        </ol>
+      </div>
+      <figure class="shot car" style="margin:0">
+        <svg viewBox="0 0 360 470" role="img" aria-label="차량 휴게 안내 예시. 다음 휴게소의 대표 메뉴와 가격, 근처 기사식당" style="display:block;width:100%;height:auto;background:#14171C;border-radius:1.1cqw;padding:.55cqw;box-sizing:border-box">
+          <rect x="0" y="0" width="360" height="470" rx="14" fill="#F2F4F6"/>
+          <text x="20" y="40" font-size="13" fill="#4E5968">다음 휴게소 · 12km</text>
+          <text x="20" y="70" font-size="21" font-weight="700" fill="#191F28">안성(부산)휴게소</text>
+          <rect x="20" y="84" width="88" height="24" rx="12" fill="#FFF0EA"/><text x="64" y="101" font-size="12" font-weight="700" text-anchor="middle" fill="#E5531C">화물차 라운지</text>
+          <rect x="14" y="122" width="332" height="150" rx="14" fill="#fff"/>
+          <text x="30" y="150" font-size="12" fill="#4E5968">대표 메뉴</text>
+          <text x="30" y="178" font-size="17" font-weight="700" fill="#191F28">어묵우동</text><text x="330" y="178" font-size="17" font-weight="700" text-anchor="end" fill="#191F28">7,000원</text>
+          <line x1="30" y1="196" x2="330" y2="196" stroke="#E5E8EB"/>
+          <text x="30" y="222" font-size="12" fill="#4E5968">가장 싼 한 끼</text>
+          <text x="30" y="250" font-size="17" font-weight="700" fill="#191F28">라면</text><text x="330" y="250" font-size="17" font-weight="700" text-anchor="end" fill="#191F28">4,500원</text>
+          <rect x="14" y="284" width="332" height="172" rx="14" fill="#fff"/>
+          <text x="30" y="312" font-size="12" fill="#4E5968">경로 근처 기사식당</text>
+          <text x="30" y="342" font-size="17" font-weight="700" fill="#191F28">○○기사식당</text>
+          <text x="30" y="366" font-size="13" fill="#4E5968">IC에서 1.2km · 새벽 4시부터</text>
+          <rect x="30" y="380" width="98" height="24" rx="12" fill="#E8F6EC"/><text x="79" y="397" font-size="12" font-weight="700" text-anchor="middle" fill="#1B7F3B">25톤 주차 됨</text>
+          <text x="30" y="436" font-size="13" fill="#191F28">기사님 38명이 '괜찮았다'</text>
+        </svg>
+        <figcaption style="max-width:none"><b>차량 화면 예시 (계획)</b>휴게소·식당 이름과 숫자는 예시예요.</figcaption>
+      </figure>
+    </div>
+    <p class="note">먼저 확인할 것: 식당 이름·주소를 가져올 지도 검색 API(카카오·네이버)의 이용 조건, 정차만으로 '식사'를 짐작하는 기준, 식당 쪽 광고·제휴를 받을지.</p>
+    <div class="foot"><img src="assets/ieo_wordmark_orange.svg" alt="ieo"><span>앞으로 · 휴게소 밥값과 기사식당</span></div>
+  </section>
+
+  <section class="page sheet" aria-label="계절별 맞춤 에어컨">
+    <div class="eyebrow">NEXT · 03 · 검토 중</div>
+    <h2>계절마다 내 에어컨, 묻고 나서 켜요</h2>
+    <p class="lead">기사님이 계절마다 즐겨 쓰는 에어컨 설정을 기억해 두었다가, 운행을 시작할 때 실내 온도를 보고 "에어컨 23도로 켤까요?" 하고 물어요. '응' 한마디면 켜져요. Pleos 차량 SDK에 필요한 기능이 있는 걸 확인했고, 실제 차에서 쓸 수 있는지는 더 알아봐야 해요.</p>
+    <div style="display:grid;grid-template-columns:1fr 1.1fr 0.85fr;gap:1.8cqw;align-items:start">
+      <div style="background:#F7F8FA;border-radius:1.2cqw;padding:1.5cqw 1.7cqw">
+        <h3 style="margin:0 0 .6cqw">이렇게 동작해요</h3>
+        <ol class="flow">
+          <li><b>기억하기</b> 기사님이 직접 바꾼 온도·풍량·내기 순환·오토를 봄·여름·가을·겨울로 나눠 쌓고, 가장 자주 쓴 값을 그 계절 설정으로 삼아요.</li>
+          <li><b>살피기</b> 시동 뒤나 운행을 시작할 때 실내 온도를 읽어요. 설정과 차이가 크면 물어요.</li>
+          <li><b>묻고 켜기</b> "실내 31도예요. 여름 설정으로 에어컨 23도 켤까요?" '응'이면 켜고, '아니'면 그날은 다시 묻지 않아요.</li>
+        </ol>
+      </div>
+      <div style="background:#F7F8FA;border-radius:1.2cqw;padding:1.5cqw 1.7cqw">
+        <h3 style="margin:0 0 .6cqw">Pleos 차량 SDK에서 확인한 것</h3>
+        <table class="apis" aria-label="Pleos 차량 SDK 공조 기능" style="margin:0">
+          <thead><tr><th>할 일</th><th>SDK 기능 (Vehicle 2.3.2)</th></tr></thead>
+          <tbody>
+            <tr><td>실내 온도 읽기</td><td><code>getHvacTemperatureCurrent</code></td></tr>
+            <tr><td>설정 온도</td><td><code>setHvacTemperature</code></td></tr>
+            <tr><td>에어컨·오토</td><td><code>setHvacAc</code>, <code>setHvacAuto</code></td></tr>
+            <tr><td>풍량·내기 순환</td><td><code>setHvacFanSpeed</code>, <code>setHvacRecirculation</code></td></tr>
+            <tr><td>차마다 되는 기능</td><td><code>check…Capabilities</code></td></tr>
+            <tr><td>권한</td><td>읽기 CAR_CLIMATE, 바꾸기 CONTROL_CAR_CLIMATE</td></tr>
+            <tr><td>바깥 온도</td><td>SDK에 없어요. 날씨 데이터로 대신</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <figure class="shot car" style="margin:0">
+        <svg viewBox="0 0 360 400" role="img" aria-label="차량 화면 예시. 실내 31도, 여름 설정으로 에어컨 23도를 켤지 묻는 창" style="display:block;width:100%;height:auto;background:#14171C;border-radius:1.1cqw;padding:.55cqw;box-sizing:border-box">
+          <rect x="0" y="0" width="360" height="400" rx="14" fill="#F2F4F6"/>
+          <rect x="18" y="60" width="324" height="300" rx="18" fill="#fff"/>
+          <text x="180" y="112" font-size="14" text-anchor="middle" fill="#4E5968">실내 31℃ · 여름 설정</text>
+          <text x="180" y="160" font-size="24" font-weight="700" text-anchor="middle" fill="#191F28">에어컨 23℃로</text>
+          <text x="180" y="194" font-size="24" font-weight="700" text-anchor="middle" fill="#191F28">켤까요?</text>
+          <text x="180" y="232" font-size="13" text-anchor="middle" fill="#8B95A1">"응" 또는 "아니"라고 말해 주세요</text>
+          <rect x="38" y="262" width="134" height="64" rx="14" fill="#F2F4F6"/><text x="105" y="302" font-size="20" font-weight="700" text-anchor="middle" fill="#4E5968">아니</text>
+          <rect x="188" y="262" width="134" height="64" rx="14" fill="#FF6C37"/><text x="255" y="302" font-size="20" font-weight="700" text-anchor="middle" fill="#fff">응</text>
+        </svg>
+        <figcaption style="max-width:none"><b>차량 화면 예시 (검토)</b>숫자는 예시예요.</figcaption>
+      </figure>
+    </div>
+    <ul class="facts">
+      <li><b>안전하게</b> 묻고 '응'일 때만 바꿔요. 성에 제거·최대 냉방처럼 시야와 이어지는 기능은 건드리지 않고, 기사님이 직접 바꾸면 그 값이 우선이에요.</li>
+      <li><b>먼저 확인할 것</b> 외부 앱에 바꾸기 권한(CONTROL_CAR_CLIMATE)이 실제로 허용되는지, 차종마다 되는 기능(Pleos 문서: 차종에 따라 일부만 될 수 있음), 에뮬레이터에서 공조 값을 바꿔 시험할 수 있는지.</li>
+    </ul>
+    <div class="foot"><img src="assets/ieo_wordmark_orange.svg" alt="ieo"><span>앞으로 · 계절별 맞춤 에어컨</span></div>
   </section>
 
   <section class="page cover closing" aria-label="감사합니다">
